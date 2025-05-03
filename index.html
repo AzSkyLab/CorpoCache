@@ -59,14 +59,14 @@
     <div class="container mx-auto px-4 py-8">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <!-- Credit Card Section -->
-            <div class="cyber-card rounded-lg p-6">
+            <div class="cyber-card rounded-lg p-6 credit-info-section">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-xl font-semibold text-white">
                         <i class="fas fa-credit-card mr-2 text-neon-blue"></i> Credit Information
                     </h2>
-                    <button onclick="addCreditCard()" class="cyber-primary-btn px-4 py-2 rounded-md hover:bg-opacity-90 transition">
+                    <a href="#" onclick="addCreditCard()" class="text-white px-4 py-2 bg-glass-blue hover:bg-opacity-90 rounded-md transition">
                         <i class="fas fa-plus mr-1"></i> Add Card
-                    </button>
+                    </a>
                 </div>
                 
                 <div class="credit-cards-wrapper">
@@ -76,7 +76,10 @@
                 </div>
                 
                 <div class="mt-6">
-                    <h3 class="text-lg font-medium text-white mb-3">Credit Utilization Summary</h3>
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-lg font-medium text-white">Credit Summary</h3>
+                        <span class="text-sm text-neon-blue"><span id="totalAccounts">0</span> Active Accounts</span>
+                    </div>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                         <div class="bg-glass-blue p-4 rounded-lg">
                             <p class="text-sm text-gray-300">Total Credit Limit</p>
@@ -105,18 +108,29 @@
             </div>
 
             <!-- Bills Section -->
-            <div class="cyber-card rounded-lg p-6">
+            <div class="cyber-card rounded-lg p-6 bills-section">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-xl font-semibold text-white">
                         <i class="fas fa-file-invoice-dollar mr-2 text-neon-green"></i> Monthly Bills
                     </h2>
-                    <button onclick="showAddBillModal()" class="cyber-secondary-btn px-4 py-2 rounded-md hover:bg-opacity-90 transition">
+                    <a href="#" onclick="showAddBillModal()" class="text-white px-4 py-2 bg-glass-purple hover:bg-opacity-90 rounded-md transition">
                         <i class="fas fa-plus mr-1"></i> Add Bill
-                    </button>
+                    </a>
                 </div>
                 
-                <div class="mb-6">
-                    <h3 class="text-lg font-medium text-white mb-3">Payment Schedule</h3>
+                <div class="bills-wrapper" style="min-height: 332px; max-height: 550px; overflow-y: auto;">
+                    <h3 class="text-lg font-medium text-white mb-3">Upcoming Bills</h3>
+                    <div id="billsContainer" class="bills-container">
+                        <!-- Bills will be added here -->
+                        <p class="text-gray-400 text-center py-4">No bills added yet</p>
+                    </div>
+                </div>
+                
+                <div class="mt-6">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-lg font-medium text-white">Payment Schedule</h3>
+                        <span class="text-sm text-neon-green">Paycheck Distribution</span>
+                    </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="bg-glass-blue p-4 rounded-lg">
                             <p class="text-sm text-neon-blue">Paycheck 1 (15th)</p>
@@ -128,14 +142,6 @@
                             <p id="paycheck2Bills" class="text-lg font-medium text-white">No bills scheduled</p>
                             <p id="paycheck2Total" class="text-sm text-neon-green">Total: $0</p>
                         </div>
-                    </div>
-                </div>
-                
-                <div>
-                    <h3 class="text-lg font-medium text-white mb-3">Upcoming Bills</h3>
-                    <div id="billsContainer">
-                        <!-- Bills will be added here -->
-                        <p class="text-gray-400 text-center py-4">No bills added yet</p>
                     </div>
                 </div>
             </div>
@@ -253,9 +259,9 @@
                 <div class="mt-6">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-lg font-medium text-white">Monthly Expenses</h3>
-                        <button onclick="showAddExpenseModal()" class="text-sm bg-cyber-gray hover:bg-opacity-80 text-white px-3 py-1 rounded">
+                        <a href="#" onclick="showAddExpenseModal()" class="text-white px-4 py-2 bg-glass-blue hover:bg-opacity-90 rounded-md transition">
                             <i class="fas fa-plus mr-1"></i> Add Expense
-                        </button>
+                        </a>
                     </div>
                     
                     <div id="expensesContainer" class="mb-4">

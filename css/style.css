@@ -48,12 +48,13 @@ body {
 
 /* Credit cards container with scrollbar */
 .credit-cards-wrapper {
-    max-height: 490px; /* Height for approximately 2 cards */
+    max-height: 550px; /* Increased height to fit two complete cards */
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: var(--neon-purple) var(--cyber-black);
     padding-right: 5px; /* Prevent content from touching scrollbar */
     margin-right: -5px; /* Offset the padding */
+    padding-top: 4px; /* Add padding to the top to prevent border clipping */
 }
 
 /* Custom scrollbar for Webkit browsers */
@@ -220,4 +221,17 @@ body {
     .cyber-card {
         margin-bottom: 1.5rem;
     }
+}
+
+/* Credit and Bills cards specific styling */
+.credit-info-section,
+.bills-section {
+    min-height: 800px; /* Set minimum height for these sections */
+    display: flex;
+    flex-direction: column;
+}
+
+.bills-container {
+    flex-grow: 1;
+    min-height: 550px; /* Match the height of credit cards wrapper */
 }

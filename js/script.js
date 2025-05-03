@@ -225,6 +225,9 @@ function updateCreditSummary() {
     const totalBalanceValue = creditCards.reduce((sum, card) => sum + card.balance, 0);
     const totalUtilizationValue = totalLimitValue > 0 ? (totalBalanceValue / totalLimitValue) * 100 : 0;
     
+    // Update account count
+    document.getElementById('totalAccounts').textContent = creditCards.length;
+    
     totalLimit.textContent = `$${totalLimitValue.toFixed(2)}`;
     totalBalance.textContent = `$${totalBalanceValue.toFixed(2)}`;
     totalUtilization.textContent = `${totalUtilizationValue.toFixed(1)}%`;
