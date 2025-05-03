@@ -26,6 +26,72 @@ document.addEventListener('DOMContentLoaded', () => {
     setupScrollDetection();
 });
 
+// Credit Card Company Logo Functions
+/**
+ * Identifies the credit card company based on the card name
+ * @param {string} cardName - The name of the credit card
+ * @returns {string} - The identified credit card company
+ */
+function identifyCreditCardCompany(cardName) {
+    const nameLower = cardName.toLowerCase();
+    
+    // Check for common credit card companies
+    if (nameLower.includes('visa')) return 'visa';
+    if (nameLower.includes('mastercard')) return 'mastercard';
+    if (nameLower.includes('amex') || nameLower.includes('american express')) return 'amex';
+    if (nameLower.includes('discover')) return 'discover';
+    if (nameLower.includes('capital one')) return 'capitalone';
+    if (nameLower.includes('chase')) return 'chase';
+    if (nameLower.includes('citi') || nameLower.includes('citibank')) return 'citi';
+    if (nameLower.includes('wells fargo')) return 'wellsfargo';
+    if (nameLower.includes('bank of america')) return 'bankofamerica';
+    if (nameLower.includes('td bank') || nameLower.includes('td ')) return 'tdbank';
+    if (nameLower.includes('usaa')) return 'usaa';
+    if (nameLower.includes('pnc')) return 'pnc';
+    if (nameLower.includes('barclays')) return 'barclays';
+    if (nameLower.includes('navy federal') || nameLower.includes('navyfederal')) return 'navyfederal';
+    if (nameLower.includes('synchrony')) return 'synchrony';
+    if (nameLower.includes('apple')) return 'apple';
+    if (nameLower.includes('amazon')) return 'amazon';
+    if (nameLower.includes('paypal')) return 'paypal';
+    
+    // Return generic if no match found
+    return 'generic';
+}
+
+/**
+ * Gets the logo URL for a given credit card company
+ * @param {string} company - The credit card company name
+ * @returns {string} - The URL to the logo image
+ */
+function getCreditCardLogoUrl(company) {
+    // Using common free logo services for credit card logos
+    // You can replace these with local images or other services if needed
+    const logoUrls = {
+        'visa': 'https://cdn.iconscout.com/icon/free/png-256/free-visa-3-226460.png',
+        'mastercard': 'https://cdn.iconscout.com/icon/free/png-256/free-mastercard-3-226466.png',
+        'amex': 'https://cdn.iconscout.com/icon/free/png-256/free-american-express-3-226464.png',
+        'discover': 'https://cdn.iconscout.com/icon/free/png-256/free-discover-3-226468.png',
+        'capitalone': 'https://logo.clearbit.com/capitalone.com',
+        'chase': 'https://logo.clearbit.com/chase.com',
+        'citi': 'https://logo.clearbit.com/citi.com',
+        'wellsfargo': 'https://logo.clearbit.com/wellsfargo.com',
+        'bankofamerica': 'https://logo.clearbit.com/bankofamerica.com',
+        'tdbank': 'https://logo.clearbit.com/td.com',
+        'usaa': 'https://logo.clearbit.com/usaa.com',
+        'pnc': 'https://logo.clearbit.com/pnc.com',
+        'barclays': 'https://logo.clearbit.com/barclays.co.uk',
+        'navyfederal': 'https://logo.clearbit.com/navyfederal.org',
+        'synchrony': 'https://logo.clearbit.com/syf.com',
+        'apple': 'https://logo.clearbit.com/apple.com',
+        'amazon': 'https://logo.clearbit.com/amazon.com',
+        'paypal': 'https://logo.clearbit.com/paypal.com',
+        'generic': 'https://cdn.iconscout.com/icon/free/png-256/free-credit-card-459-226457.png'
+    };
+    
+    return logoUrls[company] || logoUrls['generic'];
+}
+
 function initElements() {
     window.creditCardsContainer = document.getElementById('creditCardsContainer');
     window.billsContainer = document.getElementById('billsContainer');
@@ -231,6 +297,22 @@ window.saveCreditCard = function() {
     } else {
         // Add new card
         creditCards.push(card);
+        
+        // Also add a bill entry with amount $0 for this credit card
+        const newBill = {
+            name: `${card.name} Payment`,
+            amount: 0,
+            dueDate: card.dueDate,
+            type: 'credit',
+            priority: 'normal'
+        };
+        
+        // Add the new bill
+        bills.push(newBill);
+        
+        // Update the bills display
+        renderBills();
+        updatePaymentSchedule();
     }
     
     renderCreditCards();
@@ -290,12 +372,19 @@ function renderCreditCards() {
         
         const utilizationColorClass = utilization > 30 ? 'cyber-pink' : utilization > 10 ? 'cyber-yellow' : 'cyber-green';
         
+        // Identify the credit card company and get the appropriate logo URL
+        const cardCompany = identifyCreditCardCompany(card.name);
+        const cardLogoUrl = getCreditCardLogoUrl(cardCompany);
+        
         html += `
             <div class="border cyber-border rounded-lg p-4 mb-4 cyber-card">
                 <div class="flex justify-between items-start">
-                    <div>
-                        <h3 class="font-medium text-lg cyber-neon">${card.name}</h3>
-                        <p class="text-sm text-gray-400">${accountAge}</p>
+                    <div class="flex items-center">
+                        <div>
+                            <h3 class="font-medium text-lg cyber-neon">${card.name}</h3>
+                            <p class="text-sm text-gray-400">${accountAge}</p>
+                        </div>
+                        <img src="${cardLogoUrl}" alt="${cardCompany} logo" class="h-8 ml-3 card-logo">
                     </div>
                     <div class="flex">
                         <button onclick="editCreditCard(${index})" class="text-neon-blue hover:text-neon-purple mr-3">
@@ -355,7 +444,28 @@ function renderCreditCards() {
 }
 
 window.deleteCreditCard = function(index) {
+    const deletedCard = creditCards[index];
+    
+    // First delete the card
     creditCards.splice(index, 1);
+    
+    // Then find and delete any bill entries that correspond to this card
+    if (deletedCard && deletedCard.name) {
+        const billName = `${deletedCard.name} Payment`;
+        
+        // Find the index of the corresponding bill
+        const billIndex = bills.findIndex(bill => bill.name === billName && bill.type === 'credit');
+        
+        // If a matching bill is found, delete it
+        if (billIndex !== -1) {
+            bills.splice(billIndex, 1);
+            
+            // Update the bills display and payment schedule
+            renderBills();
+            updatePaymentSchedule();
+        }
+    }
+    
     renderCreditCards();
     updateCreditSummary();
 }

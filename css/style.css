@@ -27,6 +27,19 @@ body {
     background-position: 0 0, 0 50px, 50px -50px, -50px 0px;
 }
 
+/* Hide spinners (up/down buttons) from number inputs */
+/* For Chrome, Safari, Edge, Opera */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* For Firefox */
+input[type="number"] {
+    -moz-appearance: textfield;
+}
+
 .cyber-header {
     background: linear-gradient(90deg, var(--dark-purple), var(--dark-blue));
     border-bottom: 2px solid var(--neon-blue);
@@ -287,4 +300,18 @@ body {
     border-width: 1px;
     position: relative;
     z-index: 1;
+}
+
+/* Credit card logo styles */
+.card-logo {
+    height: 32px;
+    width: auto;
+    object-fit: contain;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.card-logo:hover {
+    transform: scale(1.1);
+    filter: drop-shadow(0 0 3px var(--neon-blue));
 }
