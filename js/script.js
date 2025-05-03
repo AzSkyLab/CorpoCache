@@ -51,6 +51,7 @@ function initElements() {
     window.creditLimit = document.getElementById('creditLimit');
     window.currentBalance = document.getElementById('currentBalance');
     window.openDate = document.getElementById('openDate');
+    window.cardDueDate = document.getElementById('cardDueDate');
     window.billName = document.getElementById('billName');
     window.billAmount = document.getElementById('billAmount');
     window.billDueDate = document.getElementById('billDueDate');
@@ -104,6 +105,7 @@ window.addCreditCard = function() {
     creditLimit.value = '';
     currentBalance.value = '';
     openDate.value = '';
+    cardDueDate.value = '';
     document.getElementById('editCardIndex').value = '-1';
     
     // Hide any previous validation errors
@@ -126,6 +128,13 @@ window.editCreditCard = function(index) {
         openDate.value = card.openDate;
     } else {
         openDate.value = '';
+    }
+    
+    // Set the due date if it exists
+    if (card.dueDate) {
+        cardDueDate.value = card.dueDate;
+    } else {
+        cardDueDate.value = '';
     }
     
     document.getElementById('editCardIndex').value = index;
@@ -169,6 +178,11 @@ function validateCreditCardForm() {
         }
     }
     
+    const dueDateValue = parseInt(cardDueDate.value);
+    if (!cardDueDate.value || isNaN(dueDateValue) || dueDateValue < 1 || dueDateValue > 31) {
+        errors.push('Payment Due Date is required and must be a day between 1 and 31');
+    }
+    
     // If we have values for both limit and balance, check that balance doesn't exceed limit
     if (!isNaN(limitValue) && !isNaN(balanceValue) && balanceValue > limitValue) {
         errors.push('Current Balance cannot be greater than Credit Limit');
@@ -205,7 +219,8 @@ window.saveCreditCard = function() {
         name: cardName.value.trim(),
         limit: parseFloat(creditLimit.value),
         balance: parseFloat(currentBalance.value),
-        openDate: openDate.value
+        openDate: openDate.value,
+        dueDate: parseInt(cardDueDate.value)
     };
     
     const editIndex = parseInt(document.getElementById('editCardIndex').value);
@@ -238,17 +253,37 @@ function renderCreditCards() {
         const payTo29 = (card.limit * 0.29) - card.balance;
         const payTo9 = (card.limit * 0.09) - card.balance;
         
-        // Calculate account age in months from open date
+        // Calculate account age in years from open date
         let accountAge = '';
         if (card.openDate) {
             const openDate = new Date(card.openDate);
             const today = new Date();
             const monthsDiff = (today.getFullYear() - openDate.getFullYear()) * 12 + 
                               today.getMonth() - openDate.getMonth();
-            accountAge = `${monthsDiff} months old`;
+            const years = Math.floor(monthsDiff / 12);
+            const months = monthsDiff % 12;
+            
+            if (years > 0) {
+                accountAge = `${years} ${years === 1 ? 'year' : 'years'} old`;
+                if (months > 0) {
+                    accountAge = `${years} ${years === 1 ? 'year' : 'years'}, ${months} ${months === 1 ? 'month' : 'months'} old`;
+                }
+            } else {
+                accountAge = `${months} ${months === 1 ? 'month' : 'months'} old`;
+            }
         } else if (card.age) { 
             // Support for legacy data
-            accountAge = `${card.age} months old`;
+            const years = Math.floor(card.age / 12);
+            const months = card.age % 12;
+            
+            if (years > 0) {
+                accountAge = `${years} ${years === 1 ? 'year' : 'years'} old`;
+                if (months > 0) {
+                    accountAge = `${years} ${years === 1 ? 'year' : 'years'}, ${months} ${months === 1 ? 'month' : 'months'} old`;
+                }
+            } else {
+                accountAge = `${months} ${months === 1 ? 'month' : 'months'} old`;
+            }
         } else {
             accountAge = 'Age unknown';
         }
@@ -294,7 +329,7 @@ function renderCreditCards() {
                     </div>
                 </div>
                 
-                <div class="grid grid-cols-2 gap-4 mt-4">
+                <div class="grid grid-cols-3 gap-4 mt-4">
                     <div>
                         <p class="text-sm text-gray-400">Pay to 29% utilization</p>
                         <p class="font-medium ${payTo29 < 0 ? 'text-neon-pink' : 'text-neon-green'}">
@@ -306,6 +341,10 @@ function renderCreditCards() {
                         <p class="font-medium ${payTo9 < 0 ? 'text-neon-pink' : 'text-neon-green'}">
                             $${Math.abs(payTo9).toFixed(2)} ${payTo9 < 0 ? 'over' : 'needed'}
                         </p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-400">Payment Due Date</p>
+                        <p class="font-medium">${card.dueDate ? `${card.dueDate}th of each month` : 'Not specified'}</p>
                     </div>
                 </div>
             </div>
@@ -380,12 +419,23 @@ function updateCreditSummary() {
         });
         
         if (oldestAgeInMonths > 0) {
-            oldestCreditLine.innerHTML = `<span class="text-neon-pink">${oldestAgeInMonths}</span> months`;
+            const years = Math.floor(oldestAgeInMonths / 12);
+            const months = oldestAgeInMonths % 12;
+            
+            if (years > 0) {
+                if (months > 0) {
+                    oldestCreditLine.innerHTML = `<span class="text-neon-pink">${years}</span> ${years === 1 ? 'year' : 'years'}, <span class="text-neon-pink">${months}</span> ${months === 1 ? 'month' : 'months'}`;
+                } else {
+                    oldestCreditLine.innerHTML = `<span class="text-neon-pink">${years}</span> ${years === 1 ? 'year' : 'years'}`;
+                }
+            } else {
+                oldestCreditLine.innerHTML = `<span class="text-neon-pink">${months}</span> ${months === 1 ? 'month' : 'months'}`;
+            }
         } else {
-            oldestCreditLine.innerHTML = `<span class="text-neon-pink">0</span> months`;
+            oldestCreditLine.innerHTML = `<span class="text-neon-pink">0</span> years`;
         }
     } else {
-        oldestCreditLine.innerHTML = `<span class="text-neon-pink">0</span> months`;
+        oldestCreditLine.innerHTML = `<span class="text-neon-pink">0</span> years`;
     }
 }
 
