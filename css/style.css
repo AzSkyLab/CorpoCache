@@ -39,11 +39,12 @@ body {
     box-shadow: 0 0 10px rgba(185, 103, 255, 0.5);
     backdrop-filter: blur(5px);
     transition: all 0.3s ease;
+    position: relative;
 }
 
 .cyber-card:hover {
     box-shadow: 0 0 20px var(--neon-purple);
-    transform: translateY(-3px);
+    transform: translateY(-2px); /* Reduced from -3px to -2px to prevent excessive shifting */
 }
 
 /* Credit cards container with scrollbar */
@@ -53,7 +54,7 @@ body {
     scrollbar-width: none; /* Hide scrollbar in Firefox by default */
     padding-right: 5px; /* Prevent content from touching scrollbar */
     margin-right: -5px; /* Offset the padding */
-    padding-top: 4px; /* Add padding to the top to prevent border clipping */
+    padding-top: 8px; /* Increased padding to the top to prevent border clipping when hovering */
     -ms-overflow-style: none; /* Internet Explorer and Edge */
 }
 
@@ -64,8 +65,14 @@ body {
     scrollbar-width: none; /* Hide scrollbar in Firefox by default */
     padding-right: 5px; /* Prevent content from touching scrollbar */
     margin-right: -5px; /* Offset the padding */
-    padding-top: 4px; /* Use same padding as credit-cards-wrapper */
+    padding-top: 8px; /* Increased padding to match credit-cards-wrapper */
     -ms-overflow-style: none; /* Internet Explorer and Edge */
+}
+
+/* Ensure the first card has proper spacing */
+.credit-cards-wrapper > div:first-child,
+.bills-wrapper > div:first-child {
+    margin-top: 2px;
 }
 
 /* Hide scrollbars by default for all browsers */
