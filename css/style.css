@@ -59,11 +59,12 @@ body {
 
 /* Bills container with scrollbar - matching credit cards style */
 .bills-wrapper {
+    max-height: 550px; /* Match the max-height of credit-cards-wrapper */
+    overflow-y: auto;
     scrollbar-width: none; /* Hide scrollbar in Firefox by default */
     padding-right: 5px; /* Prevent content from touching scrollbar */
     margin-right: -5px; /* Offset the padding */
-    padding-top: 4px; /* Add padding to the top to prevent border clipping */
-    overflow-y: auto; /* Enable vertical scrolling only when needed */
+    padding-top: 4px; /* Use same padding as credit-cards-wrapper */
     -ms-overflow-style: none; /* Internet Explorer and Edge */
 }
 
@@ -270,4 +271,13 @@ body {
 .credit-cards-wrapper,
 .bills-wrapper {
     overflow-y: auto;
+}
+
+/* Bill item specific styling to fix border visibility */
+.bill-item {
+    margin-top: 4px;
+    margin-bottom: 6px;
+    border-width: 1px;
+    position: relative;
+    z-index: 1;
 }

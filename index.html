@@ -131,19 +131,29 @@
                 
                 <div class="mt-6">
                     <div class="flex justify-between items-center mb-3">
-                        <h3 class="text-lg font-medium text-white">Payment Schedule</h3>
-                        <span class="text-sm text-neon-green">Paycheck Distribution</span>
+                        <h3 class="text-lg font-medium text-white">Monthly Bills</h3>
+                        <span class="text-sm text-neon-blue"><span id="totalBills">0</span> Monthly Bills</span>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="bg-glass-blue p-4 rounded-lg">
-                            <p class="text-sm text-neon-blue">Paycheck 1 (15th)</p>
-                            <p id="paycheck1Bills" class="text-lg font-medium text-white">No bills scheduled</p>
-                            <p id="paycheck1Total" class="text-sm text-neon-blue">Total: $0</p>
+                        <div class="bg-glass-blue p-4 rounded-lg flex flex-col">
+                            <p class="text-sm text-gray-300">Paycheck 1 (15th)</p>
+                            <div class="flex-grow" style="min-height: 80px;">
+                                <p id="paycheck1Bills" class="text-lg font-medium text-white">No bills scheduled</p>
+                            </div>
+                            <div class="flex justify-between items-center mt-auto">
+                                <span class="text-white">Total:</span>
+                                <span id="paycheck1Total" class="text-xl font-bold text-neon-green">$0</span>
+                            </div>
                         </div>
-                        <div class="bg-glass-purple p-4 rounded-lg">
-                            <p class="text-sm text-neon-green">Paycheck 2 (End of Month)</p>
-                            <p id="paycheck2Bills" class="text-lg font-medium text-white">No bills scheduled</p>
-                            <p id="paycheck2Total" class="text-sm text-neon-green">Total: $0</p>
+                        <div class="bg-glass-purple p-4 rounded-lg flex flex-col">
+                            <p class="text-sm text-gray-300">Paycheck 2 (End of Month)</p>
+                            <div class="flex-grow" style="min-height: 80px;">
+                                <p id="paycheck2Bills" class="text-lg font-medium text-white">No bills scheduled</p>
+                            </div>
+                            <div class="flex justify-between items-center mt-auto">
+                                <span class="text-white">Total:</span>
+                                <span id="paycheck2Total" class="text-xl font-bold text-neon-pink">$0</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -383,10 +393,18 @@
         </div>
     </div>
 
-    <!-- Add Bill Modal -->
+    <!-- Add/Edit Bill Modal -->
     <div id="billModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
         <div class="modal-cyber rounded-lg p-6 w-full max-w-md">
-            <h3 class="text-xl font-semibold mb-4 text-white">Add Monthly Bill</h3>
+            <h3 id="billModalTitle" class="text-xl font-semibold mb-4 text-white">Add Monthly Bill</h3>
+            
+            <div id="billValidationErrors" class="mb-4 hidden">
+                <div class="bg-glass-purple p-3 rounded-lg border border-neon-pink">
+                    <p class="text-neon-pink text-sm font-medium"><i class="fas fa-exclamation-triangle mr-2"></i>Please correct the following errors:</p>
+                    <ul id="billErrorList" class="list-disc ml-6 text-sm text-white mt-1">
+                    </ul>
+                </div>
+            </div>
             
             <div class="space-y-4">
                 <div class="input-container">
@@ -395,8 +413,26 @@
                 </div>
                 
                 <div class="input-container">
-                    <input type="number" id="billAmount" class="cyber-input w-full p-3 rounded-md" placeholder=" ">
+                    <input type="number" id="billAmount" class="cyber-input w-full p-3 rounded-md" placeholder=" " min="0" step="any">
                     <label class="floating-label">Amount ($)</label>
+                </div>
+                
+                <div class="input-container">
+                    <select id="billType" class="cyber-input w-full p-3 rounded-md">
+                        <option value="housing">Housing (Mortgage/Rent)</option>
+                        <option value="utilities">Utilities</option>
+                        <option value="internet">Internet/Cable</option>
+                        <option value="phone">Phone</option>
+                        <option value="insurance">Insurance</option>
+                        <option value="loan">Loan Payment</option>
+                        <option value="credit">Credit Card Payment</option>
+                        <option value="subscription">Subscription</option>
+                        <option value="streaming">Streaming Service</option>
+                        <option value="healthcare">Healthcare</option>
+                        <option value="childcare">Childcare</option>
+                        <option value="other">Other</option>
+                    </select>
+                    <label class="floating-label">Bill Type</label>
                 </div>
                 
                 <div class="input-container">
@@ -422,6 +458,7 @@
                     Save Bill
                 </button>
             </div>
+            <input type="hidden" id="editBillIndex" value="-1">
         </div>
     </div>
 

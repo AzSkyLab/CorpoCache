@@ -221,6 +221,9 @@ window.saveCreditCard = function() {
     renderCreditCards();
     updateCreditSummary();
     closeCreditCardModal();
+    
+    // Dispatch event to trigger scroll detection check
+    document.dispatchEvent(new Event('cardsChanged'));
 }
 
 function renderCreditCards() {
@@ -386,20 +389,117 @@ function updateCreditSummary() {
     }
 }
 
+// Bill Modal Functions
+window.showAddBillModal = function() {
+    document.getElementById('billModalTitle').textContent = 'Add Monthly Bill';
+    billName.value = '';
+    billAmount.value = '';
+    billDueDate.value = '';
+    billType.value = 'housing';
+    billPriority.value = 'normal';
+    document.getElementById('editBillIndex').value = '-1';
+    
+    // Hide any previous validation errors
+    document.getElementById('billValidationErrors').classList.add('hidden');
+    document.getElementById('billErrorList').innerHTML = '';
+    
+    billModal.classList.remove('hidden');
+}
+
+window.editBill = function(index) {
+    document.getElementById('billModalTitle').textContent = 'Edit Monthly Bill';
+    const bill = bills[index];
+    
+    billName.value = bill.name;
+    billAmount.value = bill.amount;
+    billDueDate.value = bill.dueDate;
+    // Set bill type if it exists, otherwise default to 'other'
+    billType.value = bill.type || 'other';
+    billPriority.value = bill.priority;
+    
+    document.getElementById('editBillIndex').value = index;
+    
+    // Hide any previous validation errors
+    document.getElementById('billValidationErrors').classList.add('hidden');
+    document.getElementById('billErrorList').innerHTML = '';
+    
+    billModal.classList.remove('hidden');
+}
+
+window.closeBillModal = function() {
+    billModal.classList.add('hidden');
+}
+
+// Validate bill form data
+function validateBillForm() {
+    const errors = [];
+    
+    if (!billName.value || billName.value.trim() === '') {
+        errors.push('Bill Name is required');
+    }
+    
+    const amountValue = parseFloat(billAmount.value);
+    if (isNaN(amountValue) || amountValue < 0) {
+        errors.push('Amount must be a non-negative number');
+    }
+    
+    const dueDateValue = parseInt(billDueDate.value);
+    if (isNaN(dueDateValue) || dueDateValue < 1 || dueDateValue > 31) {
+        errors.push('Due Date must be a day between 1 and 31');
+    }
+    
+    return errors;
+}
+
+// Display bill validation errors
+function showBillValidationErrors(errors) {
+    const errorContainer = document.getElementById('billValidationErrors');
+    const errorList = document.getElementById('billErrorList');
+    
+    errorList.innerHTML = '';
+    errors.forEach(error => {
+        const li = document.createElement('li');
+        li.textContent = error;
+        errorList.appendChild(li);
+    });
+    
+    errorContainer.classList.remove('hidden');
+}
+
 // Bill Functions
 window.saveBill = function() {
+    // Validate form data
+    const errors = validateBillForm();
+    if (errors.length > 0) {
+        showBillValidationErrors(errors);
+        return;
+    }
+    
     const bill = {
-        name: billName.value,
+        name: billName.value.trim(),
         amount: parseFloat(billAmount.value),
         dueDate: parseInt(billDueDate.value),
+        type: billType.value,
         priority: billPriority.value
     };
     
-    bills.push(bill);
+    const editIndex = parseInt(document.getElementById('editBillIndex').value);
+    
+    if (editIndex >= 0 && editIndex < bills.length) {
+        // Edit existing bill
+        bills[editIndex] = bill;
+    } else {
+        // Add new bill
+        bills.push(bill);
+    }
+    
     renderBills();
     updatePaymentSchedule();
     updateExpenseSummary();
     closeBillModal();
+    
+    // Dispatch event to trigger scroll detection check
+    document.dispatchEvent(new Event('billsChanged'));
 }
 
 function renderBills() {
@@ -413,22 +513,29 @@ function renderBills() {
     
     let html = '';
     bills.forEach((bill, index) => {
-        const priorityColor = bill.priority === 'high' ? 'bg-glass-blue border-neon-pink' : 
-                            bill.priority === 'low' ? 'bg-glass-blue border-neon-blue' : 'bg-glass-purple border-neon-purple';
         const priorityIcon = bill.priority === 'high' ? 'fa-exclamation-circle text-neon-pink' : 
                            bill.priority === 'low' ? 'fa-info-circle text-neon-blue' : 'fa-check-circle text-neon-purple';
         
+        // Get bill type icon
+        const typeIcon = getBillTypeIcon(bill.type || 'other');
+        
         html += `
-            <div class="border cyber-border rounded-lg p-4 mb-3 cyber-card">
-                <div class="flex justify-between items-center">
+            <div class="border cyber-border rounded-lg p-4 mb-3 cyber-card bill-item">
+                <div class="flex justify-between items-start">
                     <div>
-                        <h3 class="font-medium cyber-neon">${bill.name}</h3>
+                        <div class="flex items-center">
+                            <i class="fas ${typeIcon} mr-2 text-neon-green"></i>
+                            <h3 class="font-medium text-lg cyber-neon">${bill.name}</h3>
+                        </div>
                         <p class="text-sm text-gray-400">Due on ${bill.dueDate}th</p>
                     </div>
                     <div class="flex items-center">
                         <span class="font-medium mr-4">$${bill.amount.toFixed(2)}</span>
                         <i class="fas ${priorityIcon} mr-2 cyber-neon"></i>
-                        <button onclick="deleteBill(${index})" class="text-gray-400 hover:text-neon-pink">
+                        <button onclick="editBill(${index})" class="text-neon-blue hover:text-neon-purple mr-3">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteBill(${index})" class="text-neon-pink hover:text-neon-purple">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -440,11 +547,32 @@ function renderBills() {
     billsContainer.innerHTML = html;
 }
 
+function getBillTypeIcon(type) {
+    const icons = {
+        'housing': 'fa-home',
+        'utilities': 'fa-bolt',
+        'internet': 'fa-wifi',
+        'phone': 'fa-mobile-alt',
+        'insurance': 'fa-shield-alt',
+        'loan': 'fa-money-bill-wave',
+        'credit': 'fa-credit-card',
+        'subscription': 'fa-calendar-alt',
+        'streaming': 'fa-stream',
+        'healthcare': 'fa-heart',
+        'childcare': 'fa-child',
+        'other': 'fa-file-invoice-dollar'
+    };
+    return icons[type] || 'fa-file-invoice-dollar';
+}
+
 window.deleteBill = function(index) {
     bills.splice(index, 1);
     renderBills();
     updatePaymentSchedule();
     updateExpenseSummary();
+    
+    // Dispatch event to trigger scroll detection check
+    document.dispatchEvent(new Event('billsChanged'));
 }
 
 function updatePaymentSchedule() {
@@ -460,8 +588,11 @@ function updatePaymentSchedule() {
     paycheck2Bills.textContent = paycheck2.length > 0 ? 
         paycheck2.map(bill => bill.name).join(', ') : 'No bills scheduled';
         
-    paycheck1Total.textContent = `Total: $${paycheck1TotalAmount.toFixed(2)}`;
-    paycheck2Total.textContent = `Total: $${paycheck2TotalAmount.toFixed(2)}`;
+    paycheck1Total.textContent = `$${paycheck1TotalAmount.toFixed(2)}`;
+    paycheck2Total.textContent = `$${paycheck2TotalAmount.toFixed(2)}`;
+    
+    // Update total bills count
+    document.getElementById('totalBills').textContent = bills.length;
     
     // Update total bills amount
     const totalBills = paycheck1TotalAmount + paycheck2TotalAmount;
@@ -696,27 +827,48 @@ function setupScrollDetection() {
     const checkIfScrollable = (element) => {
         if (!element) return;
         
-        // If scrollHeight is greater than clientHeight, content is scrollable
-        if (element.scrollHeight > element.clientHeight + 5) { // Adding small buffer for rounding errors
+        // More accurate comparison to determine if scrolling is needed
+        // Using a larger threshold to account for various browser renderings
+        const threshold = 15; // Increased threshold to account for margins/padding/borders
+        const isScrollable = element.scrollHeight > (element.clientHeight + threshold);
+        
+        if (isScrollable) {
             element.classList.add('actually-scrollable');
         } else {
             element.classList.remove('actually-scrollable');
         }
+        
+        // Debug info to help troubleshoot
+        console.debug(`Element ${element.className} - scrollHeight: ${element.scrollHeight}, clientHeight: ${element.clientHeight}, isScrollable: ${isScrollable}`);
     };
     
     // Initial check when the page loads
-    if (creditCardsWrapper) checkIfScrollable(creditCardsWrapper);
-    if (billsWrapper) checkIfScrollable(billsWrapper);
+    // Delay the initial check to ensure all content has been properly rendered
+    setTimeout(() => {
+        if (creditCardsWrapper) checkIfScrollable(creditCardsWrapper);
+        if (billsWrapper) checkIfScrollable(billsWrapper);
+    }, 300);
     
     // Set up mutation observer to detect content changes
     const observer = new MutationObserver((mutations) => {
+        let creditCardsMutated = false;
+        let billsMutated = false;
+        
         for (const mutation of mutations) {
             if (mutation.target.closest('.credit-cards-wrapper')) {
-                setTimeout(() => checkIfScrollable(creditCardsWrapper), 50); // Small delay to ensure DOM is updated
+                creditCardsMutated = true;
             }
             if (mutation.target.closest('.bills-wrapper')) {
-                setTimeout(() => checkIfScrollable(billsWrapper), 50); // Small delay to ensure DOM is updated
+                billsMutated = true;
             }
+        }
+        
+        // Only check affected containers
+        if (creditCardsMutated && creditCardsWrapper) {
+            setTimeout(() => checkIfScrollable(creditCardsWrapper), 300);
+        }
+        if (billsMutated && billsWrapper) {
+            setTimeout(() => checkIfScrollable(billsWrapper), 300);
         }
     });
     
@@ -746,4 +898,14 @@ function setupScrollDetection() {
             checkIfScrollable(billsWrapper);
         });
     }
+    
+    // Force a check after any DOM updates that might affect height
+    const forceCheck = () => {
+        if (creditCardsWrapper) checkIfScrollable(creditCardsWrapper);
+        if (billsWrapper) checkIfScrollable(billsWrapper);
+    };
+    
+    // Re-check if bills are added or removed
+    document.addEventListener('billsChanged', forceCheck);
+    document.addEventListener('cardsChanged', forceCheck);
 }
