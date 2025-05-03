@@ -64,32 +64,33 @@ function identifyCreditCardCompany(cardName) {
  * @param {string} company - The credit card company name
  * @returns {string} - The URL to the logo image
  */
-function getCreditCardLogoUrl(company) {
-    // Using common free logo services for credit card logos
-    // You can replace these with local images or other services if needed
-    const logoUrls = {
-        'visa': 'https://cdn.iconscout.com/icon/free/png-256/free-visa-3-226460.png',
-        'mastercard': 'https://cdn.iconscout.com/icon/free/png-256/free-mastercard-3-226466.png',
-        'amex': 'https://cdn.iconscout.com/icon/free/png-256/free-american-express-3-226464.png',
-        'discover': 'https://cdn.iconscout.com/icon/free/png-256/free-discover-3-226468.png',
-        'capitalone': 'https://logo.clearbit.com/capitalone.com',
-        'chase': 'https://logo.clearbit.com/chase.com',
-        'citi': 'https://logo.clearbit.com/citi.com',
-        'wellsfargo': 'https://logo.clearbit.com/wellsfargo.com',
-        'bankofamerica': 'https://logo.clearbit.com/bankofamerica.com',
-        'tdbank': 'https://logo.clearbit.com/td.com',
-        'usaa': 'https://logo.clearbit.com/usaa.com',
-        'pnc': 'https://logo.clearbit.com/pnc.com',
-        'barclays': 'https://logo.clearbit.com/barclays.co.uk',
-        'navyfederal': 'https://logo.clearbit.com/navyfederal.org',
-        'synchrony': 'https://logo.clearbit.com/syf.com',
-        'apple': 'https://logo.clearbit.com/apple.com',
-        'amazon': 'https://logo.clearbit.com/amazon.com',
-        'paypal': 'https://logo.clearbit.com/paypal.com',
-        'generic': 'https://cdn.iconscout.com/icon/free/png-256/free-credit-card-459-226457.png'
-    };
-    
-    return logoUrls[company] || logoUrls['generic'];
+function getCreditCardLogoUrl(cardType) {
+    // Check if it's a custom image selection first
+    switch (cardType.toLowerCase()) {
+        case 'visa':
+            return 'https://cdn.iconscout.com/icon/free/png-256/free-visa-3-226460.png';
+        case 'mastercard':
+            return 'https://cdn.iconscout.com/icon/free/png-256/free-mastercard-3-226466.png';
+        case 'amex':
+        case 'american express':
+            return 'https://cdn.iconscout.com/icon/free/png-256/free-american-express-3-226464.png';
+        case 'discover':
+            return 'https://cdn.iconscout.com/icon/free/png-256/free-discover-3-226468.png';
+        case 'capitalone':
+        case 'capital one':
+            return 'https://logo.clearbit.com/capitalone.com';
+        case 'chase':
+            return 'https://logo.clearbit.com/chase.com';
+        case 'citi':
+        case 'citibank':
+            return 'https://logo.clearbit.com/citi.com';
+        case 'apple':
+        case 'apple card':
+            return 'https://logo.clearbit.com/apple.com';
+        case 'generic':
+        default:
+            return 'https://cdn.iconscout.com/icon/free/png-256/free-credit-card-459-226457.png';
+    }
 }
 
 function initElements() {
@@ -337,43 +338,67 @@ function renderCreditCards() {
         
         // Calculate account age in years from open date
         let accountAge = '';
+        let accountAgeClass = 'text-neon-pink'; // Default for 0-2 years
+        let ageYears = 0;
+        let ageMonths = 0;
+        
         if (card.openDate) {
             const openDate = new Date(card.openDate);
             const today = new Date();
             const monthsDiff = (today.getFullYear() - openDate.getFullYear()) * 12 + 
                               today.getMonth() - openDate.getMonth();
-            const years = Math.floor(monthsDiff / 12);
-            const months = monthsDiff % 12;
+            ageYears = Math.floor(monthsDiff / 12);
+            ageMonths = monthsDiff % 12;
             
-            if (years > 0) {
-                accountAge = `${years} ${years === 1 ? 'year' : 'years'} old`;
-                if (months > 0) {
-                    accountAge = `${years} ${years === 1 ? 'year' : 'years'}, ${months} ${months === 1 ? 'month' : 'months'} old`;
+            // Determine color class based on age ranges, matching the updateCreditSummary logic
+            if (ageYears >= 25) {
+                accountAgeClass = "text-neon-green"; // 25+ years
+            } else if (ageYears >= 8) {
+                accountAgeClass = "text-neon-blue";  // 8-24 years
+            } else if (ageYears >= 3) {
+                accountAgeClass = "text-neon-yellow"; // 3-7 years
+            }
+            
+            if (ageYears > 0) {
+                if (ageMonths > 0) {
+                    accountAge = `<span class="${accountAgeClass}">${ageYears}</span> ${ageYears === 1 ? 'year' : 'years'}, <span class="${accountAgeClass}">${ageMonths}</span> ${ageMonths === 1 ? 'month' : 'months'} old`;
+                } else {
+                    accountAge = `<span class="${accountAgeClass}">${ageYears}</span> ${ageYears === 1 ? 'year' : 'years'} old`;
                 }
             } else {
-                accountAge = `${months} ${months === 1 ? 'month' : 'months'} old`;
+                accountAge = `<span class="text-neon-pink">${ageMonths}</span> ${ageMonths === 1 ? 'month' : 'months'} old`;
             }
         } else if (card.age) { 
             // Support for legacy data
-            const years = Math.floor(card.age / 12);
-            const months = card.age % 12;
+            ageYears = Math.floor(card.age / 12);
+            ageMonths = card.age % 12;
             
-            if (years > 0) {
-                accountAge = `${years} ${years === 1 ? 'year' : 'years'} old`;
-                if (months > 0) {
-                    accountAge = `${years} ${years === 1 ? 'year' : 'years'}, ${months} ${months === 1 ? 'month' : 'months'} old`;
+            // Determine color class based on age ranges, matching the updateCreditSummary logic
+            if (ageYears >= 25) {
+                accountAgeClass = "text-neon-green"; // 25+ years
+            } else if (ageYears >= 8) {
+                accountAgeClass = "text-neon-blue";  // 8-24 years
+            } else if (ageYears >= 3) {
+                accountAgeClass = "text-neon-yellow"; // 3-7 years
+            }
+            
+            if (ageYears > 0) {
+                if (ageMonths > 0) {
+                    accountAge = `<span class="${accountAgeClass}">${ageYears}</span> ${ageYears === 1 ? 'year' : 'years'}, <span class="${accountAgeClass}">${ageMonths}</span> ${ageMonths === 1 ? 'month' : 'months'} old`;
+                } else {
+                    accountAge = `<span class="${accountAgeClass}">${ageYears}</span> ${ageYears === 1 ? 'year' : 'years'} old`;
                 }
             } else {
-                accountAge = `${months} ${months === 1 ? 'month' : 'months'} old`;
+                accountAge = `<span class="text-neon-pink">${ageMonths}</span> ${ageMonths === 1 ? 'month' : 'months'} old`;
             }
         } else {
-            accountAge = 'Age unknown';
+            accountAge = '<span class="text-neon-pink">Age unknown</span>';
         }
         
         const utilizationColorClass = utilization > 30 ? 'cyber-pink' : utilization > 10 ? 'cyber-yellow' : 'cyber-green';
         
         // Identify the credit card company and get the appropriate logo URL
-        const cardCompany = identifyCreditCardCompany(card.name);
+        const cardCompany = card.customImage || identifyCreditCardCompany(card.name);
         const cardLogoUrl = getCreditCardLogoUrl(cardCompany);
         
         html += `
@@ -382,9 +407,9 @@ function renderCreditCards() {
                     <div class="flex items-center">
                         <div>
                             <h3 class="font-medium text-lg cyber-neon">${card.name}</h3>
-                            <p class="text-sm text-gray-400">${accountAge}</p>
+                            <p class="text-sm">${accountAge}</p>
                         </div>
-                        <img src="${cardLogoUrl}" alt="${cardCompany} logo" class="h-8 ml-3 card-logo">
+                        <img src="${cardLogoUrl}" alt="${cardCompany} logo" class="h-8 ml-3 card-logo cursor-pointer" onclick="showCardImageModal(${index})">
                     </div>
                     <div class="flex">
                         <button onclick="editCreditCard(${index})" class="text-neon-blue hover:text-neon-purple mr-3">
@@ -422,13 +447,13 @@ function renderCreditCards() {
                     <div>
                         <p class="text-sm text-gray-400">Pay to 29% utilization</p>
                         <p class="font-medium ${payTo29 < 0 ? 'text-neon-pink' : 'text-neon-green'}">
-                            $${Math.abs(payTo29).toFixed(2)} ${payTo29 < 0 ? 'over' : 'needed'}
+                            $${Math.abs(payTo29).toFixed(2)} ${payTo29 > 0 ? 'available' : payTo29 < 0 ? 'needed' : 'at limit'}
                         </p>
                     </div>
                     <div>
                         <p class="text-sm text-gray-400">Pay to 9% utilization</p>
                         <p class="font-medium ${payTo9 < 0 ? 'text-neon-pink' : 'text-neon-green'}">
-                            $${Math.abs(payTo9).toFixed(2)} ${payTo9 < 0 ? 'over' : 'needed'}
+                            $${Math.abs(payTo9).toFixed(2)} ${payTo9 > 0 ? 'available' : payTo9 < 0 ? 'needed' : 'at limit'}
                         </p>
                     </div>
                     <div>
@@ -478,9 +503,30 @@ function updateCreditSummary() {
     // Update account count
     document.getElementById('totalAccounts').textContent = creditCards.length;
     
-    totalLimit.textContent = `$${totalLimitValue.toFixed(2)}`;
+    // Determine color for total available credit
+    let totalLimitColorClass = "text-neon-pink"; // Default for 0-2,500
+    if (totalLimitValue > 50000) {
+        totalLimitColorClass = "text-neon-green"; // 50,001+
+    } else if (totalLimitValue > 15000) {
+        totalLimitColorClass = "text-neon-blue";  // 15,001-50,000
+    } else if (totalLimitValue > 2500) {
+        totalLimitColorClass = "text-neon-yellow"; // 2,501-15,000
+    }
+    
+    // Format total limit with color class
+    totalLimit.innerHTML = `<span class="${totalLimitColorClass}">$${totalLimitValue.toFixed(2)}</span>`;
     totalBalance.textContent = `$${totalBalanceValue.toFixed(2)}`;
-    totalUtilization.textContent = `${totalUtilizationValue.toFixed(1)}%`;
+    
+    // Apply updated color coding to total utilization based on new thresholds
+    let utilizationColorClass = 'text-neon-green'; // Default for 0-10%
+    if (totalUtilizationValue > 61) {
+        utilizationColorClass = 'text-neon-pink'; // 61%+
+    } else if (totalUtilizationValue > 30) {
+        utilizationColorClass = 'text-neon-yellow'; // 30%-61%
+    } else if (totalUtilizationValue > 10) {
+        utilizationColorClass = 'text-neon-blue'; // 10%-30%
+    }
+    totalUtilization.innerHTML = `<span class="${utilizationColorClass}">${totalUtilizationValue.toFixed(1)}%</span>`;
     
     // Calculate amount needed to reach 29% and 9% utilization
     const payTo29 = document.getElementById('payTo29');
@@ -532,11 +578,21 @@ function updateCreditSummary() {
             const years = Math.floor(oldestAgeInMonths / 12);
             const months = oldestAgeInMonths % 12;
             
+            // Determine color class based on age ranges
+            let ageColorClass = "text-neon-pink"; // Default for 0-2 years
+            if (years >= 25) {
+                ageColorClass = "text-neon-green"; // 25+ years
+            } else if (years >= 8) {
+                ageColorClass = "text-neon-blue";  // 8-24 years
+            } else if (years >= 3) {
+                ageColorClass = "text-neon-yellow"; // 3-7 years
+            }
+            
             if (years > 0) {
                 if (months > 0) {
-                    oldestCreditLine.innerHTML = `<span class="text-neon-pink">${years}</span> ${years === 1 ? 'year' : 'years'}, <span class="text-neon-pink">${months}</span> ${months === 1 ? 'month' : 'months'}`;
+                    oldestCreditLine.innerHTML = `<span class="${ageColorClass}">${years}</span> ${years === 1 ? 'year' : 'years'}, <span class="${ageColorClass}">${months}</span> ${months === 1 ? 'month' : 'months'}`;
                 } else {
-                    oldestCreditLine.innerHTML = `<span class="text-neon-pink">${years}</span> ${years === 1 ? 'year' : 'years'}`;
+                    oldestCreditLine.innerHTML = `<span class="${ageColorClass}">${years}</span> ${years === 1 ? 'year' : 'years'}`;
                 }
             } else {
                 oldestCreditLine.innerHTML = `<span class="text-neon-pink">${months}</span> ${months === 1 ? 'month' : 'months'}`;
@@ -640,13 +696,15 @@ window.saveBill = function() {
         amount: parseFloat(billAmount.value),
         dueDate: parseInt(billDueDate.value),
         type: billType.value,
-        priority: billPriority.value
+        priority: billPriority.value,
+        isPaid: false // Add isPaid property, default to false
     };
     
     const editIndex = parseInt(document.getElementById('editBillIndex').value);
     
     if (editIndex >= 0 && editIndex < bills.length) {
-        // Edit existing bill
+        // Edit existing bill, preserve the paid status if it exists
+        bill.isPaid = bills[editIndex].isPaid || false;
         bills[editIndex] = bill;
     } else {
         // Add new bill
@@ -679,8 +737,11 @@ function renderBills() {
         // Get bill type icon
         const typeIcon = getBillTypeIcon(bill.type || 'other');
         
+        // Add paid class if bill is marked as paid
+        const paidClass = bill.isPaid ? 'bill-paid' : '';
+        
         html += `
-            <div class="border cyber-border rounded-lg p-4 mb-3 cyber-card bill-item">
+            <div class="border cyber-border rounded-lg p-4 mb-3 cyber-card bill-item ${paidClass}" data-bill-index="${index}">
                 <div class="flex justify-between items-start">
                     <div>
                         <div class="flex items-center">
@@ -705,6 +766,17 @@ function renderBills() {
     });
     
     billsContainer.innerHTML = html;
+    
+    // Add click event listener to each bill item for marking as paid
+    document.querySelectorAll('.bill-item').forEach(item => {
+        item.addEventListener('click', function(e) {
+            // Don't toggle if click was on a button
+            if (e.target.closest('button')) return;
+            
+            const index = parseInt(this.getAttribute('data-bill-index'));
+            toggleBillPaidStatus(index);
+        });
+    });
 }
 
 function getBillTypeIcon(type) {
@@ -740,16 +812,53 @@ function updatePaymentSchedule() {
     const paycheck1 = bills.filter(bill => bill.dueDate <= 15);
     const paycheck2 = bills.filter(bill => bill.dueDate > 15);
     
+    // Calculate total amounts
     const paycheck1TotalAmount = paycheck1.reduce((sum, bill) => sum + bill.amount, 0);
     const paycheck2TotalAmount = paycheck2.reduce((sum, bill) => sum + bill.amount, 0);
     
+    // Calculate remaining unpaid amounts
+    const paycheck1RemainingAmount = paycheck1.reduce((sum, bill) => sum + (bill.isPaid ? 0 : bill.amount), 0);
+    const paycheck2RemainingAmount = paycheck2.reduce((sum, bill) => sum + (bill.isPaid ? 0 : bill.amount), 0);
+    const totalRemainingAmount = paycheck1RemainingAmount + paycheck2RemainingAmount;
+    
+    // Update bill names in payment schedule
     paycheck1Bills.textContent = paycheck1.length > 0 ? 
         paycheck1.map(bill => bill.name).join(', ') : 'No bills scheduled';
     paycheck2Bills.textContent = paycheck2.length > 0 ? 
         paycheck2.map(bill => bill.name).join(', ') : 'No bills scheduled';
         
-    paycheck1Total.textContent = `$${paycheck1TotalAmount.toFixed(2)}`;
-    paycheck2Total.textContent = `$${paycheck2TotalAmount.toFixed(2)}`;
+    // Update total amounts with neon pink color
+    paycheck1Total.innerHTML = `<span class="text-neon-pink">$${paycheck1TotalAmount.toFixed(2)}</span>`;
+    paycheck2Total.innerHTML = `<span class="text-neon-pink">$${paycheck2TotalAmount.toFixed(2)}</span>`;
+    
+    // Update remaining amounts with conditional colors
+    // For paycheck 1: neon pink if equal to total, neon blue if less than total but not 0, neon green if 0
+    let paycheck1RemainingClass = 'text-neon-pink';
+    if (paycheck1RemainingAmount === 0) {
+        paycheck1RemainingClass = 'text-neon-green';
+    } else if (paycheck1RemainingAmount < paycheck1TotalAmount) {
+        paycheck1RemainingClass = 'text-neon-blue';
+    }
+    
+    // For paycheck 2: neon pink if equal to total, neon blue if less than total but not 0, neon green if 0
+    let paycheck2RemainingClass = 'text-neon-pink';
+    if (paycheck2RemainingAmount === 0) {
+        paycheck2RemainingClass = 'text-neon-green';
+    } else if (paycheck2RemainingAmount < paycheck2TotalAmount) {
+        paycheck2RemainingClass = 'text-neon-blue';
+    }
+    
+    // For total remaining: neon pink if equal to total, neon blue if less than total but not 0, neon green if 0
+    let totalRemainingClass = 'text-neon-pink';
+    if (totalRemainingAmount === 0) {
+        totalRemainingClass = 'text-neon-green';
+    } else if (totalRemainingAmount < (paycheck1TotalAmount + paycheck2TotalAmount)) {
+        totalRemainingClass = 'text-neon-blue';
+    }
+    
+    document.getElementById('paycheck1Remaining').innerHTML = `<span class="${paycheck1RemainingClass}">$${paycheck1RemainingAmount.toFixed(2)}</span>`;
+    document.getElementById('paycheck2Remaining').innerHTML = `<span class="${paycheck2RemainingClass}">$${paycheck2RemainingAmount.toFixed(2)}</span>`;
+    document.getElementById('totalRemaining').innerHTML = `<span class="${totalRemainingClass}">$${totalRemainingAmount.toFixed(2)}</span>`;
     
     // Update total bills count
     document.getElementById('totalBills').textContent = bills.length;
@@ -1068,4 +1177,100 @@ function setupScrollDetection() {
     // Re-check if bills are added or removed
     document.addEventListener('billsChanged', forceCheck);
     document.addEventListener('cardsChanged', forceCheck);
+}
+
+// Function to show the card image selection modal
+function showCardImageModal(cardIndex) {
+    document.getElementById('editCardImageIndex').value = cardIndex;
+    
+    // Highlight currently selected image if any
+    const currentCard = creditCards[cardIndex];
+    const imageOptions = document.querySelectorAll('.card-image-option');
+    
+    // Reset all selections
+    imageOptions.forEach(option => {
+        option.classList.remove('border-neon-blue', 'border-2');
+        option.classList.add('border-gray-600', 'border');
+    });
+    
+    // If card has a custom image, highlight it
+    if (currentCard.customImage) {
+        const selectedOption = document.querySelector(`.card-image-option[data-image="${currentCard.customImage}"]`);
+        if (selectedOption) {
+            selectedOption.classList.remove('border-gray-600', 'border');
+            selectedOption.classList.add('border-neon-blue', 'border-2');
+        }
+    }
+    
+    // Add click event listeners to all card image options
+    imageOptions.forEach(option => {
+        option.onclick = function() {
+            // Remove highlight from all options
+            imageOptions.forEach(opt => {
+                opt.classList.remove('border-neon-blue', 'border-2');
+                opt.classList.add('border-gray-600', 'border');
+            });
+            
+            // Highlight selected option
+            this.classList.remove('border-gray-600', 'border');
+            this.classList.add('border-neon-blue', 'border-2');
+            
+            // Save the selection
+            const imageType = this.getAttribute('data-image');
+            saveCardImage(cardIndex, imageType);
+        };
+    });
+    
+    // Show the modal
+    document.getElementById('cardImageModal').classList.remove('hidden');
+}
+
+// Function to save the selected card image
+function saveCardImage(cardIndex, imageType) {
+    // Update the card object
+    creditCards[cardIndex].customImage = imageType;
+    
+    // Save to localStorage
+    localStorage.setItem('creditCards', JSON.stringify(creditCards));
+    
+    // Re-render the credit cards to show the new image
+    renderCreditCards();
+    updateCreditSummary();
+    
+    // Close the modal
+    closeCardImageModal();
+}
+
+// Function to close the card image modal
+function closeCardImageModal() {
+    document.getElementById('cardImageModal').classList.add('hidden');
+}
+
+// Function to reset the paid status of all bills
+window.resetAllPayments = function() {
+    // Set isPaid to false for all bills
+    bills.forEach(bill => {
+        bill.isPaid = false;
+    });
+    
+    // Re-render bills to update the UI
+    renderBills();
+    
+    // Update the payment schedule since paid status affects calculations
+    updatePaymentSchedule();
+}
+
+// Function to toggle the paid status of a bill
+function toggleBillPaidStatus(index) {
+    // Make sure the index is valid
+    if (index >= 0 && index < bills.length) {
+        // Toggle the paid status
+        bills[index].isPaid = !bills[index].isPaid;
+        
+        // Re-render bills to update the UI
+        renderBills();
+        
+        // Update the payment schedule since paid status may affect calculations
+        updatePaymentSchedule();
+    }
 }

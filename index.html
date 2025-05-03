@@ -69,7 +69,7 @@
                     </a>
                 </div>
                 
-                <div class="credit-cards-wrapper" style="min-height: 332px; max-height: 550px; overflow-y: auto;">
+                <div class="credit-cards-wrapper" style="min-height: 335px; max-height: 550px; overflow-y: auto;">
                     <div id="creditCardsContainer" class="bills-container">
                         <!-- Credit cards will be added here -->
                     </div>
@@ -90,7 +90,7 @@
                             <p id="totalBalance" class="text-2xl font-bold text-white">$0</p>
                         </div>
                         <div class="bg-glass-blue p-4 rounded-lg">
-                            <p class="text-sm text-gray-300">Utilization</p>
+                            <p class="text-sm text-gray-300">Total Utilization</p>
                             <p id="totalUtilization" class="text-2xl font-bold text-white">0%</p>
                         </div>
                     </div>
@@ -117,12 +117,17 @@
                     <h2 class="text-xl font-semibold text-white">
                         <i class="fas fa-file-invoice-dollar mr-2 text-neon-green"></i> Monthly Bills
                     </h2>
-                    <a href="#" onclick="showAddBillModal()" class="text-white px-4 py-2 bg-glass-purple hover:bg-opacity-90 rounded-md transition">
-                        <i class="fas fa-plus mr-1"></i> Add Bill
-                    </a>
+                    <div class="flex space-x-2">
+                        <a href="#" onclick="resetAllPayments()" class="text-white px-4 py-2 bg-glass-blue hover:bg-opacity-90 rounded-md transition">
+                            <i class="fas fa-redo-alt mr-1"></i> Reset Payments
+                        </a>
+                        <a href="#" onclick="showAddBillModal()" class="text-white px-4 py-2 bg-glass-purple hover:bg-opacity-90 rounded-md transition">
+                            <i class="fas fa-plus mr-1"></i> Add Bill
+                        </a>
+                    </div>
                 </div>
                 
-                <div class="bills-wrapper" style="min-height: 332px; max-height: 550px; overflow-y: auto;">
+                <div class="bills-wrapper" style="min-height: 335px; max-height: 550px; overflow-y: auto;">
                     <div id="billsContainer" class="bills-container">
                         <!-- Bills will be added here -->
                         <p class="text-gray-400 text-center py-4">No bills added yet</p>
@@ -144,6 +149,10 @@
                                 <span class="text-white">Total:</span>
                                 <span id="paycheck1Total" class="text-xl font-bold text-neon-green">$0</span>
                             </div>
+                            <div class="flex justify-between items-center mt-2 border-t border-gray-700 pt-2">
+                                <span class="text-white">Remaining:</span>
+                                <span id="paycheck1Remaining" class="text-xl font-bold text-neon-blue">$0</span>
+                            </div>
                         </div>
                         <div class="bg-glass-purple p-4 rounded-lg flex flex-col">
                             <p class="text-sm text-gray-300">Paycheck 2 (End of Month)</p>
@@ -154,6 +163,17 @@
                                 <span class="text-white">Total:</span>
                                 <span id="paycheck2Total" class="text-xl font-bold text-neon-pink">$0</span>
                             </div>
+                            <div class="flex justify-between items-center mt-2 border-t border-gray-700 pt-2">
+                                <span class="text-white">Remaining:</span>
+                                <span id="paycheck2Remaining" class="text-xl font-bold text-neon-blue">$0</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-glass-blue p-4 rounded-lg mt-4">
+                        <div class="flex justify-between items-center">
+                            <span class="text-white font-semibold">Total Remaining Bills:</span>
+                            <span id="totalRemaining" class="text-xl font-bold text-neon-green">$0</span>
                         </div>
                     </div>
                 </div>
@@ -504,6 +524,62 @@
                     Save Expense
                 </button>
             </div>
+        </div>
+    </div>
+    
+    <!-- Credit Card Image Modal -->
+    <div id="cardImageModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="modal-cyber rounded-lg p-6 w-full max-w-md">
+            <h3 class="text-xl font-semibold mb-4 text-white">Select Credit Card Image</h3>
+            
+            <div class="space-y-4">
+                <div class="grid grid-cols-3 gap-3" id="cardImageOptions">
+                    <!-- Image options will be added here -->
+                    <div class="card-image-option p-2 border border-gray-600 rounded-lg text-center cursor-pointer hover:border-neon-blue" data-image="visa">
+                        <img src="https://cdn.iconscout.com/icon/free/png-256/free-visa-3-226460.png" alt="Visa" class="h-10 mx-auto mb-1">
+                        <p class="text-xs text-gray-400">Visa</p>
+                    </div>
+                    <div class="card-image-option p-2 border border-gray-600 rounded-lg text-center cursor-pointer hover:border-neon-blue" data-image="mastercard">
+                        <img src="https://cdn.iconscout.com/icon/free/png-256/free-mastercard-3-226466.png" alt="Mastercard" class="h-10 mx-auto mb-1">
+                        <p class="text-xs text-gray-400">Mastercard</p>
+                    </div>
+                    <div class="card-image-option p-2 border border-gray-600 rounded-lg text-center cursor-pointer hover:border-neon-blue" data-image="amex">
+                        <img src="https://cdn.iconscout.com/icon/free/png-256/free-american-express-3-226464.png" alt="American Express" class="h-10 mx-auto mb-1">
+                        <p class="text-xs text-gray-400">Amex</p>
+                    </div>
+                    <div class="card-image-option p-2 border border-gray-600 rounded-lg text-center cursor-pointer hover:border-neon-blue" data-image="discover">
+                        <img src="https://cdn.iconscout.com/icon/free/png-256/free-discover-3-226468.png" alt="Discover" class="h-10 mx-auto mb-1">
+                        <p class="text-xs text-gray-400">Discover</p>
+                    </div>
+                    <div class="card-image-option p-2 border border-gray-600 rounded-lg text-center cursor-pointer hover:border-neon-blue" data-image="capitalone">
+                        <img src="https://logo.clearbit.com/capitalone.com" alt="Capital One" class="h-10 mx-auto mb-1">
+                        <p class="text-xs text-gray-400">Capital One</p>
+                    </div>
+                    <div class="card-image-option p-2 border border-gray-600 rounded-lg text-center cursor-pointer hover:border-neon-blue" data-image="chase">
+                        <img src="https://logo.clearbit.com/chase.com" alt="Chase" class="h-10 mx-auto mb-1">
+                        <p class="text-xs text-gray-400">Chase</p>
+                    </div>
+                    <div class="card-image-option p-2 border border-gray-600 rounded-lg text-center cursor-pointer hover:border-neon-blue" data-image="citi">
+                        <img src="https://logo.clearbit.com/citi.com" alt="Citi" class="h-10 mx-auto mb-1">
+                        <p class="text-xs text-gray-400">Citi</p>
+                    </div>
+                    <div class="card-image-option p-2 border border-gray-600 rounded-lg text-center cursor-pointer hover:border-neon-blue" data-image="apple">
+                        <img src="https://logo.clearbit.com/apple.com" alt="Apple" class="h-10 mx-auto mb-1">
+                        <p class="text-xs text-gray-400">Apple</p>
+                    </div>
+                    <div class="card-image-option p-2 border border-gray-600 rounded-lg text-center cursor-pointer hover:border-neon-blue" data-image="generic">
+                        <img src="https://cdn.iconscout.com/icon/free/png-256/free-credit-card-459-226457.png" alt="Default" class="h-10 mx-auto mb-1">
+                        <p class="text-xs text-gray-400">Default</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex justify-end space-x-3 mt-6">
+                <button onclick="closeCardImageModal()" class="px-4 py-2 border border-gray-600 text-white rounded-md hover:bg-gray-800">
+                    Cancel
+                </button>
+            </div>
+            <input type="hidden" id="editCardImageIndex" value="-1">
         </div>
     </div>
 
