@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chrome Cache</title>
+    
+    <!-- Tailwind and Font Awesome CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts for Cyberpunk theme -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'neon-pink': '#ff00ff',
+                        'neon-blue': '#00ffff',
+                        'neon-purple': '#b967ff',
+                        'neon-green': '#39ff14',
+                        'dark-purple': '#1a0933',
+                        'dark-blue': '#0b0b2b',
+                        'cyber-black': '#0d0221',
+                        'cyber-gray': '#31314d',
+                        'cyber-yellow': '#ffd319'
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- External CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        .blinking-cursor {
+            display: inline-block;
+            font-weight: 100;
+            font-size: 1.2em;
+            color: var(--neon-blue);
+            animation: blink 1s step-end infinite;
+        }
+    </style>
+</head>
+<body class="bg-cyber-black min-h-screen">
+    <div class="cyber-header text-white py-6 px-4">
+        <div class="container mx-auto text-center">
+            <h1 class="text-4xl lg:text-5xl font-bold">Chrome Cache<span class="blinking-cursor">_</span></h1>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Credit Card Section -->
+            <div class="cyber-card rounded-lg p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-semibold text-white">
+                        <i class="fas fa-credit-card mr-2 text-neon-blue"></i> Credit Information
+                    </h2>
+                    <button onclick="addCreditCard()" class="cyber-primary-btn px-4 py-2 rounded-md hover:bg-opacity-90 transition">
+                        <i class="fas fa-plus mr-1"></i> Add Card
+                    </button>
+                </div>
+                
+                <div class="credit-cards-wrapper">
+                    <div id="creditCardsContainer">
+                        <!-- Credit cards will be added here -->
+                    </div>
+                </div>
+                
+                <div class="mt-6">
+                    <h3 class="text-lg font-medium text-white mb-3">Credit Utilization Summary</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div class="bg-glass-blue p-4 rounded-lg">
+                            <p class="text-sm text-gray-300">Total Credit Limit</p>
+                            <p id="totalLimit" class="text-2xl font-bold text-white">$0</p>
+                        </div>
+                        <div class="bg-glass-purple p-4 rounded-lg">
+                            <p class="text-sm text-gray-300">Total Balance</p>
+                            <p id="totalBalance" class="text-2xl font-bold text-white">$0</p>
+                        </div>
+                        <div class="bg-glass-blue p-4 rounded-lg">
+                            <p class="text-sm text-gray-300">Utilization</p>
+                            <p id="totalUtilization" class="text-2xl font-bold text-white">0%</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-glass-purple p-4 rounded-lg">
+                            <p class="text-sm text-gray-300">Pay to 29% Utilization</p>
+                            <p id="payTo29" class="text-xl font-bold"><span class="text-neon-green">$0</span></p>
+                        </div>
+                        <div class="bg-glass-blue p-4 rounded-lg">
+                            <p class="text-sm text-gray-300">Pay to 9% Utilization</p>
+                            <p id="payTo9" class="text-xl font-bold"><span class="text-neon-blue">$0</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bills Section -->
+            <div class="cyber-card rounded-lg p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-semibold text-white">
+                        <i class="fas fa-file-invoice-dollar mr-2 text-neon-green"></i> Monthly Bills
+                    </h2>
+                    <button onclick="showAddBillModal()" class="cyber-secondary-btn px-4 py-2 rounded-md hover:bg-opacity-90 transition">
+                        <i class="fas fa-plus mr-1"></i> Add Bill
+                    </button>
+                </div>
+                
+                <div class="mb-6">
+                    <h3 class="text-lg font-medium text-white mb-3">Payment Schedule</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-glass-blue p-4 rounded-lg">
+                            <p class="text-sm text-neon-blue">Paycheck 1 (15th)</p>
+                            <p id="paycheck1Bills" class="text-lg font-medium text-white">No bills scheduled</p>
+                            <p id="paycheck1Total" class="text-sm text-neon-blue">Total: $0</p>
+                        </div>
+                        <div class="bg-glass-purple p-4 rounded-lg">
+                            <p class="text-sm text-neon-green">Paycheck 2 (End of Month)</p>
+                            <p id="paycheck2Bills" class="text-lg font-medium text-white">No bills scheduled</p>
+                            <p id="paycheck2Total" class="text-sm text-neon-green">Total: $0</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-medium text-white mb-3">Upcoming Bills</h3>
+                    <div id="billsContainer">
+                        <!-- Bills will be added here -->
+                        <p class="text-gray-400 text-center py-4">No bills added yet</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Salary Calculator -->
+            <div class="cyber-card rounded-lg p-6">
+                <h2 class="text-xl font-semibold text-white mb-6">
+                    <i class="fas fa-money-bill-wave mr-2 text-cyber-yellow"></i> Salary Calculator
+                </h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <div class="input-container">
+                            <input type="number" id="grossSalary" class="cyber-input w-full p-3 rounded-md" placeholder=" ">
+                            <label class="floating-label">Gross Annual Salary</label>
+                        </div>
+                        
+                        <div class="input-container">
+                            <input type="number" id="payFrequency" class="cyber-input w-full p-3 rounded-md" placeholder=" " value="26">
+                            <label class="floating-label">Pay Periods Per Year</label>
+                        </div>
+                        
+                        <div class="input-container">
+                            <input type="number" id="bonusPercentage" class="cyber-input w-full p-3 rounded-md" placeholder=" " value="10">
+                            <label class="floating-label">Bonus Percentage (%)</label>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="input-container">
+                            <input type="number" id="taxRate" class="cyber-input w-full p-3 rounded-md" placeholder=" " value="25">
+                            <label class="floating-label">Tax Rate (%)</label>
+                        </div>
+                        
+                        <div class="input-container">
+                            <input type="number" id="retirementContribution" class="cyber-input w-full p-3 rounded-md" placeholder=" " value="10">
+                            <label class="floating-label">401k Contribution (%)</label>
+                        </div>
+                        
+                        <div class="input-container">
+                            <input type="number" id="esppContribution" class="cyber-input w-full p-3 rounded-md" placeholder=" " value="10">
+                            <label class="floating-label">ESPP Contribution (%)</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <button onclick="calculateSalary()" class="w-full mt-6 cyber-primary-btn py-3 rounded-md hover:bg-opacity-90 transition">
+                    Calculate Take-Home Pay
+                </button>
+                
+                <div id="salaryResults" class="mt-6 hidden">
+                    <h3 class="text-lg font-medium text-white mb-3">Salary Breakdown</h3>
+                    <div class="space-y-3 text-white">
+                        <div class="flex justify-between">
+                            <span>Gross Pay:</span>
+                            <span id="grossPay" class="font-medium">$0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Taxes:</span>
+                            <span id="taxAmount" class="font-medium">$0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>401k Contribution:</span>
+                            <span id="retirementAmount" class="font-medium">$0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>ESPP Contribution:</span>
+                            <span id="esppAmount" class="font-medium">$0</span>
+                        </div>
+                        <div class="flex justify-between border-t border-gray-700 pt-2 mt-2">
+                            <span class="font-semibold">Net Pay:</span>
+                            <span id="netPay" class="font-bold text-lg text-neon-green">$0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Annual Bonus:</span>
+                            <span id="bonusAmount" class="font-medium text-neon-purple">$0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Savings Estimator -->
+            <div class="cyber-card rounded-lg p-6">
+                <h2 class="text-xl font-semibold text-white mb-6">
+                    <i class="fas fa-piggy-bank mr-2 text-neon-blue"></i> Savings Estimator
+                </h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <div class="input-container">
+                            <input type="number" id="monthlyIncome" class="cyber-input w-full p-3 rounded-md" placeholder=" ">
+                            <label class="floating-label">Monthly Net Income</label>
+                        </div>
+                        
+                        <div class="input-container">
+                            <input type="number" id="savingsGoal" class="cyber-input w-full p-3 rounded-md" placeholder=" " value="20">
+                            <label class="floating-label">Monthly Savings Goal (%)</label>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="input-container">
+                            <input type="number" id="currentSavings" class="cyber-input w-full p-3 rounded-md" placeholder=" " value="0">
+                            <label class="floating-label">Current Savings Balance</label>
+                        </div>
+                        
+                        <div class="input-container">
+                            <input type="number" id="savingsInterest" class="cyber-input w-full p-3 rounded-md" placeholder=" " value="3">
+                            <label class="floating-label">Annual Interest Rate (%)</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Monthly Expenses Section -->
+                <div class="mt-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-medium text-white">Monthly Expenses</h3>
+                        <button onclick="showAddExpenseModal()" class="text-sm bg-cyber-gray hover:bg-opacity-80 text-white px-3 py-1 rounded">
+                            <i class="fas fa-plus mr-1"></i> Add Expense
+                        </button>
+                    </div>
+                    
+                    <div id="expensesContainer" class="mb-4">
+                        <!-- Expenses will be added here -->
+                    </div>
+                    
+                    <div class="bg-glass-blue p-4 rounded-lg">
+                        <div class="flex justify-between mb-2 text-white">
+                            <span class="font-medium">Total Bills:</span>
+                            <span id="totalBillsAmount">$0</span>
+                        </div>
+                        <div class="flex justify-between mb-2 text-white">
+                            <span class="font-medium">Total Expenses:</span>
+                            <span id="totalExpensesAmount">$0</span>
+                        </div>
+                        <div class="flex justify-between border-t border-gray-700 pt-2 text-white">
+                            <span class="font-semibold">Total Monthly Outgoings:</span>
+                            <span id="totalOutgoings" class="font-bold">$0</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <button onclick="calculateSavings()" class="w-full mt-6 cyber-secondary-btn py-3 rounded-md hover:bg-opacity-90 transition">
+                    Estimate Savings
+                </button>
+                
+                <div id="savingsResults" class="mt-6 hidden">
+                    <h3 class="text-lg font-medium text-white mb-3">Savings Projection</h3>
+                    <div class="space-y-3 text-white">
+                        <div class="flex justify-between">
+                            <span>Monthly Net Income:</span>
+                            <span id="monthlyNetIncome" class="font-medium">$0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Total Monthly Outgoings:</span>
+                            <span id="monthlyOutgoings" class="font-medium">$0</span>
+                        </div>
+                        <div class="flex justify-between border-b border-gray-700 pb-2 mb-2">
+                            <span class="font-semibold">Disposable Income:</span>
+                            <span id="disposableIncome" class="font-bold text-neon-blue">$0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Monthly Savings Amount:</span>
+                            <span id="monthlySavings" class="font-medium">$0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Projected 1 Year Savings:</span>
+                            <span id="year1Savings" class="font-medium">$0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Projected 5 Year Savings:</span>
+                            <span id="year5Savings" class="font-medium">$0</span>
+                        </div>
+                        <div class="flex justify-between border-t border-gray-700 pt-2 mt-2">
+                            <span class="font-semibold">Total with Interest:</span>
+                            <span id="totalWithInterest" class="font-bold text-lg text-neon-green">$0</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h4 class="text-md font-medium text-white mb-2">Savings Progress</h4>
+                        <div class="cyber-progress-bar">
+                            <div id="savingsProgress" class="cyber-progress-fill cyber-blue" style="width: 0%"></div>
+                        </div>
+                        <p id="savingsStatus" class="text-sm text-gray-400 mt-1">0% of monthly goal achieved</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Credit Card Modal -->
+    <div id="creditCardModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="modal-cyber rounded-lg p-6 w-full max-w-md">
+            <h3 class="text-xl font-semibold mb-4 text-white">Add Credit Card</h3>
+            
+            <div class="space-y-4">
+                <div class="input-container">
+                    <input type="text" id="cardName" class="cyber-input w-full p-3 rounded-md" placeholder=" ">
+                    <label class="floating-label">Card Name</label>
+                </div>
+                
+                <div class="input-container">
+                    <input type="number" id="creditLimit" class="cyber-input w-full p-3 rounded-md" placeholder=" ">
+                    <label class="floating-label">Credit Limit ($)</label>
+                </div>
+                
+                <div class="input-container">
+                    <input type="number" id="currentBalance" class="cyber-input w-full p-3 rounded-md" placeholder=" ">
+                    <label class="floating-label">Current Balance ($)</label>
+                </div>
+                
+                <div class="input-container">
+                    <input type="number" id="creditAge" class="cyber-input w-full p-3 rounded-md" placeholder=" ">
+                    <label class="floating-label">Age of Credit (months)</label>
+                </div>
+            </div>
+            
+            <div class="flex justify-end space-x-3 mt-6">
+                <button onclick="closeCreditCardModal()" class="px-4 py-2 border border-gray-600 text-white rounded-md hover:bg-gray-800">
+                    Cancel
+                </button>
+                <button onclick="saveCreditCard()" class="px-4 py-2 cyber-primary-btn rounded-md">
+                    Save Card
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Bill Modal -->
+    <div id="billModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="modal-cyber rounded-lg p-6 w-full max-w-md">
+            <h3 class="text-xl font-semibold mb-4 text-white">Add Monthly Bill</h3>
+            
+            <div class="space-y-4">
+                <div class="input-container">
+                    <input type="text" id="billName" class="cyber-input w-full p-3 rounded-md" placeholder=" ">
+                    <label class="floating-label">Bill Name</label>
+                </div>
+                
+                <div class="input-container">
+                    <input type="number" id="billAmount" class="cyber-input w-full p-3 rounded-md" placeholder=" ">
+                    <label class="floating-label">Amount ($)</label>
+                </div>
+                
+                <div class="input-container">
+                    <input type="number" id="billDueDate" class="cyber-input w-full p-3 rounded-md" placeholder=" " min="1" max="31">
+                    <label class="floating-label">Due Date (Day of Month)</label>
+                </div>
+                
+                <div class="input-container">
+                    <select id="billPriority" class="cyber-input w-full p-3 rounded-md">
+                        <option value="normal">Normal Priority</option>
+                        <option value="high">High Priority</option>
+                        <option value="low">Low Priority</option>
+                    </select>
+                    <label class="floating-label">Priority</label>
+                </div>
+            </div>
+            
+            <div class="flex justify-end space-x-3 mt-6">
+                <button onclick="closeBillModal()" class="px-4 py-2 border border-gray-600 text-white rounded-md hover:bg-gray-800">
+                    Cancel
+                </button>
+                <button onclick="saveBill()" class="px-4 py-2 cyber-secondary-btn rounded-md">
+                    Save Bill
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Expense Modal -->
+    <div id="expenseModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="modal-cyber rounded-lg p-6 w-full max-w-md">
+            <h3 class="text-xl font-semibold mb-4 text-white">Add Monthly Expense</h3>
+            
+            <div class="space-y-4">
+                <div class="input-container">
+                    <input type="text" id="expenseName" class="cyber-input w-full p-3 rounded-md" placeholder=" ">
+                    <label class="floating-label">Expense Name</label>
+                </div>
+                
+                <div class="input-container">
+                    <input type="number" id="expenseAmount" class="cyber-input w-full p-3 rounded-md" placeholder=" ">
+                    <label class="floating-label">Amount ($)</label>
+                </div>
+                
+                <div class="input-container">
+                    <select id="expenseCategory" class="cyber-input w-full p-3 rounded-md">
+                        <option value="food">Food & Dining</option>
+                        <option value="entertainment">Entertainment</option>
+                        <option value="transportation">Transportation</option>
+                        <option value="shopping">Shopping</option>
+                        <option value="health">Health & Fitness</option>
+                        <option value="other">Other</option>
+                    </select>
+                    <label class="floating-label">Category</label>
+                </div>
+            </div>
+            
+            <div class="flex justify-end space-x-3 mt-6">
+                <button onclick="closeExpenseModal()" class="px-4 py-2 border border-gray-600 text-white rounded-md hover:bg-gray-800">
+                    Cancel
+                </button>
+                <button onclick="saveExpense()" class="px-4 py-2 cyber-blue text-white rounded-md hover:opacity-90">
+                    Save Expense
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- External JavaScript -->
+    <script src="js/script.js"></script>
+</body>
+</html>
