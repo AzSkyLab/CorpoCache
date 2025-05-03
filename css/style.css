@@ -50,30 +50,60 @@ body {
 .credit-cards-wrapper {
     max-height: 550px; /* Increased height to fit two complete cards */
     overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: var(--neon-purple) var(--cyber-black);
+    scrollbar-width: none; /* Hide scrollbar in Firefox by default */
     padding-right: 5px; /* Prevent content from touching scrollbar */
     margin-right: -5px; /* Offset the padding */
     padding-top: 4px; /* Add padding to the top to prevent border clipping */
+    -ms-overflow-style: none; /* Internet Explorer and Edge */
 }
 
-/* Custom scrollbar for Webkit browsers */
-.credit-cards-wrapper::-webkit-scrollbar {
+/* Bills container with scrollbar - matching credit cards style */
+.bills-wrapper {
+    scrollbar-width: none; /* Hide scrollbar in Firefox by default */
+    padding-right: 5px; /* Prevent content from touching scrollbar */
+    margin-right: -5px; /* Offset the padding */
+    padding-top: 4px; /* Add padding to the top to prevent border clipping */
+    overflow-y: auto; /* Enable vertical scrolling only when needed */
+    -ms-overflow-style: none; /* Internet Explorer and Edge */
+}
+
+/* Hide scrollbars by default for all browsers */
+.credit-cards-wrapper::-webkit-scrollbar,
+.bills-wrapper::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    background: transparent;
+}
+
+/* Only show scrollbar when the content is actually scrollable AND the container has a special class */
+.actually-scrollable.credit-cards-wrapper,
+.actually-scrollable.bills-wrapper {
+    scrollbar-width: thin;
+    scrollbar-color: var(--neon-purple) var(--dark-blue);
+    -ms-overflow-style: auto;
+}
+
+.actually-scrollable.credit-cards-wrapper::-webkit-scrollbar,
+.actually-scrollable.bills-wrapper::-webkit-scrollbar {
+    display: block;
     width: 6px;
 }
 
-.credit-cards-wrapper::-webkit-scrollbar-track {
+.actually-scrollable.credit-cards-wrapper::-webkit-scrollbar-track,
+.actually-scrollable.bills-wrapper::-webkit-scrollbar-track {
     background: var(--dark-blue);
     border-radius: 10px;
 }
 
-.credit-cards-wrapper::-webkit-scrollbar-thumb {
+.actually-scrollable.credit-cards-wrapper::-webkit-scrollbar-thumb,
+.actually-scrollable.bills-wrapper::-webkit-scrollbar-thumb {
     background: var(--neon-purple);
     border-radius: 10px;
     border: 2px solid var(--dark-blue);
 }
 
-.credit-cards-wrapper::-webkit-scrollbar-thumb:hover {
+.actually-scrollable.credit-cards-wrapper::-webkit-scrollbar-thumb:hover,
+.actually-scrollable.bills-wrapper::-webkit-scrollbar-thumb:hover {
     background: var(--neon-blue);
     box-shadow: 0 0 8px var(--neon-blue);
 }
@@ -234,4 +264,10 @@ body {
 .bills-container {
     flex-grow: 1;
     min-height: 550px; /* Match the height of credit cards wrapper */
+}
+
+/* Only show scrollbars when needed (auto) */
+.credit-cards-wrapper,
+.bills-wrapper {
+    overflow-y: auto;
 }

@@ -69,8 +69,8 @@
                     </a>
                 </div>
                 
-                <div class="credit-cards-wrapper">
-                    <div id="creditCardsContainer">
+                <div class="credit-cards-wrapper" style="min-height: 332px; max-height: 550px; overflow-y: auto;">
+                    <div id="creditCardsContainer" class="bills-container">
                         <!-- Credit cards will be added here -->
                     </div>
                 </div>
@@ -94,7 +94,7 @@
                             <p id="totalUtilization" class="text-2xl font-bold text-white">0%</p>
                         </div>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div class="bg-glass-purple p-4 rounded-lg">
                             <p class="text-sm text-gray-300">Pay to 29% Utilization</p>
                             <p id="payTo29" class="text-xl font-bold"><span class="text-neon-green">$0</span></p>
@@ -102,6 +102,10 @@
                         <div class="bg-glass-blue p-4 rounded-lg">
                             <p class="text-sm text-gray-300">Pay to 9% Utilization</p>
                             <p id="payTo9" class="text-xl font-bold"><span class="text-neon-blue">$0</span></p>
+                        </div>
+                        <div class="bg-glass-purple p-4 rounded-lg">
+                            <p class="text-sm text-gray-300">Age of Oldest Credit Line</p>
+                            <p id="oldestCreditLine" class="text-xl font-bold"><span class="text-neon-pink">0</span> months</p>
                         </div>
                     </div>
                 </div>
@@ -119,7 +123,6 @@
                 </div>
                 
                 <div class="bills-wrapper" style="min-height: 332px; max-height: 550px; overflow-y: auto;">
-                    <h3 class="text-lg font-medium text-white mb-3">Upcoming Bills</h3>
                     <div id="billsContainer" class="bills-container">
                         <!-- Bills will be added here -->
                         <p class="text-gray-400 text-center py-4">No bills added yet</p>
@@ -333,10 +336,18 @@
         </div>
     </div>
 
-    <!-- Add Credit Card Modal -->
+    <!-- Add/Edit Credit Card Modal -->
     <div id="creditCardModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
         <div class="modal-cyber rounded-lg p-6 w-full max-w-md">
-            <h3 class="text-xl font-semibold mb-4 text-white">Add Credit Card</h3>
+            <h3 id="creditCardModalTitle" class="text-xl font-semibold mb-4 text-white">Add Credit Card</h3>
+            
+            <div id="cardValidationErrors" class="mb-4 hidden">
+                <div class="bg-glass-purple p-3 rounded-lg border border-neon-pink">
+                    <p class="text-neon-pink text-sm font-medium"><i class="fas fa-exclamation-triangle mr-2"></i>Please correct the following errors:</p>
+                    <ul id="cardErrorList" class="list-disc ml-6 text-sm text-white mt-1">
+                    </ul>
+                </div>
+            </div>
             
             <div class="space-y-4">
                 <div class="input-container">
@@ -345,18 +356,18 @@
                 </div>
                 
                 <div class="input-container">
-                    <input type="number" id="creditLimit" class="cyber-input w-full p-3 rounded-md" placeholder=" ">
+                    <input type="number" id="creditLimit" class="cyber-input w-full p-3 rounded-md" placeholder=" " min="1" step="any">
                     <label class="floating-label">Credit Limit ($)</label>
                 </div>
                 
                 <div class="input-container">
-                    <input type="number" id="currentBalance" class="cyber-input w-full p-3 rounded-md" placeholder=" ">
+                    <input type="number" id="currentBalance" class="cyber-input w-full p-3 rounded-md" placeholder=" " min="0" step="any">
                     <label class="floating-label">Current Balance ($)</label>
                 </div>
                 
                 <div class="input-container">
-                    <input type="number" id="creditAge" class="cyber-input w-full p-3 rounded-md" placeholder=" ">
-                    <label class="floating-label">Age of Credit (months)</label>
+                    <input type="date" id="openDate" class="cyber-input w-full p-3 rounded-md" placeholder=" ">
+                    <label class="floating-label">Date Opened</label>
                 </div>
             </div>
             
@@ -368,6 +379,7 @@
                     Save Card
                 </button>
             </div>
+            <input type="hidden" id="editCardIndex" value="-1">
         </div>
     </div>
 

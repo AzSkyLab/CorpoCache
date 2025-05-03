@@ -21,6 +21,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Add cyber effects
     initCyberEffects();
+    
+    // Setup scroll detection for containers
+    setupScrollDetection();
 });
 
 function initElements() {
@@ -47,7 +50,7 @@ function initElements() {
     window.cardName = document.getElementById('cardName');
     window.creditLimit = document.getElementById('creditLimit');
     window.currentBalance = document.getElementById('currentBalance');
-    window.creditAge = document.getElementById('creditAge');
+    window.openDate = document.getElementById('openDate');
     window.billName = document.getElementById('billName');
     window.billAmount = document.getElementById('billAmount');
     window.billDueDate = document.getElementById('billDueDate');
@@ -96,10 +99,41 @@ function initCyberEffects() {
 
 // Modal Functions
 window.addCreditCard = function() {
+    document.getElementById('creditCardModalTitle').textContent = 'Add Credit Card';
     cardName.value = '';
     creditLimit.value = '';
     currentBalance.value = '';
-    creditAge.value = '';
+    openDate.value = '';
+    document.getElementById('editCardIndex').value = '-1';
+    
+    // Hide any previous validation errors
+    document.getElementById('cardValidationErrors').classList.add('hidden');
+    document.getElementById('cardErrorList').innerHTML = '';
+    
+    creditCardModal.classList.remove('hidden');
+}
+
+window.editCreditCard = function(index) {
+    document.getElementById('creditCardModalTitle').textContent = 'Edit Credit Card';
+    const card = creditCards[index];
+    
+    cardName.value = card.name;
+    creditLimit.value = card.limit;
+    currentBalance.value = card.balance;
+    
+    // Set the open date if it exists
+    if (card.openDate) {
+        openDate.value = card.openDate;
+    } else {
+        openDate.value = '';
+    }
+    
+    document.getElementById('editCardIndex').value = index;
+    
+    // Hide any previous validation errors
+    document.getElementById('cardValidationErrors').classList.add('hidden');
+    document.getElementById('cardErrorList').innerHTML = '';
+    
     creditCardModal.classList.remove('hidden');
 }
 
@@ -107,39 +141,83 @@ window.closeCreditCardModal = function() {
     creditCardModal.classList.add('hidden');
 }
 
-window.showAddBillModal = function() {
-    billName.value = '';
-    billAmount.value = '';
-    billDueDate.value = '';
-    billPriority.value = 'normal';
-    billModal.classList.remove('hidden');
+// Validate credit card form data
+function validateCreditCardForm() {
+    const errors = [];
+    
+    if (!cardName.value || cardName.value.trim() === '') {
+        errors.push('Card Name is required');
+    }
+    
+    const limitValue = parseFloat(creditLimit.value);
+    if (isNaN(limitValue) || limitValue <= 0) {
+        errors.push('Credit Limit must be a positive number');
+    }
+    
+    const balanceValue = parseFloat(currentBalance.value);
+    if (isNaN(balanceValue) || balanceValue < 0) {
+        errors.push('Current Balance must be a non-negative number');
+    }
+    
+    if (!openDate.value) {
+        errors.push('Date Opened is required');
+    } else {
+        const selectedDate = new Date(openDate.value);
+        const today = new Date();
+        if (selectedDate > today) {
+            errors.push('Date Opened cannot be in the future');
+        }
+    }
+    
+    // If we have values for both limit and balance, check that balance doesn't exceed limit
+    if (!isNaN(limitValue) && !isNaN(balanceValue) && balanceValue > limitValue) {
+        errors.push('Current Balance cannot be greater than Credit Limit');
+    }
+    
+    return errors;
 }
 
-window.closeBillModal = function() {
-    billModal.classList.add('hidden');
-}
-
-window.showAddExpenseModal = function() {
-    expenseName.value = '';
-    expenseAmount.value = '';
-    expenseCategory.value = 'food';
-    expenseModal.classList.remove('hidden');
-}
-
-window.closeExpenseModal = function() {
-    expenseModal.classList.add('hidden');
+// Display validation errors
+function showValidationErrors(errors) {
+    const errorContainer = document.getElementById('cardValidationErrors');
+    const errorList = document.getElementById('cardErrorList');
+    
+    errorList.innerHTML = '';
+    errors.forEach(error => {
+        const li = document.createElement('li');
+        li.textContent = error;
+        errorList.appendChild(li);
+    });
+    
+    errorContainer.classList.remove('hidden');
 }
 
 // Credit Card Functions
 window.saveCreditCard = function() {
+    // Validate form data
+    const errors = validateCreditCardForm();
+    if (errors.length > 0) {
+        showValidationErrors(errors);
+        return;
+    }
+    
     const card = {
-        name: cardName.value,
+        name: cardName.value.trim(),
         limit: parseFloat(creditLimit.value),
         balance: parseFloat(currentBalance.value),
-        age: parseInt(creditAge.value)
+        openDate: openDate.value
     };
     
-    creditCards.push(card);
+    const editIndex = parseInt(document.getElementById('editCardIndex').value);
+    
+    if (editIndex >= 0 && editIndex < creditCards.length) {
+        // Edit existing card
+        creditCards[editIndex] = card;
+    } else {
+        // Add new card
+        creditCards.push(card);
+    }
+    
     renderCreditCards();
     updateCreditSummary();
     closeCreditCardModal();
@@ -157,6 +235,21 @@ function renderCreditCards() {
         const payTo29 = (card.limit * 0.29) - card.balance;
         const payTo9 = (card.limit * 0.09) - card.balance;
         
+        // Calculate account age in months from open date
+        let accountAge = '';
+        if (card.openDate) {
+            const openDate = new Date(card.openDate);
+            const today = new Date();
+            const monthsDiff = (today.getFullYear() - openDate.getFullYear()) * 12 + 
+                              today.getMonth() - openDate.getMonth();
+            accountAge = `${monthsDiff} months old`;
+        } else if (card.age) { 
+            // Support for legacy data
+            accountAge = `${card.age} months old`;
+        } else {
+            accountAge = 'Age unknown';
+        }
+        
         const utilizationColorClass = utilization > 30 ? 'cyber-pink' : utilization > 10 ? 'cyber-yellow' : 'cyber-green';
         
         html += `
@@ -164,11 +257,16 @@ function renderCreditCards() {
                 <div class="flex justify-between items-start">
                     <div>
                         <h3 class="font-medium text-lg cyber-neon">${card.name}</h3>
-                        <p class="text-sm text-gray-400">${card.age} months old</p>
+                        <p class="text-sm text-gray-400">${accountAge}</p>
                     </div>
-                    <button onclick="deleteCreditCard(${index})" class="text-neon-pink hover:text-neon-purple">
-                        <i class="fas fa-trash"></i>
-                    </button>
+                    <div class="flex">
+                        <button onclick="editCreditCard(${index})" class="text-neon-blue hover:text-neon-purple mr-3">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteCreditCard(${index})" class="text-neon-pink hover:text-neon-purple">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="grid grid-cols-2 gap-4 mt-4">
@@ -256,6 +354,35 @@ function updateCreditSummary() {
     } else {
         payTo29.innerHTML = `<span class="text-neon-green">$0</span>`;
         payTo9.innerHTML = `<span class="text-neon-blue">$0</span>`;
+    }
+    
+    // Calculate the age of oldest credit line
+    const oldestCreditLine = document.getElementById('oldestCreditLine');
+    if (creditCards.length > 0) {
+        let oldestAgeInMonths = 0;
+        const today = new Date();
+        
+        creditCards.forEach(card => {
+            if (card.openDate) {
+                const openDate = new Date(card.openDate);
+                const ageInMonths = (today.getFullYear() - openDate.getFullYear()) * 12 + 
+                                  today.getMonth() - openDate.getMonth();
+                if (ageInMonths > oldestAgeInMonths) {
+                    oldestAgeInMonths = ageInMonths;
+                }
+            } else if (card.age && card.age > oldestAgeInMonths) {
+                // Support for legacy data
+                oldestAgeInMonths = card.age;
+            }
+        });
+        
+        if (oldestAgeInMonths > 0) {
+            oldestCreditLine.innerHTML = `<span class="text-neon-pink">${oldestAgeInMonths}</span> months`;
+        } else {
+            oldestCreditLine.innerHTML = `<span class="text-neon-pink">0</span> months`;
+        }
+    } else {
+        oldestCreditLine.innerHTML = `<span class="text-neon-pink">0</span> months`;
     }
 }
 
@@ -526,10 +653,22 @@ window.calculateSavings = function() {
 }
 
 function loadSampleData() {
+    // Current date for reference is May 3, 2025
+    
     // Load sample data for demo
     creditCards = [
-        { name: "Cyber Security", limit: 10000, balance: 3500, age: 24 },
-        { name: "Digital Wave", limit: 15000, balance: 1200, age: 36 }
+        { 
+            name: "Cyber Security", 
+            limit: 10000, 
+            balance: 3500, 
+            openDate: "2023-05-03" // 24 months ago
+        },
+        { 
+            name: "Digital Wave", 
+            limit: 15000, 
+            balance: 1200, 
+            openDate: "2022-05-03" // 36 months ago
+        }
     ];
     
     bills = [
@@ -546,4 +685,65 @@ function loadSampleData() {
         { name: "Body Mods", amount: 30, category: "health" },
         { name: "Transit Fuel", amount: 150, category: "transportation" }
     ];
+}
+
+function setupScrollDetection() {
+    // Get the container elements
+    const creditCardsWrapper = document.querySelector('.credit-cards-wrapper');
+    const billsWrapper = document.querySelector('.bills-wrapper');
+    
+    // Function to check if content is actually scrollable
+    const checkIfScrollable = (element) => {
+        if (!element) return;
+        
+        // If scrollHeight is greater than clientHeight, content is scrollable
+        if (element.scrollHeight > element.clientHeight + 5) { // Adding small buffer for rounding errors
+            element.classList.add('actually-scrollable');
+        } else {
+            element.classList.remove('actually-scrollable');
+        }
+    };
+    
+    // Initial check when the page loads
+    if (creditCardsWrapper) checkIfScrollable(creditCardsWrapper);
+    if (billsWrapper) checkIfScrollable(billsWrapper);
+    
+    // Set up mutation observer to detect content changes
+    const observer = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+            if (mutation.target.closest('.credit-cards-wrapper')) {
+                setTimeout(() => checkIfScrollable(creditCardsWrapper), 50); // Small delay to ensure DOM is updated
+            }
+            if (mutation.target.closest('.bills-wrapper')) {
+                setTimeout(() => checkIfScrollable(billsWrapper), 50); // Small delay to ensure DOM is updated
+            }
+        }
+    });
+    
+    // Watch both containers for content changes
+    if (creditCardsWrapper) {
+        observer.observe(creditCardsWrapper, { childList: true, subtree: true, characterData: true });
+    }
+    if (billsWrapper) {
+        observer.observe(billsWrapper, { childList: true, subtree: true, characterData: true });
+    }
+    
+    // Also check when window is resized
+    window.addEventListener('resize', () => {
+        if (creditCardsWrapper) checkIfScrollable(creditCardsWrapper);
+        if (billsWrapper) checkIfScrollable(billsWrapper);
+    });
+    
+    // Add event listeners to detect mouse enter/leave
+    if (creditCardsWrapper) {
+        creditCardsWrapper.addEventListener('mouseenter', () => {
+            checkIfScrollable(creditCardsWrapper);
+        });
+    }
+    
+    if (billsWrapper) {
+        billsWrapper.addEventListener('mouseenter', () => {
+            checkIfScrollable(billsWrapper);
+        });
+    }
 }
