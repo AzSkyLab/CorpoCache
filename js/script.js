@@ -1547,6 +1547,11 @@ window.showSalaryModal = function() {
         const bonusPct = (bonusAmount / annualSalary) * 100;
         document.getElementById('modalBonusPercentage').value = bonusPct.toFixed(2);
         
+        // Set the bonus tax rate from the display, preserving the current value
+        const bonusTaxRateText = document.getElementById('bonusTaxRate').textContent.replace(/[()%]/g, '').trim();
+        const bonusTaxRate = parseFloat(bonusTaxRateText) || 25;
+        document.getElementById('modalBonusTax').value = bonusTaxRate;
+        
         // For retirement and ESPP, calculate back from the amount shown
         const grossPerPeriod = annualSalary / periods;
         
@@ -1570,6 +1575,7 @@ window.showSalaryModal = function() {
         document.getElementById('modalGrossSalary').value = grossSalary && grossSalary.value ? grossSalary.value : '';
         document.getElementById('modalPayFrequency').value = 26;
         document.getElementById('modalBonusPercentage').value = 10;
+        document.getElementById('modalBonusTax').value = 25; // Explicitly set to 25% default
         document.getElementById('modalTaxBracket').value = 'single';
         document.getElementById('modalRetirementContribution').value = 10;
         document.getElementById('modalEsppContribution').value = 10;
@@ -1593,6 +1599,7 @@ window.calculateSalaryFromModal = function() {
     const gross = parseFloat(document.getElementById('modalGrossSalary').value);
     const periods = parseInt(document.getElementById('modalPayFrequency').value);
     const bonusPct = parseFloat(document.getElementById('modalBonusPercentage').value);
+    const bonusTaxRate = parseFloat(document.getElementById('modalBonusTax').value) || 25; // Default to 25% if not provided
     const filingStatus = document.getElementById('modalTaxBracket').value;
     const retirementPct = parseFloat(document.getElementById('modalRetirementContribution').value);
     const esppPct = parseFloat(document.getElementById('modalEsppContribution').value);
@@ -1653,6 +1660,9 @@ window.calculateSalaryFromModal = function() {
     const netPay = grossPerPeriod - totalTaxAmount - retirementAmount - esppAmount - totalInsuranceCost;
     const bonusAmount = gross * (bonusPct / 100);
     
+    // Calculate after-tax bonus amount with flat tax rate
+    const afterTaxBonusAmount = bonusAmount * (1 - (bonusTaxRate / 100));
+    
     // Store the annual salary for use in future updates
     document.getElementById('annualSalary').textContent = `$${gross.toFixed(2)}`;
     
@@ -1685,6 +1695,10 @@ window.calculateSalaryFromModal = function() {
     
     document.getElementById('netPay').textContent = `$${netPay.toFixed(2)}`;
     document.getElementById('bonusAmount').textContent = `$${bonusAmount.toFixed(2)}`;
+    document.getElementById('afterTaxBonusAmount').textContent = `$${afterTaxBonusAmount.toFixed(2)}`;
+    
+    // Update bonus tax rate display
+    document.getElementById('bonusTaxRate').textContent = `(${bonusTaxRate}% tax)`;
     
     // Update the Calculate Salary button to show "Update Salary" now that we have calculated results
     const calculateButton = document.querySelector('a[onclick="showSalaryModal()"]');
@@ -1760,8 +1774,9 @@ function calculateGrossProfit() {
     const annualSalaryText = document.getElementById('annualSalary').textContent.replace('$', '').trim();
     const annualSalary = parseFloat(annualSalaryText) || 0;
     
-    const bonusText = document.getElementById('bonusAmount').textContent.replace('$', '').trim();
-    const annualBonus = parseFloat(bonusText) || 0;
+    // Get the after-tax bonus amount instead of pre-tax bonus
+    const afterTaxBonusText = document.getElementById('afterTaxBonusAmount').textContent.replace('$', '').trim();
+    const afterTaxBonus = parseFloat(afterTaxBonusText) || 0;
     
     // Get bills information
     // Split bills between two paychecks (15th and end of month)
@@ -1782,7 +1797,7 @@ function calculateGrossProfit() {
     const paycheck2Surplus = payPerPaycheck - paycheck2BillsAmount;
     const monthlySurplus = payPerMonth - totalMonthlyBills;
     const annualSurplus = (netPayPerPaycheck * payFrequency) - annualBills; // Correct annual calculation
-    const annualSurplusWithBonus = annualSurplus + annualBonus;
+    const annualSurplusWithBonus = annualSurplus + afterTaxBonus; // Use after-tax bonus amount
     
     // Calculate profit ratio for progress bar (as a percentage)
     const profitRatio = totalMonthlyBills > 0 ? Math.min(100, Math.max(0, monthlySurplus / totalMonthlyBills * 100)) : 0;
@@ -1819,7 +1834,7 @@ function calculateGrossProfit() {
     
     // Update annual projections
     gpAnnualIncome.textContent = `$${(netPayPerPaycheck * payFrequency).toFixed(2)}`;
-    gpAnnualBonus.textContent = `$${annualBonus.toFixed(2)}`;
+    gpAnnualBonus.textContent = `$${afterTaxBonus.toFixed(2)}`; // Display after-tax bonus here too for consistency
     gpAnnualBills.textContent = `$${annualBills.toFixed(2)}`;
     
     const annualSurplusColor = annualSurplus >= 0 ? "text-neon-green" : "text-neon-pink";

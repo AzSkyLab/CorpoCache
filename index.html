@@ -287,6 +287,11 @@
                         <span id="bonusAmount" class="text-xl font-bold text-orange-500">$0</span>
                     </div>
                     
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="text-xl font-bold text-white">After-Tax Bonus <span id="bonusTaxRate" class="text-sm text-neon-pink">(25% tax)</span>:</span>
+                        <span id="afterTaxBonusAmount" class="text-xl font-bold text-neon-green">$0</span>
+                    </div>
+                    
                     <h3 class="text-lg font-medium text-white mb-3">Salary Breakdown</h3>
                     <div class="space-y-3 text-white">
                         <div class="flex justify-between">
@@ -449,7 +454,7 @@
             <div class="cyber-card rounded-lg p-6">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-xl font-semibold text-white">
-                        <i class="fas fa-chart-line mr-2 text-neon-blue"></i> Gross Profit Calculator
+                        <i class="fas fa-chart-line mr-2 text-neon-blue"></i> Net Profit Calculator
                     </h2>
                     <a href="#" onclick="updateGrossProfit()" class="text-white px-4 py-2 bg-glass-blue hover:bg-opacity-90 rounded-md transition">
                         <i class="fas fa-sync-alt mr-1"></i> Update Profit
@@ -784,6 +789,11 @@
                 <div class="input-container">
                     <input type="number" id="modalBonusPercentage" class="cyber-input w-full p-3 rounded-md" placeholder=" " value="10">
                     <label class="floating-label">Bonus Percentage (%)</label>
+                </div>
+                
+                <div class="input-container">
+                    <input type="number" id="modalBonusTax" class="cyber-input w-full p-3 rounded-md" placeholder=" " value="25">
+                    <label class="floating-label">Bonus Tax Rate (%)</label>
                 </div>
                 
                 <!-- Tax Section -->
