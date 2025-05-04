@@ -321,9 +321,9 @@
                     <h2 class="text-xl font-semibold text-white">
                         <i class="fas fa-money-bill-wave mr-2 text-cyber-yellow"></i> Salary Calculator
                     </h2>
-                    <a href="#" onclick="showSalaryModal()" class="text-white px-4 py-2 bg-glass-blue hover:bg-opacity-90 rounded-md transition">
+                    <button onclick="showSalaryModal()" class="text-white px-4 py-2 bg-glass-blue hover:bg-opacity-90 rounded-md transition">
                         <i class="fas fa-calculator mr-1"></i> Calculate Salary
-                    </a>
+                    </button>
                 </div>
                 
                 <div id="salaryResults" class="hidden">
@@ -506,9 +506,9 @@
                     <h2 class="text-xl font-semibold text-white">
                         <i class="fas fa-chart-line mr-2 text-neon-blue"></i> Net Profit Calculator
                     </h2>
-                    <a href="#" onclick="updateGrossProfit()" class="text-white px-4 py-2 bg-glass-blue hover:bg-opacity-90 rounded-md transition">
+                    <button type="button" onclick="updateGrossProfit()" class="text-white px-4 py-2 bg-glass-blue hover:bg-opacity-90 rounded-md transition">
                         <i class="fas fa-sync-alt mr-1"></i> Update Profit
-                    </a>
+                    </button>
                 </div>
                 
                 <div id="grossProfitContainer">
@@ -832,8 +832,11 @@
                 </div>
                 
                 <div class="input-container">
-                    <input type="number" id="modalPayFrequency" class="cyber-input w-full p-3 rounded-md" placeholder=" " value="26">
-                    <label class="floating-label">Pay Periods Per Year</label>
+                    <select id="modalPayFrequency" class="cyber-input w-full p-3 rounded-md" placeholder=" ">
+                        <option value="24">Semi-Monthly (24 pay periods)</option>
+                        <option value="26" selected>Bi-Weekly (26 pay periods)</option>
+                    </select>
+                    <label class="floating-label">Pay Frequency</label>
                 </div>
                 
                 <div class="input-container">

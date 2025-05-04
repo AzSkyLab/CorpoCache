@@ -1537,13 +1537,13 @@ window.showSalaryModal = function() {
         
         // Get annual salary directly instead of calculating from gross pay per period
         const annualSalary = parseFloat(document.getElementById('annualSalary').textContent.replace('$', ''));
-        const periods = parseInt(document.getElementById('modalPayFrequency').value) || 26;
         
         // Set gross salary from the stored annual value
         document.getElementById('modalGrossSalary').value = annualSalary;
         
-        // Set pay frequency from previous value or default
-        document.getElementById('modalPayFrequency').value = periods;
+        // Set pay frequency from previous value (either 24 for Semi-Monthly or 26 for Bi-Weekly)
+        const payFrequencyValue = document.getElementById('payFrequency').value || '26';
+        document.getElementById('modalPayFrequency').value = payFrequencyValue === '24' ? '24' : '26';
         
         // Get bonus percentage from the display (divide by annual salary)
         const bonusAmount = parseFloat(document.getElementById('bonusAmount').textContent.replace('$', ''));
@@ -1556,6 +1556,7 @@ window.showSalaryModal = function() {
         document.getElementById('modalBonusTax').value = bonusTaxRate;
         
         // For retirement and ESPP, calculate back from the amount shown
+        const periods = parseInt(payFrequencyValue) || 26;
         const grossPerPeriod = annualSalary / periods;
         
         const retirementAmount = parseFloat(document.getElementById('retirementAmount').textContent.replace('$', ''));
@@ -1576,9 +1577,9 @@ window.showSalaryModal = function() {
     } else {
         // For new calculations, set default values
         document.getElementById('modalGrossSalary').value = grossSalary && grossSalary.value ? grossSalary.value : '';
-        document.getElementById('modalPayFrequency').value = 26;
+        document.getElementById('modalPayFrequency').value = '26'; // Default to Bi-Weekly
         document.getElementById('modalBonusPercentage').value = 10;
-        document.getElementById('modalBonusTax').value = 25; // Explicitly set to 25% default
+        document.getElementById('modalBonusTax').value = 25;
         document.getElementById('modalTaxBracket').value = 'single';
         document.getElementById('modalRetirementContribution').value = 10;
         document.getElementById('modalEsppContribution').value = 10;
@@ -1681,7 +1682,7 @@ window.calculateSalaryFromModal = function() {
     // Update tax amount displays
     document.getElementById('federalTaxAmount').textContent = `$${federalTaxAmount.toFixed(2)}`;
     document.getElementById('oasdiTaxAmount').textContent = `$${oasdiTaxAmount.toFixed(2)}`;
-    document.getElementById('medicareTaxAmount').textContent = `$${medicareTaxAmount.toFixed(2)}`;
+    document.getElementById('medicareTaxAmount').textContent = `$${stateTaxAmount.toFixed(2)}`;
     document.getElementById('stateTaxAmount').textContent = `$${stateTaxAmount.toFixed(2)}`;
     document.getElementById('taxAmount').textContent = `$${totalTaxAmount.toFixed(2)}`;
     
@@ -1704,9 +1705,22 @@ window.calculateSalaryFromModal = function() {
     document.getElementById('bonusTaxRate').textContent = `(${bonusTaxRate}% tax)`;
     
     // Update the Calculate Salary button to show "Update Salary" now that we have calculated results
-    const calculateButton = document.querySelector('a[onclick="showSalaryModal()"]');
+    const calculateButton = document.querySelector('button[onclick="showSalaryModal()"]');
     if (calculateButton) {
         calculateButton.innerHTML = '<i class="fas fa-calculator mr-1"></i> Update Salary';
+        // Change the onclick handler from showSalaryModal to directly showSalaryModal with update flag
+        calculateButton.setAttribute('onclick', 'showSalaryModal(true)');
+        
+        // Save the pay frequency to a hidden field for future reference
+        if (!document.getElementById('payFrequency')) {
+            const hiddenField = document.createElement('input');
+            hiddenField.type = 'hidden';
+            hiddenField.id = 'payFrequency';
+            hiddenField.value = periods;
+            document.body.appendChild(hiddenField);
+        } else {
+            document.getElementById('payFrequency').value = periods;
+        }
     }
     
     // Show the salary results and close the modal
