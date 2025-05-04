@@ -1014,7 +1014,7 @@ function updatePaymentSchedule() {
     try {
         updateExpenseSummary();
     } catch (e) {
-        console.log("Error in updateExpenseSummary:", e);
+        // Silently handle errors
     }
 }
 
@@ -1036,7 +1036,7 @@ function renderExpenses() {
     // Add null check for expensesContainer
     const expensesContainerElement = document.getElementById('expensesContainer');
     if (!expensesContainerElement) {
-        console.log('Expenses container not found in the DOM');
+        // Silently return if the container is not found
         return;
     }
     
@@ -1326,9 +1326,6 @@ function setupScrollDetection() {
         } else {
             element.classList.remove('actually-scrollable');
         }
-        
-        // Debug info to help troubleshoot
-        console.debug(`Element ${element.className} - scrollHeight: ${element.scrollHeight}, clientHeight: ${element.clientHeight}, isScrollable: ${isScrollable}`);
     };
     
     // Initial check when the page loads
@@ -1699,9 +1696,10 @@ window.calculateSalaryFromModal = function() {
     document.getElementById('salaryResults').classList.remove('hidden');
     closeSalaryModal();
     
-    // Update monthly income in savings estimator if empty
-    if (!monthlyIncome.value && netPay > 0) {
-        monthlyIncome.value = (netPay * periods / 12).toFixed(2);
+    // Update monthly income in savings estimator if it exists and is empty
+    const monthlyIncomeElement = document.getElementById('monthlyIncome');
+    if (monthlyIncomeElement && !monthlyIncomeElement.value && netPay > 0) {
+        monthlyIncomeElement.value = (netPay * periods / 12).toFixed(2);
     }
     
     // Then calculate gross profit
@@ -1872,6 +1870,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Initialize gross profit calculator
         initGrossProfitCalculator();
+        
+        // Initialize collapsible sections
+        initCollapsibleSections();
     };
     
     // Also call bill update to trigger gross profit calculation
@@ -1900,3 +1901,46 @@ window.updateGrossProfit = function() {
     // Call the gross profit calculation function
     calculateGrossProfit();
 }
+
+// Initialize collapsible sections
+function initCollapsibleSections() {
+    // Credit Rating Legend section
+    const creditRatingLegendHeader = document.getElementById('creditRatingLegendHeader');
+    const creditRatingLegendContent = document.getElementById('creditRatingLegendContent');
+    
+    if (creditRatingLegendHeader && creditRatingLegendContent) {
+        const creditRatingChevron = creditRatingLegendHeader.querySelector('i.fa-chevron-down');
+        
+        creditRatingLegendHeader.addEventListener('click', function() {
+            creditRatingLegendContent.classList.toggle('hidden');
+            if (creditRatingChevron) {
+                creditRatingChevron.classList.toggle('transform');
+                creditRatingChevron.classList.toggle('rotate-180');
+            }
+        });
+    }
+    
+    // Tax Bracket section
+    const taxBracketHeader = document.getElementById('taxBracketHeader');
+    const taxBracketContent = document.getElementById('taxBracketContent');
+    
+    if (taxBracketHeader && taxBracketContent) {
+        const taxBracketChevron = taxBracketHeader.querySelector('i.fa-chevron-down');
+        
+        taxBracketHeader.addEventListener('click', function() {
+            taxBracketContent.classList.toggle('hidden');
+            if (taxBracketChevron) {
+                taxBracketChevron.classList.toggle('transform');
+                taxBracketChevron.classList.toggle('rotate-180');
+            }
+        });
+    }
+}
+
+// Initialize collapsible sections directly
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize collapsible sections immediately rather than waiting for initElements
+    setTimeout(function() {
+        initCollapsibleSections();
+    }, 500);
+});
