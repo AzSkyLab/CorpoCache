@@ -26,6 +26,23 @@ document.addEventListener('DOMContentLoaded', () => {
     setupScrollDetection();
 });
 
+/**
+ * Gets the appropriate color class for the credit utilization percentage
+ * @param {number} utilization - The credit utilization percentage
+ * @returns {string} - The CSS class to apply for text color
+ */
+function getUtilizationColorClass(utilization) {
+    if (utilization >= 61) {
+        return 'text-neon-pink';    // 61%+: neon pink
+    } else if (utilization >= 30) {
+        return 'text-neon-yellow';  // 30% to 61%: neon yellow
+    } else if (utilization >= 10) {
+        return 'text-neon-blue';    // 10% to 30%: neon blue
+    } else {
+        return 'text-neon-green';   // 0% to 10%: neon green
+    }
+}
+
 // Credit Card Company Logo Functions
 /**
  * Identifies the credit card company based on the card name
@@ -436,7 +453,7 @@ function renderCreditCards() {
                     </div>
                     <div>
                         <p class="text-sm text-gray-400">Current Balance</p>
-                        <p class="font-medium">$${card.balance.toFixed(2)}</p>
+                        <p class="font-medium ${getUtilizationColorClass(utilization)}">$${card.balance.toFixed(2)}</p>
                     </div>
                 </div>
                 
@@ -1293,5 +1310,22 @@ function getOrdinalSuffix(n) {
         case 2: return 'nd';
         case 3: return 'rd';
         default: return 'th';
+    }
+}
+
+/**
+ * Returns the appropriate CSS color class based on credit utilization percentage
+ * @param {number} utilization - The credit utilization percentage (0-100)
+ * @returns {string} CSS class name for the appropriate neon color
+ */
+function getUtilizationColorClass(utilization) {
+    if (utilization < 10) {
+        return 'text-neon-green';
+    } else if (utilization < 30) {
+        return 'text-neon-blue';
+    } else if (utilization < 61) {
+        return 'text-neon-yellow';
+    } else {
+        return 'text-neon-pink';
     }
 }
