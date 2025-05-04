@@ -395,7 +395,9 @@ function renderCreditCards() {
             accountAge = '<span class="text-neon-pink">Age unknown</span>';
         }
         
-        const utilizationColorClass = utilization > 30 ? 'cyber-pink' : utilization > 10 ? 'cyber-yellow' : 'cyber-green';
+        const utilizationColorClass = utilization > 61 ? 'cyber-pink' : 
+                                     utilization > 30 ? 'cyber-yellow' : 
+                                     utilization > 10 ? 'cyber-blue' : 'cyber-green';
         
         // Identify the credit card company and get the appropriate logo URL
         const cardCompany = card.customImage || identifyCreditCardCompany(card.name);
