@@ -540,7 +540,9 @@ function updateCreditSummary() {
     
     // Format total limit with color class
     totalLimit.innerHTML = `<span class="${totalLimitColorClass}">$${totalLimitValue.toFixed(2)}</span>`;
-    totalBalance.textContent = `$${totalBalanceValue.toFixed(2)}`;
+    
+    // Apply utilization-based color to total balance using the same getUtilizationColorClass function
+    totalBalance.innerHTML = `<span class="${getUtilizationColorClass(totalUtilizationValue)}">$${totalBalanceValue.toFixed(2)}</span>`;
     
     // Apply updated color coding to total utilization based on new thresholds
     let utilizationColorClass = 'text-neon-green'; // Default for 0-10%
