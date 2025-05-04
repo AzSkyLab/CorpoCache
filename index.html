@@ -26,7 +26,8 @@
                         'dark-blue': '#0b0b2b',
                         'cyber-black': '#0d0221',
                         'cyber-gray': '#31314d',
-                        'cyber-yellow': '#ffd319'
+                        'cyber-yellow': '#ffd319',
+                        'orange-500': '#f97316'
                     }
                 }
             }
@@ -245,99 +246,26 @@
 
             <!-- Salary Calculator -->
             <div class="cyber-card rounded-lg p-6">
-                <h2 class="text-xl font-semibold text-white mb-6">
-                    <i class="fas fa-money-bill-wave mr-2 text-cyber-yellow"></i> Salary Calculator
-                </h2>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <div class="input-container">
-                            <input type="number" id="grossSalary" class="cyber-input w-full p-3 rounded-md" placeholder=" ">
-                            <label class="floating-label">Gross Annual Salary</label>
-                        </div>
-                        
-                        <div class="input-container">
-                            <input type="number" id="payFrequency" class="cyber-input w-full p-3 rounded-md" placeholder=" " value="26">
-                            <label class="floating-label">Pay Periods Per Year</label>
-                        </div>
-                        
-                        <div class="input-container">
-                            <input type="number" id="bonusPercentage" class="cyber-input w-full p-3 rounded-md" placeholder=" " value="10">
-                            <label class="floating-label">Bonus Percentage (%)</label>
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <!-- Tax Section with breakdown -->
-                        <div class="input-container">
-                            <select id="taxBracket" class="cyber-input w-full p-3 rounded-md" placeholder=" ">
-                                <option value="single">Single</option>
-                                <option value="married">Married Filing Jointly</option>
-                                <option value="head">Head of Household</option>
-                            </select>
-                            <label class="floating-label">Tax Filing Status</label>
-                        </div>
-                        
-                        <div class="input-container">
-                            <input type="number" id="federalTaxRate" class="cyber-input w-full p-3 rounded-md" placeholder=" " value="12">
-                            <label class="floating-label">Federal Tax Rate (%)</label>
-                        </div>
-                        
-                        <div class="grid grid-cols-3 gap-2">
-                            <div class="input-container">
-                                <input type="number" id="oasdiTaxRate" class="cyber-input w-full p-3 rounded-md" placeholder=" " value="6.2">
-                                <label class="floating-label">OASDI (%)</label>
-                            </div>
-                            
-                            <div class="input-container">
-                                <input type="number" id="medicareTaxRate" class="cyber-input w-full p-3 rounded-md" placeholder=" " value="1.45">
-                                <label class="floating-label">Medicare (%)</label>
-                            </div>
-                            
-                            <div class="input-container">
-                                <input type="number" id="stateTaxRate" class="cyber-input w-full p-3 rounded-md" placeholder=" " value="5">
-                                <label class="floating-label">State (%)</label>
-                            </div>
-                        </div>
-                        
-                        <div class="input-container">
-                            <input type="number" id="retirementContribution" class="cyber-input w-full p-3 rounded-md" placeholder=" " value="10">
-                            <label class="floating-label">401k Contribution (%)</label>
-                        </div>
-                        
-                        <div class="input-container">
-                            <input type="number" id="esppContribution" class="cyber-input w-full p-3 rounded-md" placeholder=" " value="10">
-                            <label class="floating-label">ESPP Contribution (%)</label>
-                        </div>
-                        
-                        <!-- Insurance Inputs Section -->
-                        <div class="border-t border-gray-700 pt-4 mt-4">
-                            <h4 class="text-white text-sm mb-3">Insurance Contributions (per pay period)</h4>
-                            <div class="grid grid-cols-3 gap-2">
-                                <div class="input-container">
-                                    <input type="number" id="healthInsurance" class="cyber-input w-full p-3 rounded-md" placeholder=" " value="0" min="0" step="0.01">
-                                    <label class="floating-label">Health ($)</label>
-                                </div>
-                                
-                                <div class="input-container">
-                                    <input type="number" id="dentalInsurance" class="cyber-input w-full p-3 rounded-md" placeholder=" " value="0" min="0" step="0.01">
-                                    <label class="floating-label">Dental ($)</label>
-                                </div>
-                                
-                                <div class="input-container">
-                                    <input type="number" id="visionInsurance" class="cyber-input w-full p-3 rounded-md" placeholder=" " value="0" min="0" step="0.01">
-                                    <label class="floating-label">Vision ($)</label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-semibold text-white">
+                        <i class="fas fa-money-bill-wave mr-2 text-cyber-yellow"></i> Salary Calculator
+                    </h2>
+                    <a href="#" onclick="showSalaryModal()" class="text-white px-4 py-2 bg-glass-blue hover:bg-opacity-90 rounded-md transition">
+                        <i class="fas fa-calculator mr-1"></i> Calculate Salary
+                    </a>
                 </div>
                 
-                <button onclick="calculateSalary()" class="w-full mt-6 cyber-primary-btn py-3 rounded-md hover:bg-opacity-90 transition">
-                    Calculate Take-Home Pay
-                </button>
-                
-                <div id="salaryResults" class="mt-6 hidden">
+                <div id="salaryResults" class="hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="text-xl font-bold text-white">Annual Salary:</span>
+                        <span id="annualSalary" class="text-xl font-bold text-neon-green">$0</span>
+                    </div>
+                    
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="text-xl font-bold text-white">Potential Annual Bonus:</span>
+                        <span id="bonusAmount" class="text-xl font-bold text-orange-500">$0</span>
+                    </div>
+                    
                     <h3 class="text-lg font-medium text-white mb-3">Salary Breakdown</h3>
                     <div class="space-y-3 text-white">
                         <div class="flex justify-between">
@@ -347,42 +275,51 @@
                         
                         <!-- Tax Breakdown Section -->
                         <div class="border-t border-gray-700 pt-2">
-                            <div class="flex justify-between text-sm text-neon-blue font-semibold">
+                            <div class="flex justify-between text-sm text-neon-purple font-semibold">
                                 <span>Tax Breakdown:</span>
                                 <span id="taxAmount" class="font-medium">$0</span>
                             </div>
                             <div class="ml-4 space-y-1 mt-1">
                                 <div class="flex justify-between text-sm">
-                                    <span>Federal Tax:</span>
+                                    <span>Federal Tax <span id="federalTaxRate" class="text-neon-purple">(0%)</span>:</span>
                                     <span id="federalTaxAmount" class="font-medium">$0</span>
                                 </div>
                                 <div class="flex justify-between text-sm">
-                                    <span>Social Security (OASDI):</span>
+                                    <span>Social Security <span id="oasdiRate" class="text-neon-purple">(6.2%)</span>:</span>
                                     <span id="oasdiTaxAmount" class="font-medium">$0</span>
                                 </div>
                                 <div class="flex justify-between text-sm">
-                                    <span>Medicare:</span>
+                                    <span>Medicare <span id="medicareRate" class="text-neon-purple">(1.45%)</span>:</span>
                                     <span id="medicareTaxAmount" class="font-medium">$0</span>
                                 </div>
                                 <div class="flex justify-between text-sm">
-                                    <span>State Tax:</span>
+                                    <span>State Tax <span id="stateRate" class="text-neon-purple">(5%)</span>:</span>
                                     <span id="stateTaxAmount" class="font-medium">$0</span>
                                 </div>
                             </div>
                         </div>
                         
-                        <div class="flex justify-between">
-                            <span>401k Contribution:</span>
-                            <span id="retirementAmount" class="font-medium">$0</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>ESPP Contribution:</span>
-                            <span id="esppAmount" class="font-medium">$0</span>
+                        <!-- Savings Contributions Section -->
+                        <div class="border-t border-gray-700 pt-2">
+                            <div class="flex justify-between text-sm text-neon-green font-semibold">
+                                <span>Savings Contributions:</span>
+                                <span id="savingsTotal" class="font-medium">$0</span>
+                            </div>
+                            <div class="ml-4 space-y-1 mt-1">
+                                <div class="flex justify-between">
+                                    <span>401k Contribution:</span>
+                                    <span id="retirementAmount" class="font-medium">$0</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>ESPP Contribution:</span>
+                                    <span id="esppAmount" class="font-medium">$0</span>
+                                </div>
+                            </div>
                         </div>
                         
                         <!-- Insurance Costs Section -->
                         <div class="border-t border-gray-700 pt-2">
-                            <div class="flex justify-between text-sm text-neon-purple font-semibold">
+                            <div class="flex justify-between text-sm text-neon-blue font-semibold">
                                 <span>Insurance Costs:</span>
                                 <span id="insuranceTotal" class="font-medium">$0</span>
                             </div>
@@ -405,10 +342,6 @@
                         <div class="flex justify-between border-t border-gray-700 pt-2 mt-2">
                             <span class="font-semibold">Net Pay:</span>
                             <span id="netPay" class="font-bold text-lg text-neon-green">$0</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>Annual Bonus:</span>
-                            <span id="bonusAmount" class="font-medium text-neon-purple">$0</span>
                         </div>
                     </div>
                 </div>
@@ -810,6 +743,149 @@
                 </button>
             </div>
             <input type="hidden" id="editCardImageIndex" value="-1">
+        </div>
+    </div>
+    
+    <!-- Salary Calculator Modal -->
+    <div id="salaryModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="modal-cyber rounded-lg p-6 w-full max-w-md">
+            <h3 class="text-xl font-semibold mb-4 text-white">Calculate Salary</h3>
+            
+            <div class="space-y-4">
+                <!-- Basic Salary Information -->
+                <div class="input-container">
+                    <input type="number" id="modalGrossSalary" class="cyber-input w-full p-3 rounded-md" placeholder=" ">
+                    <label class="floating-label">Gross Annual Salary</label>
+                </div>
+                
+                <div class="input-container">
+                    <input type="number" id="modalPayFrequency" class="cyber-input w-full p-3 rounded-md" placeholder=" " value="26">
+                    <label class="floating-label">Pay Periods Per Year</label>
+                </div>
+                
+                <div class="input-container">
+                    <input type="number" id="modalBonusPercentage" class="cyber-input w-full p-3 rounded-md" placeholder=" " value="10">
+                    <label class="floating-label">Bonus Percentage (%)</label>
+                </div>
+                
+                <!-- Tax Section -->
+                <div class="mt-4 border-t border-gray-700 pt-4">
+                    <h4 class="text-white text-sm mb-3">Taxes</h4>
+                    
+                    <div class="input-container">
+                        <select id="modalTaxBracket" class="cyber-input w-full p-3 rounded-md" placeholder=" ">
+                            <option value="single">Single</option>
+                            <option value="married">Married Filing Jointly</option>
+                            <option value="head">Head of Household</option>
+                        </select>
+                        <label class="floating-label">Tax Filing Status</label>
+                    </div>
+                    
+                    <div class="input-container">
+                        <select id="modalState" class="cyber-input w-full p-3 rounded-md" placeholder=" ">
+                            <option value="none">No State Income Tax</option>
+                            <option value="al">Alabama (5%)</option>
+                            <option value="ak">Alaska (0%)</option>
+                            <option value="az">Arizona (4.5%)</option>
+                            <option value="ar">Arkansas (5.9%)</option>
+                            <option value="ca">California (9.3%)</option>
+                            <option value="co">Colorado (4.4%)</option>
+                            <option value="ct">Connecticut (5%)</option>
+                            <option value="de">Delaware (6.6%)</option>
+                            <option value="fl">Florida (0%)</option>
+                            <option value="ga">Georgia (5.75%)</option>
+                            <option value="hi">Hawaii (8.25%)</option>
+                            <option value="id">Idaho (6.5%)</option>
+                            <option value="il">Illinois (4.95%)</option>
+                            <option value="in">Indiana (3.15%)</option>
+                            <option value="ia">Iowa (4.4%)</option>
+                            <option value="ks">Kansas (5.7%)</option>
+                            <option value="ky">Kentucky (5%)</option>
+                            <option value="la">Louisiana (4.25%)</option>
+                            <option value="me">Maine (7.15%)</option>
+                            <option value="md">Maryland (5.75%)</option>
+                            <option value="ma">Massachusetts (5%)</option>
+                            <option value="mi">Michigan (4.25%)</option>
+                            <option value="mn">Minnesota (7.05%)</option>
+                            <option value="ms">Mississippi (5%)</option>
+                            <option value="mo">Missouri (5.3%)</option>
+                            <option value="mt">Montana (6.75%)</option>
+                            <option value="ne">Nebraska (6.84%)</option>
+                            <option value="nv">Nevada (0%)</option>
+                            <option value="nh">New Hampshire (5%)</option>
+                            <option value="nj">New Jersey (5.525%)</option>
+                            <option value="nm">New Mexico (5.9%)</option>
+                            <option value="ny">New York (6.33%)</option>
+                            <option value="nc">North Carolina (4.75%)</option>
+                            <option value="nd">North Dakota (2.9%)</option>
+                            <option value="oh">Ohio (3.99%)</option>
+                            <option value="ok">Oklahoma (4.75%)</option>
+                            <option value="or">Oregon (9.9%)</option>
+                            <option value="pa">Pennsylvania (3.07%)</option>
+                            <option value="ri">Rhode Island (5.99%)</option>
+                            <option value="sc">South Carolina (7%)</option>
+                            <option value="sd">South Dakota (0%)</option>
+                            <option value="tn">Tennessee (0%)</option>
+                            <option value="tx">Texas (0%)</option>
+                            <option value="ut">Utah (4.95%)</option>
+                            <option value="vt">Vermont (6.8%)</option>
+                            <option value="va">Virginia (5.75%)</option>
+                            <option value="wa">Washington (0%)</option>
+                            <option value="wv">West Virginia (6%)</option>
+                            <option value="wi">Wisconsin (5.3%)</option>
+                            <option value="wy">Wyoming (0%)</option>
+                            <option value="dc">Washington D.C. (9.75%)</option>
+                        </select>
+                        <label class="floating-label">State</label>
+                    </div>
+                </div>
+                
+                <!-- Deductions Section -->
+                <div class="mt-4 border-t border-gray-700 pt-4">
+                    <h4 class="text-white text-sm mb-3">Deductions</h4>
+                    
+                    <div class="input-container">
+                        <input type="number" id="modalRetirementContribution" class="cyber-input w-full p-3 rounded-md" placeholder=" " value="10">
+                        <label class="floating-label">401k Contribution (%)</label>
+                    </div>
+                    
+                    <div class="input-container">
+                        <input type="number" id="modalEsppContribution" class="cyber-input w-full p-3 rounded-md" placeholder=" " value="10">
+                        <label class="floating-label">ESPP Contribution (%)</label>
+                    </div>
+                </div>
+                
+                <!-- Insurance Section -->
+                <div class="mt-4 border-t border-gray-700 pt-4">
+                    <h4 class="text-white text-sm mb-3">Insurance (per pay period)</h4>
+                    
+                    <div class="grid grid-cols-3 gap-2">
+                        <div class="input-container">
+                            <input type="number" id="modalHealthInsurance" class="cyber-input w-full p-3 rounded-md" placeholder=" " value="0" min="0" step="0.01">
+                            <label class="floating-label">Health ($)</label>
+                        </div>
+                        
+                        <div class="input-container">
+                            <input type="number" id="modalDentalInsurance" class="cyber-input w-full p-3 rounded-md" placeholder=" " value="0" min="0" step="0.01">
+                            <label class="floating-label">Dental ($)</label>
+                        </div>
+                        
+                        <div class="input-container">
+                            <input type="number" id="modalVisionInsurance" class="cyber-input w-full p-3 rounded-md" placeholder=" " value="0" min="0" step="0.01">
+                            <label class="floating-label">Vision ($)</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex justify-end space-x-3 mt-6">
+                <button onclick="closeSalaryModal()" class="px-4 py-2 border border-gray-600 text-white rounded-md hover:bg-gray-800">
+                    Cancel
+                </button>
+                <button onclick="calculateSalaryFromModal()" class="px-4 py-2 cyber-primary-btn rounded-md">
+                    Calculate
+                </button>
+            </div>
         </div>
     </div>
 

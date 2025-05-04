@@ -33,18 +33,32 @@ const taxBrackets2025 = {
 function calculateFederalTax(annualIncome, filingStatus) {
     const brackets = taxBrackets2025[filingStatus] || taxBrackets2025.single;
     let tax = 0;
-    let remainingIncome = annualIncome;
     
-    for (const bracket of brackets) {
-        if (remainingIncome <= 0) break;
+    // Process each bracket in order
+    for (let i = 0; i < brackets.length; i++) {
+        const bracket = brackets[i];
         
-        const taxableAmountInBracket = Math.min(
-            bracket.max - bracket.min,
-            Math.max(0, remainingIncome)
-        );
+        // Calculate the taxable amount in the current bracket
+        let taxableInThisBracket;
         
-        tax += taxableAmountInBracket * (bracket.rate / 100);
-        remainingIncome -= taxableAmountInBracket;
+        if (annualIncome > bracket.max) {
+            // If income exceeds this bracket, tax the full bracket range
+            taxableInThisBracket = bracket.max - bracket.min;
+        } else if (annualIncome > bracket.min) {
+            // If income falls within this bracket, tax only the portion in this bracket
+            taxableInThisBracket = annualIncome - bracket.min;
+        } else {
+            // If income is below this bracket minimum, no tax in this bracket
+            taxableInThisBracket = 0;
+        }
+        
+        // Add tax for this bracket
+        tax += taxableInThisBracket * (bracket.rate / 100);
+        
+        // If income doesn't exceed this bracket, we're done
+        if (annualIncome <= bracket.max) {
+            break;
+        }
     }
     
     return tax;
@@ -1445,5 +1459,185 @@ function getUtilizationColorClass(utilization) {
         return 'text-neon-yellow';
     } else {
         return 'text-neon-pink';
+    }
+}
+
+// Salary Modal Functions
+window.showSalaryModal = function() {
+    // Check if the salary results are already displayed
+    const salaryResults = document.getElementById('salaryResults');
+    const calculateButton = document.querySelector('#salaryModal button.cyber-primary-btn');
+    const hasExistingData = salaryResults && !salaryResults.classList.contains('hidden');
+    
+    if (hasExistingData) {
+        // If we have existing salary data, transfer current values to the modal
+        
+        // Get annual salary directly instead of calculating from gross pay per period
+        const annualSalary = parseFloat(document.getElementById('annualSalary').textContent.replace('$', ''));
+        const periods = parseInt(document.getElementById('modalPayFrequency').value) || 26;
+        
+        // Set gross salary from the stored annual value
+        document.getElementById('modalGrossSalary').value = annualSalary;
+        
+        // Set pay frequency from previous value or default
+        document.getElementById('modalPayFrequency').value = periods;
+        
+        // Get bonus percentage from the display (divide by annual salary)
+        const bonusAmount = parseFloat(document.getElementById('bonusAmount').textContent.replace('$', ''));
+        const bonusPct = (bonusAmount / annualSalary) * 100;
+        document.getElementById('modalBonusPercentage').value = bonusPct.toFixed(2);
+        
+        // For retirement and ESPP, calculate back from the amount shown
+        const grossPerPeriod = annualSalary / periods;
+        
+        const retirementAmount = parseFloat(document.getElementById('retirementAmount').textContent.replace('$', ''));
+        const retirementPct = (retirementAmount / grossPerPeriod) * 100;
+        document.getElementById('modalRetirementContribution').value = retirementPct.toFixed(2);
+        
+        const esppAmount = parseFloat(document.getElementById('esppAmount').textContent.replace('$', ''));
+        const esppPct = (esppAmount / grossPerPeriod) * 100;
+        document.getElementById('modalEsppContribution').value = esppPct.toFixed(2);
+        
+        // For insurance, just copy over the current values
+        document.getElementById('modalHealthInsurance').value = parseFloat(document.getElementById('healthAmount').textContent.replace('$', ''));
+        document.getElementById('modalDentalInsurance').value = parseFloat(document.getElementById('dentalAmount').textContent.replace('$', ''));
+        document.getElementById('modalVisionInsurance').value = parseFloat(document.getElementById('visionAmount').textContent.replace('$', ''));
+        
+        // Update button text
+        calculateButton.textContent = 'Update Salary';
+    } else {
+        // For new calculations, set default values
+        document.getElementById('modalGrossSalary').value = grossSalary && grossSalary.value ? grossSalary.value : '';
+        document.getElementById('modalPayFrequency').value = 26;
+        document.getElementById('modalBonusPercentage').value = 10;
+        document.getElementById('modalTaxBracket').value = 'single';
+        document.getElementById('modalRetirementContribution').value = 10;
+        document.getElementById('modalEsppContribution').value = 10;
+        document.getElementById('modalHealthInsurance').value = 0;
+        document.getElementById('modalDentalInsurance').value = 0;
+        document.getElementById('modalVisionInsurance').value = 0;
+        
+        // Set button text for initial calculation
+        calculateButton.textContent = 'Calculate';
+    }
+    
+    document.getElementById('salaryModal').classList.remove('hidden');
+}
+
+window.closeSalaryModal = function() {
+    document.getElementById('salaryModal').classList.add('hidden');
+}
+
+// Function to calculate salary from modal inputs
+window.calculateSalaryFromModal = function() {
+    const gross = parseFloat(document.getElementById('modalGrossSalary').value);
+    const periods = parseInt(document.getElementById('modalPayFrequency').value);
+    const bonusPct = parseFloat(document.getElementById('modalBonusPercentage').value);
+    const filingStatus = document.getElementById('modalTaxBracket').value;
+    const retirementPct = parseFloat(document.getElementById('modalRetirementContribution').value);
+    const esppPct = parseFloat(document.getElementById('modalEsppContribution').value);
+    
+    // Get state selection and tax rate
+    const stateSelect = document.getElementById('modalState');
+    const stateTaxPct = parseFloat(stateSelect.options[stateSelect.selectedIndex].text.match(/\(([^)]+)%\)/)?.[1]) || 0;
+    
+    // Fixed rates for OASDI and Medicare
+    const oasdiTaxPct = 6.2;
+    const medicareTaxPct = 1.45;
+    
+    // Insurance costs (dollar amounts per pay period)
+    const healthCost = parseFloat(document.getElementById('modalHealthInsurance').value) || 0;
+    const dentalCost = parseFloat(document.getElementById('modalDentalInsurance').value) || 0;
+    const visionCost = parseFloat(document.getElementById('modalVisionInsurance').value) || 0;
+    const totalInsuranceCost = healthCost + dentalCost + visionCost;
+    
+    if (isNaN(gross) || gross <= 0) {
+        alert('Please enter a valid gross salary');
+        return;
+    }
+    
+    const grossPerPeriod = gross / periods;
+    
+    // Calculate federal tax using progressive tax brackets
+    const federalTaxPerYear = calculateFederalTax(gross, filingStatus);
+    const federalTaxAmount = federalTaxPerYear / periods;
+    
+    // Calculate effective federal tax rate and display it
+    const effectiveFederalRate = calculateEffectiveTaxRate(gross, filingStatus);
+    
+    // OASDI has a wage cap (for 2025, using estimated $168,600)
+    // Note: Adjust this annually based on actual Social Security wage base
+    const oasdiWageCap = 168600;
+    const oasdiTaxAmount = Math.min(grossPerPeriod, oasdiWageCap / periods) * (oasdiTaxPct / 100);
+    
+    // Medicare has no wage cap, but higher income has additional 0.9% for income above $200,000/$250,000
+    const medicareAdditionalRate = 0.9; // 0.9% additional for high earners
+    let medicareTaxAmount = grossPerPeriod * (medicareTaxPct / 100);
+    
+    // Add additional Medicare tax for high earners (simplified for individual filers)
+    if (gross > 200000) {
+        const excessAmount = (gross - 200000) / periods;
+        medicareTaxAmount += excessAmount * (medicareAdditionalRate / 100);
+    }
+    
+    // State tax calculation
+    const stateTaxAmount = grossPerPeriod * (stateTaxPct / 100);
+    
+    // Retirement and ESPP contributions
+    const retirementAmount = grossPerPeriod * (retirementPct / 100);
+    const esppAmount = grossPerPeriod * (esppPct / 100);
+    const savingsTotal = retirementAmount + esppAmount;
+    
+    // Calculate net pay after all deductions including insurance
+    const totalTaxAmount = federalTaxAmount + oasdiTaxAmount + medicareTaxAmount + stateTaxAmount;
+    const netPay = grossPerPeriod - totalTaxAmount - retirementAmount - esppAmount - totalInsuranceCost;
+    const bonusAmount = gross * (bonusPct / 100);
+    
+    // Store the annual salary for use in future updates
+    document.getElementById('annualSalary').textContent = `$${gross.toFixed(2)}`;
+    
+    // Update the UI with calculated values
+    document.getElementById('grossPay').textContent = `$${grossPerPeriod.toFixed(2)}`;
+    
+    // Update tax rate displays
+    document.getElementById('federalTaxRate').textContent = `(${effectiveFederalRate.toFixed(2)}%)`;
+    document.getElementById('oasdiRate').textContent = `(${oasdiTaxPct}%)`;
+    document.getElementById('medicareRate').textContent = `(${medicareTaxPct}%)`;
+    document.getElementById('stateRate').textContent = `(${stateTaxPct}%)`;
+    
+    // Update tax amount displays
+    document.getElementById('federalTaxAmount').textContent = `$${federalTaxAmount.toFixed(2)}`;
+    document.getElementById('oasdiTaxAmount').textContent = `$${oasdiTaxAmount.toFixed(2)}`;
+    document.getElementById('medicareTaxAmount').textContent = `$${medicareTaxAmount.toFixed(2)}`;
+    document.getElementById('stateTaxAmount').textContent = `$${stateTaxAmount.toFixed(2)}`;
+    document.getElementById('taxAmount').textContent = `$${totalTaxAmount.toFixed(2)}`;
+    
+    // Update savings contributions
+    document.getElementById('retirementAmount').textContent = `$${retirementAmount.toFixed(2)}`;
+    document.getElementById('esppAmount').textContent = `$${esppAmount.toFixed(2)}`;
+    document.getElementById('savingsTotal').textContent = `$${savingsTotal.toFixed(2)}`;
+    
+    // Update the insurance amounts
+    document.getElementById('healthAmount').textContent = `$${healthCost.toFixed(2)}`;
+    document.getElementById('dentalAmount').textContent = `$${dentalCost.toFixed(2)}`;
+    document.getElementById('visionAmount').textContent = `$${visionCost.toFixed(2)}`;
+    document.getElementById('insuranceTotal').textContent = `$${totalInsuranceCost.toFixed(2)}`;
+    
+    document.getElementById('netPay').textContent = `$${netPay.toFixed(2)}`;
+    document.getElementById('bonusAmount').textContent = `$${bonusAmount.toFixed(2)}`;
+    
+    // Update the Calculate Salary button to show "Update Salary" now that we have calculated results
+    const calculateButton = document.querySelector('a[onclick="showSalaryModal()"]');
+    if (calculateButton) {
+        calculateButton.innerHTML = '<i class="fas fa-calculator mr-1"></i> Update Salary';
+    }
+    
+    // Show the salary results and close the modal
+    document.getElementById('salaryResults').classList.remove('hidden');
+    closeSalaryModal();
+    
+    // Update monthly income in savings estimator if empty
+    if (!monthlyIncome.value && netPay > 0) {
+        monthlyIncome.value = (netPay * periods / 12).toFixed(2);
     }
 }
