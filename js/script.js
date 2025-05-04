@@ -213,6 +213,9 @@ function initElements() {
     window.stateTaxRate = document.getElementById('stateTaxRate');
     window.retirementContribution = document.getElementById('retirementContribution');
     window.esppContribution = document.getElementById('esppContribution');
+    window.healthInsurance = document.getElementById('healthInsurance');
+    window.dentalInsurance = document.getElementById('dentalInsurance');
+    window.visionInsurance = document.getElementById('visionInsurance');
     window.salaryResults = document.getElementById('salaryResults');
     
     // Savings Estimator Elements
@@ -1060,6 +1063,12 @@ window.calculateSalary = function() {
     const retirementPct = parseFloat(retirementContribution.value);
     const esppPct = parseFloat(esppContribution.value);
     
+    // Insurance costs (dollar amounts per pay period)
+    const healthCost = parseFloat(healthInsurance.value) || 0;
+    const dentalCost = parseFloat(dentalInsurance.value) || 0;
+    const visionCost = parseFloat(visionInsurance.value) || 0;
+    const totalInsuranceCost = healthCost + dentalCost + visionCost;
+    
     if (isNaN(gross) || gross <= 0) {
         alert('Please enter a valid gross salary');
         return;
@@ -1097,7 +1106,9 @@ window.calculateSalary = function() {
     const totalTaxAmount = federalTaxAmount + oasdiTaxAmount + medicareTaxAmount + stateTaxAmount;
     const retirementAmount = grossPerPeriod * (retirementPct / 100);
     const esppAmount = grossPerPeriod * (esppPct / 100);
-    const netPay = grossPerPeriod - totalTaxAmount - retirementAmount - esppAmount;
+    
+    // Calculate net pay after all deductions including insurance
+    const netPay = grossPerPeriod - totalTaxAmount - retirementAmount - esppAmount - totalInsuranceCost;
     const bonusAmount = gross * (bonusPct / 100);
     
     // Update the UI with calculated values
@@ -1109,6 +1120,13 @@ window.calculateSalary = function() {
     document.getElementById('taxAmount').textContent = `$${totalTaxAmount.toFixed(2)}`;
     document.getElementById('retirementAmount').textContent = `$${retirementAmount.toFixed(2)}`;
     document.getElementById('esppAmount').textContent = `$${esppAmount.toFixed(2)}`;
+    
+    // Update the insurance amounts
+    document.getElementById('healthAmount').textContent = `$${healthCost.toFixed(2)}`;
+    document.getElementById('dentalAmount').textContent = `$${dentalCost.toFixed(2)}`;
+    document.getElementById('visionAmount').textContent = `$${visionCost.toFixed(2)}`;
+    document.getElementById('insuranceTotal').textContent = `$${totalInsuranceCost.toFixed(2)}`;
+    
     document.getElementById('netPay').textContent = `$${netPay.toFixed(2)}`;
     document.getElementById('bonusAmount').textContent = `$${bonusAmount.toFixed(2)}`;
     
