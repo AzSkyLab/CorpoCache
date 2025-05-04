@@ -598,12 +598,12 @@ function updateCreditSummary() {
             
             if (years > 0) {
                 if (months > 0) {
-                    oldestCreditLine.innerHTML = `<span class="${ageColorClass}">${years}</span> ${years === 1 ? 'year' : 'years'}, <span class="${ageColorClass}">${months}</span> ${months === 1 ? 'month' : 'months'}`;
+                    oldestCreditLine.innerHTML = `<span class="${ageColorClass}">${years}</span> <span class="text-gray-400 text-sm">years</span>, <span class="${ageColorClass}">${months}</span> <span class="text-gray-400 text-sm">months</span>`;
                 } else {
-                    oldestCreditLine.innerHTML = `<span class="${ageColorClass}">${years}</span> ${years === 1 ? 'year' : 'years'}`;
+                    oldestCreditLine.innerHTML = `<span class="${ageColorClass}">${years}</span> <span class="text-gray-400 text-sm">years</span>`;
                 }
             } else {
-                oldestCreditLine.innerHTML = `<span class="text-neon-pink">${months}</span> ${months === 1 ? 'month' : 'months'}`;
+                oldestCreditLine.innerHTML = `<span class="text-neon-pink">${months}</span> <span class="text-gray-400 text-sm">months</span>`;
             }
         } else {
             oldestCreditLine.innerHTML = `<span class="text-neon-pink">0</span> years`;
