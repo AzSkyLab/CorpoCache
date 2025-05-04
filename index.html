@@ -77,7 +77,75 @@
 
     <div class="container mx-auto px-4 py-8">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- Credit Card Section -->
+            <!-- Bills Section - Now placed above credit and loan sections -->
+            <div class="cyber-card rounded-lg p-6 bills-section lg:col-span-2">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-semibold text-white">
+                        <i class="fas fa-file-invoice-dollar mr-2 text-neon-green"></i> Monthly Bills
+                    </h2>
+                    <div class="flex space-x-2">
+                        <a href="#" onclick="resetAllPayments()" class="text-white px-4 py-2 bg-glass-blue hover:bg-opacity-90 rounded-md transition">
+                            <i class="fas fa-redo-alt mr-1"></i> Reset Payments
+                        </a>
+                        <a href="#" onclick="showAddBillModal()" class="text-white px-4 py-2 bg-glass-purple hover:bg-opacity-90 rounded-md transition">
+                            <i class="fas fa-plus mr-1"></i> Add Bill
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="bills-wrapper" style="min-height: 400px; max-height: 650px; overflow-y: auto;">
+                    <div id="billsContainer" class="bills-container grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <!-- Bills will be added here -->
+                        <p class="text-gray-400 text-center py-4 md:col-span-2">No bills added yet</p>
+                    </div>
+                </div>
+                
+                <div class="mt-6">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-lg font-medium text-white">Monthly Bills</h3>
+                        <span class="text-sm text-neon-blue"><span id="totalBills">0</span> Monthly Bills</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-glass-blue p-4 rounded-lg flex flex-col">
+                            <p class="text-sm text-gray-300">Paycheck 1 (15th)</p>
+                            <div class="flex-grow" style="min-height: 80px;">
+                                <p id="paycheck1Bills" class="text-lg font-medium text-white">No bills scheduled</p>
+                            </div>
+                            <div class="flex justify-between items-center mt-auto">
+                                <span class="text-white">Total:</span>
+                                <span id="paycheck1Total" class="text-xl font-bold text-neon-green">$0</span>
+                            </div>
+                            <div class="flex justify-between items-center mt-2 border-t border-gray-700 pt-2">
+                                <span class="text-white">Remaining:</span>
+                                <span id="paycheck1Remaining" class="text-xl font-bold text-neon-blue">$0</span>
+                            </div>
+                        </div>
+                        <div class="bg-glass-purple p-4 rounded-lg flex flex-col">
+                            <p class="text-sm text-gray-300">Paycheck 2 (End of Month)</p>
+                            <div class="flex-grow" style="min-height: 80px;">
+                                <p id="paycheck2Bills" class="text-lg font-medium text-white">No bills scheduled</p>
+                            </div>
+                            <div class="flex justify-between items-center mt-auto">
+                                <span class="text-white">Total:</span>
+                                <span id="paycheck2Total" class="text-xl font-bold text-neon-pink">$0</span>
+                            </div>
+                            <div class="flex justify-between items-center mt-2 border-t border-gray-700 pt-2">
+                                <span class="text-white">Remaining:</span>
+                                <span id="paycheck2Remaining" class="text-xl font-bold text-neon-blue">$0</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-glass-blue p-4 rounded-lg mt-4">
+                        <div class="flex justify-between items-center">
+                            <span class="text-white font-semibold">Total Remaining Bills:</span>
+                            <span id="totalRemaining" class="text-xl font-bold text-neon-green">$0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Credit Card Section - Now after bills section -->
             <div class="cyber-card rounded-lg p-6 credit-info-section">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-xl font-semibold text-white">
@@ -242,74 +310,6 @@
                         </div>
                         <div class="cyber-progress-bar">
                             <div id="loanPayoffProgress" class="cyber-progress-fill cyber-pink" style="width: 0%"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Bills Section - Now spans full width -->
-            <div class="cyber-card rounded-lg p-6 bills-section lg:col-span-2">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-xl font-semibold text-white">
-                        <i class="fas fa-file-invoice-dollar mr-2 text-neon-green"></i> Monthly Bills
-                    </h2>
-                    <div class="flex space-x-2">
-                        <a href="#" onclick="resetAllPayments()" class="text-white px-4 py-2 bg-glass-blue hover:bg-opacity-90 rounded-md transition">
-                            <i class="fas fa-redo-alt mr-1"></i> Reset Payments
-                        </a>
-                        <a href="#" onclick="showAddBillModal()" class="text-white px-4 py-2 bg-glass-purple hover:bg-opacity-90 rounded-md transition">
-                            <i class="fas fa-plus mr-1"></i> Add Bill
-                        </a>
-                    </div>
-                </div>
-                
-                <div class="bills-wrapper" style="min-height: 400px; max-height: 650px; overflow-y: auto;">
-                    <div id="billsContainer" class="bills-container grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <!-- Bills will be added here -->
-                        <p class="text-gray-400 text-center py-4 md:col-span-2">No bills added yet</p>
-                    </div>
-                </div>
-                
-                <div class="mt-6">
-                    <div class="flex justify-between items-center mb-3">
-                        <h3 class="text-lg font-medium text-white">Monthly Bills</h3>
-                        <span class="text-sm text-neon-blue"><span id="totalBills">0</span> Monthly Bills</span>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="bg-glass-blue p-4 rounded-lg flex flex-col">
-                            <p class="text-sm text-gray-300">Paycheck 1 (15th)</p>
-                            <div class="flex-grow" style="min-height: 80px;">
-                                <p id="paycheck1Bills" class="text-lg font-medium text-white">No bills scheduled</p>
-                            </div>
-                            <div class="flex justify-between items-center mt-auto">
-                                <span class="text-white">Total:</span>
-                                <span id="paycheck1Total" class="text-xl font-bold text-neon-green">$0</span>
-                            </div>
-                            <div class="flex justify-between items-center mt-2 border-t border-gray-700 pt-2">
-                                <span class="text-white">Remaining:</span>
-                                <span id="paycheck1Remaining" class="text-xl font-bold text-neon-blue">$0</span>
-                            </div>
-                        </div>
-                        <div class="bg-glass-purple p-4 rounded-lg flex flex-col">
-                            <p class="text-sm text-gray-300">Paycheck 2 (End of Month)</p>
-                            <div class="flex-grow" style="min-height: 80px;">
-                                <p id="paycheck2Bills" class="text-lg font-medium text-white">No bills scheduled</p>
-                            </div>
-                            <div class="flex justify-between items-center mt-auto">
-                                <span class="text-white">Total:</span>
-                                <span id="paycheck2Total" class="text-xl font-bold text-neon-pink">$0</span>
-                            </div>
-                            <div class="flex justify-between items-center mt-2 border-t border-gray-700 pt-2">
-                                <span class="text-white">Remaining:</span>
-                                <span id="paycheck2Remaining" class="text-xl font-bold text-neon-blue">$0</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-glass-blue p-4 rounded-lg mt-4">
-                        <div class="flex justify-between items-center">
-                            <span class="text-white font-semibold">Total Remaining Bills:</span>
-                            <span id="totalRemaining" class="text-xl font-bold text-neon-green">$0</span>
                         </div>
                     </div>
                 </div>
