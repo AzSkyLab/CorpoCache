@@ -1784,7 +1784,7 @@ function calculateGrossProfit() {
     grossProfitContainer.innerHTML = '';
     
     // Get pay frequency and calculate monthly income
-    const payFrequency = parseInt(document.getElementById('modalPayFrequency')?.value) || 26;
+    const payFrequency = parseInt(document.getElementById('payFrequency')?.value) || 26;
     const payPerMonth = (netPayPerPaycheck * payFrequency) / 12;
     
     // Get annual salary and bonus
@@ -1802,7 +1802,7 @@ function calculateGrossProfit() {
     
     // Calculate bills amounts
     const paycheck1BillsAmount = paycheck1Bills.reduce((sum, bill) => sum + bill.amount, 0);
-    const paycheck2BillsAmount = paycheck2.reduce((sum, bill) => sum + bill.amount, 0);
+    const paycheck2BillsAmount = paycheck2Bills.reduce((sum, bill) => sum + bill.amount, 0);
     const totalMonthlyBills = paycheck1BillsAmount + paycheck2BillsAmount;
     const annualBills = totalMonthlyBills * 12;
     
