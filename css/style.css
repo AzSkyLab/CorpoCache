@@ -162,9 +162,9 @@ input[type="number"] {
     display: inline-block;
     font-weight: 700;
     font-size: 1.2em;
-    color: var(--neon-green);
+    color: var(--neon-blue);
     animation: blink 1s step-end infinite;
-    text-shadow: 0 0 10px var(--neon-green);
+    text-shadow: 0 0 10px var(--neon-blue);
 }
 
 @keyframes blink {
