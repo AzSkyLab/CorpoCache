@@ -66,6 +66,107 @@ input[type="number"] {
     -moz-appearance: textfield;
 }
 
+/* New Cyberpunk Header Styles */
+.cyber-grid {
+    background-image: linear-gradient(90deg, rgba(11, 11, 43, 0.5) 1px, transparent 1px), 
+                      linear-gradient(0deg, rgba(11, 11, 43, 0.5) 1px, transparent 1px);
+    background-size: 20px 20px;
+    opacity: 0.5;
+}
+
+.cyber-scanline {
+    background: linear-gradient(transparent 0%, rgba(0, 255, 255, 0.05) 10%, rgba(0, 255, 255, 0.05) 100%);
+    animation: scanline 3s linear infinite;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+@keyframes scanline {
+    0% {
+        background-position: 0 -100%;
+    }
+    100% {
+        background-position: 0 200%;
+    }
+}
+
+.font-orbitron {
+    font-family: 'Orbitron', sans-serif;
+}
+
+.drop-shadow-glow {
+    filter: drop-shadow(0 0 5px currentColor) drop-shadow(0 0 10px currentColor);
+}
+
+.cyber-glitch-title {
+    position: relative;
+}
+
+.cyber-glitch-title::before,
+.cyber-glitch-title::after {
+    content: attr(data-content);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.8;
+}
+
+.cyber-glitch-title::before {
+    animation: glitch 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) both infinite;
+    animation-delay: 0.5s;
+    color: var(--neon-pink);
+    z-index: -1;
+}
+
+.cyber-glitch-title::after {
+    animation: glitch 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) reverse both infinite;
+    animation-delay: 0.75s;
+    color: var(--neon-blue);
+    z-index: -2;
+}
+
+@keyframes glitch {
+    0% {
+        transform: translate(0);
+    }
+    20% {
+        transform: translate(-2px, 2px);
+    }
+    40% {
+        transform: translate(-2px, -2px);
+    }
+    60% {
+        transform: translate(2px, 2px);
+    }
+    80% {
+        transform: translate(2px, -2px);
+    }
+    to {
+        transform: translate(0);
+    }
+}
+
+.blinking-cursor {
+    display: inline-block;
+    font-weight: 700;
+    font-size: 1.2em;
+    color: var(--neon-green);
+    animation: blink 1s step-end infinite;
+    text-shadow: 0 0 10px var(--neon-green);
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+/* Existing styles continue below */
 .cyber-header {
     background: linear-gradient(90deg, var(--dark-purple), var(--dark-blue));
     border-bottom: 2px solid var(--neon-blue);
