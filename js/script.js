@@ -1736,7 +1736,9 @@ function calculateGrossProfit() {
     // Set color based on surplus or deficit
     const monthlySurplusColor = monthlySurplus >= 0 ? "text-neon-green" : "text-neon-pink";
     gpMonthlySurplus.className = `font-bold ${monthlySurplusColor}`;
-    gpMonthlySurplus.textContent = `$${Math.abs(monthlySurplus).toFixed(2)} ${monthlySurplus >= 0 ? 'surplus' : 'deficit'}`;
+    // Display the surplus as positive or deficit as negative
+    const monthlySurplusSign = monthlySurplus >= 0 ? "" : "-";
+    gpMonthlySurplus.textContent = `${monthlySurplusSign}$${Math.abs(monthlySurplus).toFixed(2)}`;
     
     // Update paycheck info
     gpPaycheck1Net.textContent = `$${payPerPaycheck.toFixed(2)}`;
@@ -1744,14 +1746,18 @@ function calculateGrossProfit() {
     
     const paycheck1SurplusColor = paycheck1Surplus >= 0 ? "text-neon-green" : "text-neon-pink";
     gpPaycheck1Surplus.className = `font-bold ${paycheck1SurplusColor}`;
-    gpPaycheck1Surplus.textContent = `$${Math.abs(paycheck1Surplus).toFixed(2)} ${paycheck1Surplus >= 0 ? 'surplus' : 'deficit'}`;
+    // Display the surplus as positive or deficit as negative
+    const paycheck1SurplusSign = paycheck1Surplus >= 0 ? "" : "-";
+    gpPaycheck1Surplus.textContent = `${paycheck1SurplusSign}$${Math.abs(paycheck1Surplus).toFixed(2)}`;
     
     gpPaycheck2Net.textContent = `$${payPerPaycheck.toFixed(2)}`;
     gpPaycheck2Bills.textContent = `$${paycheck2BillsAmount.toFixed(2)}`;
     
     const paycheck2SurplusColor = paycheck2Surplus >= 0 ? "text-neon-green" : "text-neon-pink";
     gpPaycheck2Surplus.className = `font-bold ${paycheck2SurplusColor}`;
-    gpPaycheck2Surplus.textContent = `$${Math.abs(paycheck2Surplus).toFixed(2)} ${paycheck2Surplus >= 0 ? 'surplus' : 'deficit'}`;
+    // Display the surplus as positive or deficit as negative
+    const paycheck2SurplusSign = paycheck2Surplus >= 0 ? "" : "-";
+    gpPaycheck2Surplus.textContent = `${paycheck2SurplusSign}$${Math.abs(paycheck2Surplus).toFixed(2)}`;
     
     // Update annual projections
     gpAnnualIncome.textContent = `$${(netPayPerPaycheck * payFrequency).toFixed(2)}`;
@@ -1760,11 +1766,15 @@ function calculateGrossProfit() {
     
     const annualSurplusColor = annualSurplus >= 0 ? "text-neon-green" : "text-neon-pink";
     gpAnnualSurplus.className = `font-bold ${annualSurplusColor}`;
-    gpAnnualSurplus.textContent = `$${Math.abs(annualSurplus).toFixed(2)} ${annualSurplus >= 0 ? 'surplus' : 'deficit'}`;
+    // Display the annual surplus as positive or deficit as negative
+    const annualSurplusSign = annualSurplus >= 0 ? "" : "-";
+    gpAnnualSurplus.textContent = `${annualSurplusSign}$${Math.abs(annualSurplus).toFixed(2)}`;
     
     const annualSurplusWithBonusColor = annualSurplusWithBonus >= 0 ? "text-neon-green" : "text-neon-pink";
     gpAnnualSurplusWithBonus.className = `font-bold ${annualSurplusWithBonusColor}`;
-    gpAnnualSurplusWithBonus.textContent = `$${Math.abs(annualSurplusWithBonus).toFixed(2)} ${annualSurplusWithBonus >= 0 ? 'surplus' : 'deficit'}`;
+    // Display the annual surplus with bonus as positive or deficit as negative
+    const annualSurplusWithBonusSign = annualSurplusWithBonus >= 0 ? "" : "-";
+    gpAnnualSurplusWithBonus.textContent = `${annualSurplusWithBonusSign}$${Math.abs(annualSurplusWithBonus).toFixed(2)}`;
     
     // Update progress bar
     const progressFillColor = monthlySurplus >= 0 ? "cyber-green" : "cyber-pink";
