@@ -717,30 +717,30 @@ function updateCreditSummary() {
 // Bill Modal Functions
 window.showAddBillModal = function() {
     document.getElementById('billModalTitle').textContent = 'Add Monthly Bill';
-    billName.value = '';
-    billAmount.value = '';
-    billDueDate.value = '';
-    billType.value = 'housing';
-    billPriority.value = 'normal';
+    document.getElementById('billName').value = '';
+    document.getElementById('billAmount').value = '';
+    document.getElementById('billDueDate').value = '';
+    document.getElementById('billType').value = 'housing';
+    document.getElementById('billPriority').value = 'normal';
     document.getElementById('editBillIndex').value = '-1';
     
     // Hide any previous validation errors
     document.getElementById('billValidationErrors').classList.add('hidden');
     document.getElementById('billErrorList').innerHTML = '';
     
-    billModal.classList.remove('hidden');
+    document.getElementById('billModal').classList.remove('hidden');
 }
 
 window.editBill = function(index) {
     document.getElementById('billModalTitle').textContent = 'Edit Monthly Bill';
     const bill = bills[index];
     
-    billName.value = bill.name;
-    billAmount.value = bill.amount;
-    billDueDate.value = bill.dueDate;
+    document.getElementById('billName').value = bill.name;
+    document.getElementById('billAmount').value = bill.amount;
+    document.getElementById('billDueDate').value = bill.dueDate;
     // Set bill type if it exists, otherwise default to 'other'
-    billType.value = bill.type || 'other';
-    billPriority.value = bill.priority;
+    document.getElementById('billType').value = bill.type || 'other';
+    document.getElementById('billPriority').value = bill.priority;
     
     document.getElementById('editBillIndex').value = index;
     
@@ -748,11 +748,11 @@ window.editBill = function(index) {
     document.getElementById('billValidationErrors').classList.add('hidden');
     document.getElementById('billErrorList').innerHTML = '';
     
-    billModal.classList.remove('hidden');
+    document.getElementById('billModal').classList.remove('hidden');
 }
 
 window.closeBillModal = function() {
-    billModal.classList.add('hidden');
+    document.getElementById('billModal').classList.add('hidden');
 }
 
 // Validate bill form data
@@ -1110,9 +1110,22 @@ function updateExpenseSummary() {
     const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
     const total = totalBills + totalExpenses;
     
-    totalBillsAmount.textContent = `$${totalBills.toFixed(2)}`;
-    totalExpensesAmount.textContent = `$${totalExpenses.toFixed(2)}`;
-    totalOutgoings.textContent = `$${total.toFixed(2)}`;
+    // Get DOM elements with null checks
+    const totalBillsAmountElement = document.getElementById('totalBillsAmount');
+    const totalExpensesAmountElement = document.getElementById('totalExpensesAmount');
+    const totalOutgoingsElement = document.getElementById('totalOutgoings');
+    
+    if (totalBillsAmountElement) {
+        totalBillsAmountElement.textContent = `$${totalBills.toFixed(2)}`;
+    }
+    
+    if (totalExpensesAmountElement) {
+        totalExpensesAmountElement.textContent = `$${totalExpenses.toFixed(2)}`;
+    }
+    
+    if (totalOutgoingsElement) {
+        totalOutgoingsElement.textContent = `$${total.toFixed(2)}`;
+    }
 }
 
 // Salary Calculator Functions
