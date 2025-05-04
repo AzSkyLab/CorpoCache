@@ -466,7 +466,7 @@ function renderCreditCards() {
                     </div>
                     <div>
                         <p class="text-sm text-gray-400">Payment Due Date</p>
-                        <p class="font-medium">${card.dueDate ? `${card.dueDate}th of each month` : 'Not specified'}</p>
+                        <p class="font-medium">${card.dueDate ? `${card.dueDate}${getOrdinalSuffix(card.dueDate)} of each month` : 'Not specified'}</p>
                     </div>
                 </div>
             </div>
@@ -1280,5 +1280,18 @@ function toggleBillPaidStatus(index) {
         
         // Update the payment schedule since paid status may affect calculations
         updatePaymentSchedule();
+    }
+}
+
+function getOrdinalSuffix(n) {
+    if (n >= 11 && n <= 13) {
+        return 'th';
+    }
+    
+    switch (n % 10) {
+        case 1: return 'st';
+        case 2: return 'nd';
+        case 3: return 'rd';
+        default: return 'th';
     }
 }
