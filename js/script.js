@@ -1691,6 +1691,9 @@ function calculateGrossProfit() {
         return;
     }
     
+    // Clear the initial message
+    grossProfitContainer.innerHTML = '';
+    
     // Get pay frequency and calculate monthly income
     const payFrequency = parseInt(document.getElementById('modalPayFrequency')?.value) || 26;
     const payPerMonth = (netPayPerPaycheck * payFrequency) / 12;
