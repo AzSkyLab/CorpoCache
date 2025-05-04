@@ -4,6 +4,7 @@
     --neon-blue: #00ffff;
     --neon-purple: #b967ff;
     --neon-green: #39ff14;
+    --neon-silver: #e0e0ff;
     --dark-purple: #1a0933;
     --dark-blue: #0b0b2b;
     --cyber-black: #0d0221;
@@ -51,6 +52,11 @@ body {
 .text-neon-yellow {
     color: var(--cyber-yellow);
     text-shadow: 0 0 5px var(--cyber-yellow);
+}
+
+.text-neon-silver {
+    color: var(--neon-silver);
+    text-shadow: 0 0 5px var(--neon-silver);
 }
 
 /* Hide spinners (up/down buttons) from number inputs */
