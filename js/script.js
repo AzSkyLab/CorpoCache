@@ -74,6 +74,7 @@ function calculateEffectiveTaxRate(annualIncome, filingStatus) {
 let creditCards = [];
 let bills = [];
 let expenses = [];
+let loans = []; // Add loans array for loan tracking
 
 // DOM Elements
 document.addEventListener('DOMContentLoaded', () => {
@@ -90,6 +91,8 @@ document.addEventListener('DOMContentLoaded', () => {
     updatePaymentSchedule();
     renderExpenses();
     updateExpenseSummary();
+    renderLoans(); // Add loan rendering
+    updateLoanSummary(); // Add loan summary update
     
     // Add cyber effects
     initCyberEffects();
@@ -1959,3 +1962,387 @@ document.addEventListener('DOMContentLoaded', function() {
         initCollapsibleSections();
     }, 500);
 });
+
+// Loan Functions
+window.addLoan = function() {
+    document.getElementById('loanModalTitle').textContent = 'Add Loan';
+    document.getElementById('loanName').value = '';
+    document.getElementById('loanAmount').value = '';
+    document.getElementById('loanBalance').value = '';
+    document.getElementById('interestRate').value = '';
+    document.getElementById('loanDueDate').value = '';
+    document.getElementById('loanType').value = 'personal';
+    document.getElementById('loanTerm').value = '';
+    document.getElementById('editLoanIndex').value = '-1';
+    
+    // Hide any previous validation errors
+    document.getElementById('loanValidationErrors').classList.add('hidden');
+    document.getElementById('loanErrorList').innerHTML = '';
+    
+    document.getElementById('loanModal').classList.remove('hidden');
+}
+
+window.editLoan = function(index) {
+    document.getElementById('loanModalTitle').textContent = 'Edit Loan';
+    const loan = loans[index];
+    
+    document.getElementById('loanName').value = loan.name;
+    document.getElementById('loanAmount').value = loan.originalAmount;
+    document.getElementById('loanBalance').value = loan.balance;
+    document.getElementById('interestRate').value = loan.interestRate;
+    document.getElementById('loanDueDate').value = loan.dueDate;
+    document.getElementById('loanType').value = loan.type || 'personal';
+    document.getElementById('loanTerm').value = loan.term || '';
+    
+    document.getElementById('editLoanIndex').value = index;
+    
+    // Hide any previous validation errors
+    document.getElementById('loanValidationErrors').classList.add('hidden');
+    document.getElementById('loanErrorList').innerHTML = '';
+    
+    document.getElementById('loanModal').classList.remove('hidden');
+}
+
+window.closeLoanModal = function() {
+    document.getElementById('loanModal').classList.add('hidden');
+}
+
+// Validate loan form data
+function validateLoanForm() {
+    const errors = [];
+    
+    if (!loanName.value || loanName.value.trim() === '') {
+        errors.push('Loan Name is required');
+    }
+    
+    const amountValue = parseFloat(loanAmount.value);
+    if (isNaN(amountValue) || amountValue <= 0) {
+        errors.push('Original Loan Amount must be a positive number');
+    }
+    
+    const balanceValue = parseFloat(loanBalance.value);
+    if (isNaN(balanceValue) || balanceValue < 0) {
+        errors.push('Current Balance must be a non-negative number');
+    }
+    
+    const rateValue = parseFloat(interestRate.value);
+    if (isNaN(rateValue) || rateValue < 0) {
+        errors.push('Interest Rate must be a non-negative number');
+    }
+    
+    const dueDateValue = parseInt(loanDueDate.value);
+    if (isNaN(dueDateValue) || dueDateValue < 1 || dueDateValue > 31) {
+        errors.push('Payment Due Date must be a day between 1 and 31');
+    }
+    
+    // Validate term if provided
+    if (loanTerm.value) {
+        const termValue = parseInt(loanTerm.value);
+        if (isNaN(termValue) || termValue <= 0) {
+            errors.push('Loan Term must be a positive number');
+        }
+    }
+    
+    return errors;
+}
+
+// Display loan validation errors
+function showLoanValidationErrors(errors) {
+    const errorContainer = document.getElementById('loanValidationErrors');
+    const errorList = document.getElementById('loanErrorList');
+    
+    errorList.innerHTML = '';
+    errors.forEach(error => {
+        const li = document.createElement('li');
+        li.textContent = error;
+        errorList.appendChild(li);
+    });
+    
+    errorContainer.classList.remove('hidden');
+}
+
+window.saveLoan = function() {
+    // Validate form data
+    const errors = validateLoanForm();
+    if (errors.length > 0) {
+        showLoanValidationErrors(errors);
+        return;
+    }
+    
+    const loan = {
+        name: loanName.value.trim(),
+        originalAmount: parseFloat(loanAmount.value),
+        balance: parseFloat(loanBalance.value),
+        interestRate: parseFloat(interestRate.value),
+        dueDate: parseInt(loanDueDate.value),
+        type: loanType.value,
+        term: loanTerm.value ? parseInt(loanTerm.value) : null,
+        startDate: new Date().toISOString().split('T')[0]
+    };
+    
+    const editIndex = parseInt(document.getElementById('editLoanIndex').value);
+    
+    if (editIndex >= 0 && editIndex < loans.length) {
+        // Edit existing loan, preserve the startDate if it exists
+        if (loans[editIndex].startDate) {
+            loan.startDate = loans[editIndex].startDate;
+        }
+        loans[editIndex] = loan;
+        
+        // Update any existing bill for this loan
+        const billIndex = bills.findIndex(bill => 
+            bill.name === `${loans[editIndex].name} Payment` && bill.type === 'loan');
+            
+        if (billIndex !== -1) {
+            bills[billIndex].dueDate = loan.dueDate;
+        }
+    } else {
+        // Add new loan
+        loans.push(loan);
+        
+        // Create a corresponding bill entry
+        const monthlyPayment = calculateLoanPayment(loan.originalAmount, loan.interestRate, loan.term);
+        const newBill = {
+            name: `${loan.name} Payment`,
+            amount: monthlyPayment,
+            dueDate: loan.dueDate,
+            type: 'loan',
+            priority: 'high'
+        };
+        
+        // Add the bill
+        bills.push(newBill);
+        
+        // Update the bills display
+        renderBills();
+        updatePaymentSchedule();
+    }
+    
+    renderLoans();
+    updateLoanSummary();
+    closeLoanModal();
+    
+    // Dispatch event to trigger scroll detection check
+    document.dispatchEvent(new Event('loansChanged'));
+}
+
+window.deleteLoan = function(index) {
+    const deletedLoan = loans[index];
+    
+    // First delete the loan
+    loans.splice(index, 1);
+    
+    // Then find and delete any bill entries that correspond to this loan
+    if (deletedLoan && deletedLoan.name) {
+        const billName = `${deletedLoan.name} Payment`;
+        
+        // Find the index of the corresponding bill
+        const billIndex = bills.findIndex(bill => bill.name === billName && bill.type === 'loan');
+        
+        // If a matching bill is found, delete it
+        if (billIndex !== -1) {
+            bills.splice(billIndex, 1);
+            
+            // Update the bills display and payment schedule
+            renderBills();
+            updatePaymentSchedule();
+        }
+    }
+    
+    renderLoans();
+    updateLoanSummary();
+}
+
+function renderLoans() {
+    const loansContainer = document.getElementById('loansContainer');
+    
+    if (!loansContainer) {
+        console.error('Loans container not found');
+        return;
+    }
+    
+    if (loans.length === 0) {
+        loansContainer.innerHTML = '<p class="text-gray-400 text-center py-4">No loans added yet</p>';
+        return;
+    }
+    
+    let html = '';
+    loans.forEach((loan, index) => {
+        // Calculate monthly payment
+        const monthlyPayment = calculateLoanPayment(loan.originalAmount, loan.interestRate, loan.term);
+        
+        // Calculate percent paid off 
+        const percentPaid = (1 - (loan.balance / loan.originalAmount)) * 100;
+        
+        // Apply color coding based on percent paid off
+        let progressColorClass = 'cyber-pink'; // Default for 0-25%
+        if (percentPaid > 75) {
+            progressColorClass = 'cyber-green'; // 75-100%
+        } else if (percentPaid > 50) {
+            progressColorClass = 'cyber-blue'; // 50-75%
+        } else if (percentPaid > 25) {
+            progressColorClass = 'cyber-yellow'; // 25-50%
+        }
+        
+        // Get loan type icon
+        const typeIcon = getLoanTypeIcon(loan.type || 'personal');
+        
+        html += `
+            <div class="border cyber-border rounded-lg p-4 mb-4 cyber-card">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <div class="flex items-center">
+                            <i class="fas ${typeIcon} mr-2 text-neon-green"></i>
+                            <h3 class="font-medium text-lg cyber-neon">${loan.name}</h3>
+                        </div>
+                        <p class="text-sm text-gray-400">Payment due on ${loan.dueDate}${getOrdinalSuffix(loan.dueDate)} of each month</p>
+                    </div>
+                    <div class="flex">
+                        <button onclick="editLoan(${index})" class="text-neon-blue hover:text-neon-purple mr-3">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteLoan(${index})" class="text-neon-pink hover:text-neon-purple">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4 mt-4">
+                    <div>
+                        <p class="text-sm text-gray-400">Original Amount</p>
+                        <p class="font-medium">$${loan.originalAmount.toFixed(2)}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-400">Current Balance</p>
+                        <p class="font-medium text-neon-blue">$${loan.balance.toFixed(2)}</p>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <div class="flex justify-between mb-1">
+                        <p class="text-sm text-gray-400">Paid Off Progress</p>
+                        <span class="text-sm">${percentPaid.toFixed(1)}%</span>
+                    </div>
+                    <div class="cyber-progress-bar">
+                        <div class="cyber-progress-fill ${progressColorClass}" 
+                             style="width: ${percentPaid}%"></div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-3 gap-4 mt-4">
+                    <div>
+                        <p class="text-sm text-gray-400">Interest Rate</p>
+                        <p class="font-medium">${loan.interestRate.toFixed(2)}%</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-400">Monthly Payment</p>
+                        <p class="font-medium text-neon-pink">$${monthlyPayment.toFixed(2)}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-400">Loan Term</p>
+                        <p class="font-medium">${loan.term ? `${loan.term} months` : 'Not specified'}</p>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <div class="flex justify-between text-sm text-gray-400">
+                        <p>Total interest over life of loan:</p>
+                        <p class="text-neon-purple">$${calculateTotalInterest(loan.originalAmount, loan.interestRate, loan.term).toFixed(2)}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    loansContainer.innerHTML = html;
+}
+
+function updateLoanSummary() {
+    const totalOriginalValue = loans.reduce((sum, loan) => sum + loan.originalAmount, 0);
+    const totalBalanceValue = loans.reduce((sum, loan) => sum + loan.balance, 0);
+    const totalPayoffPercent = totalOriginalValue > 0 ? (1 - (totalBalanceValue / totalOriginalValue)) * 100 : 0;
+    const totalMonthlyPayments = loans.reduce((sum, loan) => sum + calculateLoanPayment(loan.originalAmount, loan.interestRate, loan.term), 0);
+    
+    // Update loan count
+    document.getElementById('totalLoans').textContent = loans.length;
+    
+    // Update total original amount
+    document.getElementById('totalOriginalAmount').innerHTML = `<span class="text-white">$${totalOriginalValue.toFixed(2)}</span>`;
+    
+    // Update total current balance with color
+    let balanceColorClass = 'text-neon-pink';
+    if (totalPayoffPercent > 75) {
+        balanceColorClass = 'text-neon-green';
+    } else if (totalPayoffPercent > 50) {
+        balanceColorClass = 'text-neon-blue';
+    } else if (totalPayoffPercent > 25) {
+        balanceColorClass = 'text-neon-yellow';
+    }
+    document.getElementById('totalLoanBalance').innerHTML = `<span class="${balanceColorClass}">$${totalBalanceValue.toFixed(2)}</span>`;
+    
+    // Update total monthly payment
+    document.getElementById('totalMonthlyPayment').innerHTML = `<span class="text-neon-pink">$${totalMonthlyPayments.toFixed(2)}</span>`;
+    
+    // Update payoff progress bar
+    const progressBar = document.getElementById('loanPayoffProgress');
+    progressBar.style.width = `${totalPayoffPercent}%`;
+    
+    // Set progress bar color
+    let progressColorClass = 'cyber-pink';
+    if (totalPayoffPercent > 75) {
+        progressColorClass = 'cyber-green';
+    } else if (totalPayoffPercent > 50) {
+        progressColorClass = 'cyber-blue';
+    } else if (totalPayoffPercent > 25) {
+        progressColorClass = 'cyber-yellow';
+    }
+    progressBar.className = `cyber-progress-fill ${progressColorClass}`;
+    
+    // Update payoff percent text
+    document.getElementById('loanPayoffPercent').textContent = `${totalPayoffPercent.toFixed(1)}%`;
+}
+
+function getLoanTypeIcon(type) {
+    const icons = {
+        'personal': 'fa-user',
+        'auto': 'fa-car',
+        'student': 'fa-graduation-cap',
+        'mortgage': 'fa-home',
+        'medical': 'fa-hospital',
+        'credit': 'fa-credit-card',
+        'business': 'fa-briefcase',
+        'other': 'fa-money-bill-wave'
+    };
+    return icons[type] || 'fa-money-bill-wave';
+}
+
+// Calculate monthly loan payment using the standard amortization formula
+function calculateLoanPayment(principal, interestRate, term) {
+    // If term is not defined, assume minimum payment of 1% of principal
+    if (!term || term <= 0) {
+        return principal * 0.01;
+    }
+    
+    // Convert annual interest rate to monthly
+    const monthlyRate = interestRate / 100 / 12;
+    
+    // If interest rate is zero, simple division
+    if (monthlyRate === 0) {
+        return principal / term;
+    }
+    
+    // Calculate monthly payment using amortization formula
+    return principal * monthlyRate * Math.pow(1 + monthlyRate, term) / (Math.pow(1 + monthlyRate, term) - 1);
+}
+
+// Calculate total interest paid over the loan term
+function calculateTotalInterest(principal, interestRate, term) {
+    // If term is not defined, can't calculate total interest
+    if (!term || term <= 0) {
+        return 0;
+    }
+    
+    const monthlyPayment = calculateLoanPayment(principal, interestRate, term);
+    const totalPayments = monthlyPayment * term;
+    return totalPayments - principal;
+}

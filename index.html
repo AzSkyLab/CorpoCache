@@ -197,6 +197,56 @@
                 </div>
             </div>
 
+            <!-- Loan Information Section -->
+            <div class="cyber-card rounded-lg p-6 loan-info-section">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-semibold text-white">
+                        <i class="fas fa-money-bill-wave mr-2 text-neon-purple"></i> Loan Information
+                    </h2>
+                    <a href="#" onclick="addLoan()" class="text-white px-4 py-2 bg-glass-purple hover:bg-opacity-90 rounded-md transition">
+                        <i class="fas fa-plus mr-1"></i> Add Loan
+                    </a>
+                </div>
+                
+                <div class="loans-wrapper" style="min-height: 335px; max-height: 550px; overflow-y: auto;">
+                    <div id="loansContainer" class="loans-container">
+                        <!-- Loans will be added here -->
+                        <p class="text-gray-400 text-center py-4">No loans added yet</p>
+                    </div>
+                </div>
+                
+                <div class="mt-6">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-lg font-medium text-white">Loan Summary</h3>
+                        <span class="text-sm text-neon-blue"><span id="totalLoans">0</span> Active Loans</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div class="bg-glass-purple p-4 rounded-lg">
+                            <p class="text-sm text-gray-300">Total Original Amount</p>
+                            <p id="totalOriginalAmount" class="text-2xl font-bold text-white">$0</p>
+                        </div>
+                        <div class="bg-glass-blue p-4 rounded-lg">
+                            <p class="text-sm text-gray-300">Total Current Balance</p>
+                            <p id="totalLoanBalance" class="text-2xl font-bold text-white">$0</p>
+                        </div>
+                        <div class="bg-glass-purple p-4 rounded-lg">
+                            <p class="text-sm text-gray-300">Total Monthly Payment</p>
+                            <p id="totalMonthlyPayment" class="text-2xl font-bold text-white">$0</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <div class="flex justify-between mb-1">
+                            <p class="text-sm text-gray-400">Overall Payoff Progress</p>
+                            <span id="loanPayoffPercent" class="text-sm">0%</span>
+                        </div>
+                        <div class="cyber-progress-bar">
+                            <div id="loanPayoffProgress" class="cyber-progress-fill cyber-pink" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Bills Section -->
             <div class="cyber-card rounded-lg p-6 bills-section">
                 <div class="flex justify-between items-center mb-6">
@@ -914,6 +964,77 @@
                     Calculate
                 </button>
             </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Loan Modal -->
+    <div id="loanModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="modal-cyber rounded-lg p-6 w-full max-w-md">
+            <h3 id="loanModalTitle" class="text-xl font-semibold mb-4 text-white">Add Loan</h3>
+            
+            <div id="loanValidationErrors" class="mb-4 hidden">
+                <div class="bg-glass-purple p-3 rounded-lg border border-neon-pink">
+                    <p class="text-neon-pink text-sm font-medium"><i class="fas fa-exclamation-triangle mr-2"></i>Please correct the following errors:</p>
+                    <ul id="loanErrorList" class="list-disc ml-6 text-sm text-white mt-1">
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="space-y-4">
+                <div class="input-container">
+                    <input type="text" id="loanName" class="cyber-input w-full p-3 rounded-md" placeholder=" ">
+                    <label class="floating-label">Loan Name</label>
+                </div>
+                
+                <div class="input-container">
+                    <select id="loanType" class="cyber-input w-full p-3 rounded-md">
+                        <option value="personal">Personal Loan</option>
+                        <option value="auto">Auto Loan</option>
+                        <option value="student">Student Loan</option>
+                        <option value="mortgage">Mortgage</option>
+                        <option value="medical">Medical Loan</option>
+                        <option value="credit">Credit Line</option>
+                        <option value="business">Business Loan</option>
+                        <option value="other">Other</option>
+                    </select>
+                    <label class="floating-label">Loan Type</label>
+                </div>
+                
+                <div class="input-container">
+                    <input type="number" id="loanAmount" class="cyber-input w-full p-3 rounded-md" placeholder=" " min="1" step="any">
+                    <label class="floating-label">Original Loan Amount ($)</label>
+                </div>
+                
+                <div class="input-container">
+                    <input type="number" id="loanBalance" class="cyber-input w-full p-3 rounded-md" placeholder=" " min="0" step="any">
+                    <label class="floating-label">Current Balance ($)</label>
+                </div>
+                
+                <div class="input-container">
+                    <input type="number" id="interestRate" class="cyber-input w-full p-3 rounded-md" placeholder=" " min="0" step="0.01">
+                    <label class="floating-label">Interest Rate (%)</label>
+                </div>
+                
+                <div class="input-container">
+                    <input type="number" id="loanTerm" class="cyber-input w-full p-3 rounded-md" placeholder=" " min="1">
+                    <label class="floating-label">Loan Term (months)</label>
+                </div>
+                
+                <div class="input-container">
+                    <input type="number" id="loanDueDate" class="cyber-input w-full p-3 rounded-md" placeholder=" " min="1" max="31">
+                    <label class="floating-label">Payment Due Date (Day of Month)</label>
+                </div>
+            </div>
+            
+            <div class="flex justify-end space-x-3 mt-6">
+                <button onclick="closeLoanModal()" class="px-4 py-2 border border-gray-600 text-white rounded-md hover:bg-gray-800">
+                    Cancel
+                </button>
+                <button onclick="saveLoan()" class="px-4 py-2 cyber-primary-btn rounded-md">
+                    Save Loan
+                </button>
+            </div>
+            <input type="hidden" id="editLoanIndex" value="-1">
         </div>
     </div>
 
