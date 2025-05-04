@@ -1788,7 +1788,7 @@ function calculateGrossProfit() {
     
     // Calculate bills amounts
     const paycheck1BillsAmount = paycheck1Bills.reduce((sum, bill) => sum + bill.amount, 0);
-    const paycheck2BillsAmount = paycheck2Bills.reduce((sum, bill) => sum + bill.amount, 0);
+    const paycheck2BillsAmount = paycheck2.reduce((sum, bill) => sum + bill.amount, 0);
     const totalMonthlyBills = paycheck1BillsAmount + paycheck2BillsAmount;
     const annualBills = totalMonthlyBills * 12;
     
@@ -1975,6 +1975,15 @@ window.addLoan = function() {
     document.getElementById('loanTerm').value = '';
     document.getElementById('editLoanIndex').value = '-1';
     
+    // Reset mortgage-specific fields
+    resetMortgageFields();
+    
+    // Hide mortgage fields initially
+    document.getElementById('mortgageFields').classList.add('hidden');
+    
+    // Set up the loan type change event handler
+    setupLoanTypeChangeHandler();
+    
     // Hide any previous validation errors
     document.getElementById('loanValidationErrors').classList.add('hidden');
     document.getElementById('loanErrorList').innerHTML = '';
@@ -1995,6 +2004,34 @@ window.editLoan = function(index) {
     document.getElementById('loanTerm').value = loan.term || '';
     
     document.getElementById('editLoanIndex').value = index;
+    
+    // Set up mortgage fields event handler
+    setupLoanTypeChangeHandler();
+    
+    // Set mortgage-specific fields if they exist
+    if (loan.additionalPrincipal !== undefined) {
+        document.getElementById('additionalPrincipal').value = loan.additionalPrincipal;
+    } else {
+        document.getElementById('additionalPrincipal').value = '0';
+    }
+    
+    if (loan.pmi !== undefined) {
+        document.getElementById('pmi').value = loan.pmi;
+    } else {
+        document.getElementById('pmi').value = '0';
+    }
+    
+    if (loan.propertyTax !== undefined) {
+        document.getElementById('propertyTax').value = loan.propertyTax;
+    } else {
+        document.getElementById('propertyTax').value = '0';
+    }
+    
+    if (loan.propertyInsurance !== undefined) {
+        document.getElementById('propertyInsurance').value = loan.propertyInsurance;
+    } else {
+        document.getElementById('propertyInsurance').value = '0';
+    }
     
     // Hide any previous validation errors
     document.getElementById('loanValidationErrors').classList.add('hidden');
@@ -2080,6 +2117,14 @@ window.saveLoan = function() {
         startDate: new Date().toISOString().split('T')[0]
     };
     
+    // Add mortgage-specific fields if loan type is mortgage
+    if (loan.type === 'mortgage') {
+        loan.additionalPrincipal = parseFloat(document.getElementById('additionalPrincipal').value) || 0;
+        loan.pmi = parseFloat(document.getElementById('pmi').value) || 0;
+        loan.propertyTax = parseFloat(document.getElementById('propertyTax').value) || 0;
+        loan.propertyInsurance = parseFloat(document.getElementById('propertyInsurance').value) || 0;
+    }
+    
     const editIndex = parseInt(document.getElementById('editLoanIndex').value);
     
     if (editIndex >= 0 && editIndex < loans.length) {
@@ -2102,9 +2147,27 @@ window.saveLoan = function() {
         
         // Create a corresponding bill entry
         const monthlyPayment = calculateLoanPayment(loan.originalAmount, loan.interestRate, loan.term);
+        
+        // For mortgages, include additional costs in the monthly payment
+        let totalMonthlyPayment = monthlyPayment;
+        if (loan.type === 'mortgage') {
+            // Add PMI if provided
+            totalMonthlyPayment += loan.pmi || 0;
+            
+            // Add monthly property tax
+            if (loan.propertyTax) {
+                totalMonthlyPayment += loan.propertyTax / 12;
+            }
+            
+            // Add monthly property insurance
+            if (loan.propertyInsurance) {
+                totalMonthlyPayment += loan.propertyInsurance / 12;
+            }
+        }
+        
         const newBill = {
             name: `${loan.name} Payment`,
-            amount: monthlyPayment,
+            amount: totalMonthlyPayment,
             dueDate: loan.dueDate,
             type: 'loan',
             priority: 'high'
@@ -2187,6 +2250,66 @@ function renderLoans() {
         // Get loan type icon
         const typeIcon = getLoanTypeIcon(loan.type || 'personal');
         
+        // For mortgage loans, calculate total monthly cost including additional costs
+        let totalMonthlyPayment = monthlyPayment;
+        let mortgageDetails = '';
+        
+        if (loan.type === 'mortgage') {
+            // Add additional principal if provided
+            const additionalPrincipal = loan.additionalPrincipal || 0;
+            
+            // Add PMI if provided
+            const pmi = loan.pmi || 0;
+            totalMonthlyPayment += pmi;
+            
+            // Add monthly property tax
+            const monthlyPropertyTax = loan.propertyTax ? loan.propertyTax / 12 : 0;
+            totalMonthlyPayment += monthlyPropertyTax;
+            
+            // Add monthly property insurance
+            const monthlyPropertyInsurance = loan.propertyInsurance ? loan.propertyInsurance / 12 : 0;
+            totalMonthlyPayment += monthlyPropertyInsurance;
+            
+            // Create mortgage-specific details section
+            mortgageDetails = `
+                <div class="mt-4 border-t border-gray-700 pt-4">
+                    <h4 class="text-sm font-medium text-white mb-2">Mortgage Details</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div>
+                            <p class="text-xs text-gray-400">Base Payment</p>
+                            <p class="font-medium text-neon-blue">$${monthlyPayment.toFixed(2)}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-400">Additional Principal</p>
+                            <p class="font-medium text-neon-green">$${additionalPrincipal.toFixed(2)}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-400">PMI</p>
+                            <p class="font-medium text-neon-pink">$${pmi.toFixed(2)}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-400">Property Tax (monthly)</p>
+                            <p class="font-medium text-neon-yellow">$${monthlyPropertyTax.toFixed(2)}</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mt-3">
+                        <div>
+                            <p class="text-xs text-gray-400">Property Insurance (monthly)</p>
+                            <p class="font-medium text-neon-purple">$${monthlyPropertyInsurance.toFixed(2)}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-400">Total Monthly Cost</p>
+                            <p class="font-medium text-neon-blue text-lg">$${totalMonthlyPayment.toFixed(2)}</p>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <p class="text-xs text-gray-400">Annual Property Tax: <span class="text-white">$${(loan.propertyTax || 0).toFixed(2)}</span></p>
+                        <p class="text-xs text-gray-400">Annual Property Insurance: <span class="text-white">$${(loan.propertyInsurance || 0).toFixed(2)}</span></p>
+                    </div>
+                </div>
+            `;
+        }
+        
         html += `
             <div class="border cyber-border rounded-lg p-4 mb-4 cyber-card">
                 <div class="flex justify-between items-start">
@@ -2235,7 +2358,7 @@ function renderLoans() {
                         <p class="font-medium">${loan.interestRate.toFixed(2)}%</p>
                     </div>
                     <div>
-                        <p class="text-sm text-gray-400">Monthly Payment</p>
+                        <p class="text-sm text-gray-400">${loan.type === 'mortgage' ? 'Principal & Interest' : 'Monthly Payment'}</p>
                         <p class="font-medium text-neon-pink">$${monthlyPayment.toFixed(2)}</p>
                     </div>
                     <div>
@@ -2243,6 +2366,8 @@ function renderLoans() {
                         <p class="font-medium">${loan.term ? `${loan.term} months` : 'Not specified'}</p>
                     </div>
                 </div>
+                
+                ${mortgageDetails}
                 
                 <div class="mt-4">
                     <div class="flex justify-between text-sm text-gray-400">
@@ -2345,4 +2470,26 @@ function calculateTotalInterest(principal, interestRate, term) {
     const monthlyPayment = calculateLoanPayment(principal, interestRate, term);
     const totalPayments = monthlyPayment * term;
     return totalPayments - principal;
+}
+
+// Functions to handle mortgage-specific fields
+function setupLoanTypeChangeHandler() {
+    const loanTypeSelect = document.getElementById('loanType');
+    loanTypeSelect.addEventListener('change', function() {
+        if (this.value === 'mortgage') {
+            document.getElementById('mortgageFields').classList.remove('hidden');
+        } else {
+            document.getElementById('mortgageFields').classList.add('hidden');
+        }
+    });
+    
+    // Trigger the change event to set the initial state
+    loanTypeSelect.dispatchEvent(new Event('change'));
+}
+
+function resetMortgageFields() {
+    document.getElementById('additionalPrincipal').value = '0';
+    document.getElementById('pmi').value = '0';
+    document.getElementById('propertyTax').value = '0';
+    document.getElementById('propertyInsurance').value = '0';
 }

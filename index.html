@@ -1024,6 +1024,31 @@
                     <input type="number" id="loanDueDate" class="cyber-input w-full p-3 rounded-md" placeholder=" " min="1" max="31">
                     <label class="floating-label">Payment Due Date (Day of Month)</label>
                 </div>
+                
+                <!-- Mortgage-specific fields, hidden by default -->
+                <div id="mortgageFields" class="hidden space-y-4 pt-4 mt-4 border-t border-gray-700">
+                    <h4 class="text-white text-md mb-3">Mortgage Details</h4>
+                    
+                    <div class="input-container">
+                        <input type="number" id="additionalPrincipal" class="cyber-input w-full p-3 rounded-md" placeholder=" " min="0" step="any" value="0">
+                        <label class="floating-label">Additional Principal Payment ($/month)</label>
+                    </div>
+                    
+                    <div class="input-container">
+                        <input type="number" id="pmi" class="cyber-input w-full p-3 rounded-md" placeholder=" " min="0" step="any" value="0">
+                        <label class="floating-label">Private Mortgage Insurance ($/month)</label>
+                    </div>
+                    
+                    <div class="input-container">
+                        <input type="number" id="propertyTax" class="cyber-input w-full p-3 rounded-md" placeholder=" " min="0" step="any" value="0">
+                        <label class="floating-label">Property Tax ($/year)</label>
+                    </div>
+                    
+                    <div class="input-container">
+                        <input type="number" id="propertyInsurance" class="cyber-input w-full p-3 rounded-md" placeholder=" " min="0" step="any" value="0">
+                        <label class="floating-label">Property Insurance ($/year)</label>
+                    </div>
+                </div>
             </div>
             
             <div class="flex justify-end space-x-3 mt-6">
