@@ -1538,6 +1538,9 @@ window.showSalaryModal = function() {
         const payFrequencyValue = document.getElementById('payFrequency').value || '26';
         document.getElementById('modalPayFrequency').value = payFrequencyValue === '24' ? '24' : '26';
         
+        // Check if we need to show the last pay date field
+        toggleLastPayDateField();
+        
         // Get bonus percentage from the display (divide by annual salary)
         const bonusAmount = parseFloat(document.getElementById('bonusAmount').textContent.replace('$', ''));
         const bonusPct = (bonusAmount / annualSalary) * 100;
@@ -1565,6 +1568,12 @@ window.showSalaryModal = function() {
         document.getElementById('modalDentalInsurance').value = parseFloat(document.getElementById('dentalAmount').textContent.replace('$', ''));
         document.getElementById('modalVisionInsurance').value = parseFloat(document.getElementById('visionAmount').textContent.replace('$', ''));
         
+        // Load the last pay date if we have it stored
+        const lastPayDate = localStorage.getItem('lastPayDate');
+        if (lastPayDate && document.getElementById('modalPayFrequency').value === '26') {
+            document.getElementById('lastPayDate').value = lastPayDate;
+        }
+        
         // Update button text
         calculateButton.textContent = 'Update Salary';
     } else {
@@ -1580,15 +1589,32 @@ window.showSalaryModal = function() {
         document.getElementById('modalDentalInsurance').value = 0;
         document.getElementById('modalVisionInsurance').value = 0;
         
+        // Set a default last pay date to today
+        document.getElementById('lastPayDate').value = new Date().toISOString().split('T')[0];
+        
+        // Show/hide last pay date field based on pay frequency
+        toggleLastPayDateField();
+        
         // Set button text for initial calculation
         calculateButton.textContent = 'Calculate';
     }
     
+    // Set up event handler for pay frequency selection
+    document.getElementById('modalPayFrequency').addEventListener('change', toggleLastPayDateField);
+    
     document.getElementById('salaryModal').classList.remove('hidden');
 }
 
-window.closeSalaryModal = function() {
-    document.getElementById('salaryModal').classList.add('hidden');
+// Function to toggle the visibility of the last pay date field based on pay frequency
+function toggleLastPayDateField() {
+    const payFrequency = document.getElementById('modalPayFrequency').value;
+    const lastPayDateContainer = document.getElementById('lastPayDateContainer');
+    
+    if (payFrequency === '26') {
+        lastPayDateContainer.classList.remove('hidden');
+    } else {
+        lastPayDateContainer.classList.add('hidden');
+    }
 }
 
 // Function to calculate salary from modal inputs
@@ -1660,6 +1686,14 @@ window.calculateSalaryFromModal = function() {
     // Calculate after-tax bonus amount with flat tax rate
     const afterTaxBonusAmount = bonusAmount * (1 - (bonusTaxRate / 100));
     
+    // If bi-weekly pay is selected, save the last pay date
+    if (periods === 26) {
+        const lastPayDate = document.getElementById('lastPayDate').value;
+        if (lastPayDate) {
+            localStorage.setItem('lastPayDate', lastPayDate);
+        }
+    }
+    
     // Store the annual salary for use in future updates
     document.getElementById('annualSalary').textContent = `$${gross.toFixed(2)}`;
     
@@ -1693,9 +1727,6 @@ window.calculateSalaryFromModal = function() {
     document.getElementById('netPay').textContent = `$${netPay.toFixed(2)}`;
     document.getElementById('bonusAmount').textContent = `$${bonusAmount.toFixed(2)}`;
     document.getElementById('afterTaxBonusAmount').textContent = `$${afterTaxBonusAmount.toFixed(2)}`;
-    
-    // Update bonus tax rate display
-    document.getElementById('bonusTaxRate').textContent = `(${bonusTaxRate}% tax)`;
     
     // Update the Calculate Salary button to show "Update Salary" now that we have calculated results
     const calculateButton = document.querySelector('button[onclick="showSalaryModal()"]');
@@ -1847,7 +1878,99 @@ function calculateGrossProfit() {
     const monthlySurplusSign = monthlySurplus >= 0 ? "" : "-";
     gpMonthlySurplus.textContent = `${monthlySurplusSign}$${Math.abs(monthlySurplus).toFixed(2)}`;
     
-    // Update paycheck info
+    // Update paycheck info and labels based on pay frequency
+    if (payFrequency === 26) {
+        // Get the last pay date from local storage
+        const lastPayDateStr = localStorage.getItem('lastPayDate');
+        let lastPayDate;
+        
+        if (lastPayDateStr) {
+            // Create a properly formatted date string to avoid timezone issues
+            // Format: YYYY-MM-DDT00:00:00 to ensure consistent parsing across browsers
+            const [year, month, day] = lastPayDateStr.split('-').map(Number);
+            lastPayDate = new Date(year, month - 1, day); // month is 0-indexed in JavaScript Date
+            
+            // Make sure it's a valid date
+            if (isNaN(lastPayDate.getTime())) {
+                // If invalid date, default to today
+                lastPayDate = new Date();
+            }
+            
+            // For debug purposes, log original day of week
+            console.log('Original last pay date day:', lastPayDate.getDay(), '(0=Sun, 6=Sat)');
+        } else {
+            // Default to today if no stored date
+            lastPayDate = new Date();
+        }
+        
+        // Create completely new Date objects for calculations
+        const nextPayDate1 = new Date(lastPayDate.getFullYear(), lastPayDate.getMonth(), lastPayDate.getDate() + 14);
+        const nextPayDate2 = new Date(lastPayDate.getFullYear(), lastPayDate.getMonth(), lastPayDate.getDate() + 28);
+        
+        // Format dates for display - Month/Day format
+        const formatDate = (date) => {
+            return `${date.getMonth() + 1}/${date.getDate()}`;
+        };
+        
+        // Add day of week to the display format
+        const formatDateWithDay = (date) => {
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const dayName = days[date.getDay()];
+            return `${formatDate(date)} (${dayName})`;
+        };
+        
+        // For debugging - log the calculated dates and their days of week
+        console.log('Last pay date:', formatDateWithDay(lastPayDate), lastPayDate.toISOString());
+        console.log('Next pay date 1:', formatDateWithDay(nextPayDate1), nextPayDate1.toISOString(), 'Day:', nextPayDate1.getDay());
+        console.log('Next pay date 2:', formatDateWithDay(nextPayDate2), nextPayDate2.toISOString(), 'Day:', nextPayDate2.getDay());
+        console.log('Days between paychecks:', Math.round((nextPayDate2 - nextPayDate1) / (1000 * 60 * 60 * 24)));
+        
+        // Update the paycheck titles to show the dates with day of week
+        const paycheck1TitleElement = document.querySelector('.bg-glass-blue h4.text-md');
+        if (paycheck1TitleElement) {
+            paycheck1TitleElement.textContent = `Paycheck ${formatDateWithDay(nextPayDate1)}`;
+        }
+        
+        const paycheck2TitleElement = document.querySelector('.bg-glass-purple h4.text-md');
+        if (paycheck2TitleElement) {
+            paycheck2TitleElement.textContent = `Paycheck ${formatDateWithDay(nextPayDate2)}`;
+        }
+        
+        // Also update the bill sections in the Monthly Bills card
+        const billSection1Title = document.querySelector('.bg-glass-blue p.text-sm.text-gray-300');
+        if (billSection1Title) {
+            billSection1Title.textContent = `Paycheck ${formatDateWithDay(nextPayDate1)}`;
+        }
+        
+        const billSection2Title = document.querySelector('.bg-glass-purple p.text-sm.text-gray-300');
+        if (billSection2Title) {
+            billSection2Title.textContent = `Paycheck ${formatDateWithDay(nextPayDate2)}`;
+        }
+    } else {
+        // For semi-monthly, use the default labels
+        const paycheck1TitleElement = document.querySelector('.bg-glass-blue h4.text-md');
+        if (paycheck1TitleElement) {
+            paycheck1TitleElement.textContent = 'Paycheck 1 (15th)';
+        }
+        
+        const paycheck2TitleElement = document.querySelector('.bg-glass-purple h4.text-md');
+        if (paycheck2TitleElement) {
+            paycheck2TitleElement.textContent = 'Paycheck 2 (End of Month)';
+        }
+        
+        // Also update the bill sections in the Monthly Bills card
+        const billSection1Title = document.querySelector('.bg-glass-blue p.text-sm.text-gray-300');
+        if (billSection1Title) {
+            billSection1Title.textContent = 'Paycheck 1 (15th)';
+        }
+        
+        const billSection2Title = document.querySelector('.bg-glass-purple p.text-sm.text-gray-300');
+        if (billSection2Title) {
+            billSection2Title.textContent = 'Paycheck 2 (End of Month)';
+        }
+    }
+    
+    // Update paycheck values
     gpPaycheck1Net.textContent = `$${payPerPaycheck.toFixed(2)}`;
     gpPaycheck1Bills.textContent = `$${paycheck1BillsAmount.toFixed(2)}`;
     
@@ -2546,4 +2669,9 @@ function resetMortgageFields() {
     document.getElementById('pmi').value = '0';
     document.getElementById('propertyTax').value = '0';
     document.getElementById('propertyInsurance').value = '0';
+}
+
+// Function to close the salary modal
+window.closeSalaryModal = function() {
+    document.getElementById('salaryModal').classList.add('hidden');
 }
