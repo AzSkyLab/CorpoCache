@@ -267,40 +267,40 @@ function initCyberEffects() {
 // Modal Functions
 window.addCreditCard = function() {
     document.getElementById('creditCardModalTitle').textContent = 'Add Credit Card';
-    cardName.value = '';
-    creditLimit.value = '';
-    currentBalance.value = '';
-    openDate.value = '';
-    cardDueDate.value = '';
+    document.getElementById('cardName').value = '';
+    document.getElementById('creditLimit').value = '';
+    document.getElementById('currentBalance').value = '';
+    document.getElementById('openDate').value = '';
+    document.getElementById('cardDueDate').value = '';
     document.getElementById('editCardIndex').value = '-1';
     
     // Hide any previous validation errors
     document.getElementById('cardValidationErrors').classList.add('hidden');
     document.getElementById('cardErrorList').innerHTML = '';
     
-    creditCardModal.classList.remove('hidden');
+    document.getElementById('creditCardModal').classList.remove('hidden');
 }
 
 window.editCreditCard = function(index) {
     document.getElementById('creditCardModalTitle').textContent = 'Edit Credit Card';
     const card = creditCards[index];
     
-    cardName.value = card.name;
-    creditLimit.value = card.limit;
-    currentBalance.value = card.balance;
+    document.getElementById('cardName').value = card.name;
+    document.getElementById('creditLimit').value = card.limit;
+    document.getElementById('currentBalance').value = card.balance;
     
     // Set the open date if it exists
     if (card.openDate) {
-        openDate.value = card.openDate;
+        document.getElementById('openDate').value = card.openDate;
     } else {
-        openDate.value = '';
+        document.getElementById('openDate').value = '';
     }
     
     // Set the due date if it exists
     if (card.dueDate) {
-        cardDueDate.value = card.dueDate;
+        document.getElementById('cardDueDate').value = card.dueDate;
     } else {
-        cardDueDate.value = '';
+        document.getElementById('cardDueDate').value = '';
     }
     
     document.getElementById('editCardIndex').value = index;
@@ -309,11 +309,11 @@ window.editCreditCard = function(index) {
     document.getElementById('cardValidationErrors').classList.add('hidden');
     document.getElementById('cardErrorList').innerHTML = '';
     
-    creditCardModal.classList.remove('hidden');
+    document.getElementById('creditCardModal').classList.remove('hidden');
 }
 
 window.closeCreditCardModal = function() {
-    creditCardModal.classList.add('hidden');
+    document.getElementById('creditCardModal').classList.add('hidden');
 }
 
 // Validate credit card form data
@@ -930,15 +930,32 @@ function updatePaymentSchedule() {
     const paycheck2RemainingAmount = paycheck2.reduce((sum, bill) => sum + (bill.isPaid ? 0 : bill.amount), 0);
     const totalRemainingAmount = paycheck1RemainingAmount + paycheck2RemainingAmount;
     
+    // Get required DOM elements, with null checks
+    const paycheck1Bills = document.getElementById('paycheck1Bills');
+    const paycheck2Bills = document.getElementById('paycheck2Bills');
+    const paycheck1Total = document.getElementById('paycheck1Total');
+    const paycheck2Total = document.getElementById('paycheck2Total');
+    const totalBillsAmount = document.getElementById('totalBillsAmount');
+    
     // Update bill names in payment schedule
-    paycheck1Bills.textContent = paycheck1.length > 0 ? 
-        paycheck1.map(bill => bill.name).join(', ') : 'No bills scheduled';
-    paycheck2Bills.textContent = paycheck2.length > 0 ? 
-        paycheck2.map(bill => bill.name).join(', ') : 'No bills scheduled';
-        
+    if (paycheck1Bills) {
+        paycheck1Bills.textContent = paycheck1.length > 0 ? 
+            paycheck1.map(bill => bill.name).join(', ') : 'No bills scheduled';
+    }
+    
+    if (paycheck2Bills) {
+        paycheck2Bills.textContent = paycheck2.length > 0 ? 
+            paycheck2.map(bill => bill.name).join(', ') : 'No bills scheduled';
+    }
+    
     // Update total amounts with neon pink color
-    paycheck1Total.innerHTML = `<span class="text-neon-pink">$${paycheck1TotalAmount.toFixed(2)}</span>`;
-    paycheck2Total.innerHTML = `<span class="text-neon-pink">$${paycheck2TotalAmount.toFixed(2)}</span>`;
+    if (paycheck1Total) {
+        paycheck1Total.innerHTML = `<span class="text-neon-pink">$${paycheck1TotalAmount.toFixed(2)}</span>`;
+    }
+    
+    if (paycheck2Total) {
+        paycheck2Total.innerHTML = `<span class="text-neon-pink">$${paycheck2TotalAmount.toFixed(2)}</span>`;
+    }
     
     // Update remaining amounts with conditional colors
     // For paycheck 1: neon pink if equal to total, neon blue if less than total but not 0, neon green if 0
@@ -965,17 +982,40 @@ function updatePaymentSchedule() {
         totalRemainingClass = 'text-neon-blue';
     }
     
-    document.getElementById('paycheck1Remaining').innerHTML = `<span class="${paycheck1RemainingClass}">$${paycheck1RemainingAmount.toFixed(2)}</span>`;
-    document.getElementById('paycheck2Remaining').innerHTML = `<span class="${paycheck2RemainingClass}">$${paycheck2RemainingAmount.toFixed(2)}</span>`;
-    document.getElementById('totalRemaining').innerHTML = `<span class="${totalRemainingClass}">$${totalRemainingAmount.toFixed(2)}</span>`;
+    const paycheck1Remaining = document.getElementById('paycheck1Remaining');
+    const paycheck2Remaining = document.getElementById('paycheck2Remaining');
+    const totalRemaining = document.getElementById('totalRemaining');
+    const totalBills = document.getElementById('totalBills');
+    
+    if (paycheck1Remaining) {
+        paycheck1Remaining.innerHTML = `<span class="${paycheck1RemainingClass}">$${paycheck1RemainingAmount.toFixed(2)}</span>`;
+    }
+    
+    if (paycheck2Remaining) {
+        paycheck2Remaining.innerHTML = `<span class="${paycheck2RemainingClass}">$${paycheck2RemainingAmount.toFixed(2)}</span>`;
+    }
+    
+    if (totalRemaining) {
+        totalRemaining.innerHTML = `<span class="${totalRemainingClass}">$${totalRemainingAmount.toFixed(2)}</span>`;
+    }
     
     // Update total bills count
-    document.getElementById('totalBills').textContent = bills.length;
+    if (totalBills) {
+        totalBills.textContent = bills.length;
+    }
     
     // Update total bills amount
-    const totalBills = paycheck1TotalAmount + paycheck2TotalAmount;
-    totalBillsAmount.textContent = `$${totalBills.toFixed(2)}`;
-    updateExpenseSummary();
+    const totalBillsValue = paycheck1TotalAmount + paycheck2TotalAmount;
+    if (totalBillsAmount) {
+        totalBillsAmount.textContent = `$${totalBillsValue.toFixed(2)}`;
+    }
+    
+    // Call updateExpenseSummary with a null check
+    try {
+        updateExpenseSummary();
+    } catch (e) {
+        console.log("Error in updateExpenseSummary:", e);
+    }
 }
 
 // Expense Functions
@@ -993,8 +1033,15 @@ window.saveExpense = function() {
 }
 
 function renderExpenses() {
+    // Add null check for expensesContainer
+    const expensesContainerElement = document.getElementById('expensesContainer');
+    if (!expensesContainerElement) {
+        console.log('Expenses container not found in the DOM');
+        return;
+    }
+    
     if (expenses.length === 0) {
-        expensesContainer.innerHTML = '<p class="text-gray-400 text-center py-2">No expenses added yet</p>';
+        expensesContainerElement.innerHTML = '<p class="text-gray-400 text-center py-2">No expenses added yet</p>';
         return;
     }
     
@@ -1037,7 +1084,7 @@ function renderExpenses() {
         `;
     }
     
-    expensesContainer.innerHTML = html;
+    expensesContainerElement.innerHTML = html;
 }
 
 function getCategoryIcon(category) {
