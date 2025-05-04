@@ -333,8 +333,8 @@ function renderCreditCards() {
     let html = '';
     creditCards.forEach((card, index) => {
         const utilization = (card.balance / card.limit) * 100;
-        const payTo29 = (card.limit * 0.29) - card.balance;
-        const payTo9 = (card.limit * 0.09) - card.balance;
+        const payTo30 = (card.limit * 0.30) - card.balance;
+        const payTo10 = (card.limit * 0.10) - card.balance;
         
         // Calculate account age in years from open date
         let accountAge = '';
@@ -395,9 +395,15 @@ function renderCreditCards() {
             accountAge = '<span class="text-neon-pink">Age unknown</span>';
         }
         
-        const utilizationColorClass = utilization > 61 ? 'cyber-pink' : 
-                                     utilization > 30 ? 'cyber-yellow' : 
-                                     utilization > 10 ? 'cyber-blue' : 'cyber-green';
+        // Apply updated color coding to utilization based on new thresholds
+        let utilizationColorClass = 'cyber-green'; // Default for 0-10%
+        if (utilization > 61) {
+            utilizationColorClass = 'cyber-pink'; // 61%+
+        } else if (utilization > 30) {
+            utilizationColorClass = 'cyber-yellow'; // 30%-61%
+        } else if (utilization > 10) {
+            utilizationColorClass = 'cyber-blue'; // 10%-30%
+        }
         
         // Identify the credit card company and get the appropriate logo URL
         const cardCompany = card.customImage || identifyCreditCardCompany(card.name);
@@ -447,15 +453,15 @@ function renderCreditCards() {
                 
                 <div class="grid grid-cols-3 gap-4 mt-4">
                     <div>
-                        <p class="text-sm text-gray-400">Pay to 29% utilization</p>
-                        <p class="font-medium ${payTo29 < 0 ? 'text-neon-pink' : 'text-neon-green'}">
-                            $${Math.abs(payTo29).toFixed(2)} ${payTo29 > 0 ? 'available' : payTo29 < 0 ? 'needed' : 'at limit'}
+                        <p class="text-sm text-gray-400">Pay to 30% utilization</p>
+                        <p class="font-medium ${payTo30 < 0 ? 'text-neon-pink' : 'text-neon-green'}">
+                            $${Math.abs(payTo30).toFixed(2)} ${payTo30 > 0 ? 'available' : payTo30 < 0 ? 'needed' : 'at limit'}
                         </p>
                     </div>
                     <div>
-                        <p class="text-sm text-gray-400">Pay to 9% utilization</p>
-                        <p class="font-medium ${payTo9 < 0 ? 'text-neon-pink' : 'text-neon-green'}">
-                            $${Math.abs(payTo9).toFixed(2)} ${payTo9 > 0 ? 'available' : payTo9 < 0 ? 'needed' : 'at limit'}
+                        <p class="text-sm text-gray-400">Pay to 10% utilization</p>
+                        <p class="font-medium ${payTo10 < 0 ? 'text-neon-pink' : 'text-neon-green'}">
+                            $${Math.abs(payTo10).toFixed(2)} ${payTo10 > 0 ? 'available' : payTo10 < 0 ? 'needed' : 'at limit'}
                         </p>
                     </div>
                     <div>
@@ -530,30 +536,30 @@ function updateCreditSummary() {
     }
     totalUtilization.innerHTML = `<span class="${utilizationColorClass}">${totalUtilizationValue.toFixed(1)}%</span>`;
     
-    // Calculate amount needed to reach 29% and 9% utilization
-    const payTo29 = document.getElementById('payTo29');
-    const payTo9 = document.getElementById('payTo9');
+    // Calculate amount needed to reach 30% and 10% utilization
+    const payTo30 = document.getElementById('payTo30');
+    const payTo10 = document.getElementById('payTo10');
     
     if (totalLimitValue > 0) {
-        const target29 = totalLimitValue * 0.29;
-        const target9 = totalLimitValue * 0.09;
-        const amountTo29 = totalBalanceValue - target29;
-        const amountTo9 = totalBalanceValue - target9;
+        const target30 = totalLimitValue * 0.30;
+        const target10 = totalLimitValue * 0.10;
+        const amountTo30 = totalBalanceValue - target30;
+        const amountTo10 = totalBalanceValue - target10;
         
-        if (amountTo29 <= 0) {
-            payTo29.innerHTML = `<span class="text-neon-green">$0</span> <span class="text-gray-400 text-sm">(Under target)</span>`;
+        if (amountTo30 <= 0) {
+            payTo30.innerHTML = `<span class="text-neon-green">$${Math.abs(amountTo30).toFixed(2)}</span> <span class="text-gray-400 text-sm">available</span>`;
         } else {
-            payTo29.innerHTML = `<span class="text-neon-green">$${amountTo29.toFixed(2)}</span> <span class="text-gray-400 text-sm">needed</span>`;
+            payTo30.innerHTML = `<span class="text-neon-pink">$${amountTo30.toFixed(2)}</span> <span class="text-gray-400 text-sm">needed</span>`;
         }
         
-        if (amountTo9 <= 0) {
-            payTo9.innerHTML = `<span class="text-neon-blue">$0</span> <span class="text-gray-400 text-sm">(Under target)</span>`;
+        if (amountTo10 <= 0) {
+            payTo10.innerHTML = `<span class="text-neon-green">$${Math.abs(amountTo10).toFixed(2)}</span> <span class="text-gray-400 text-sm">available</span>`;
         } else {
-            payTo9.innerHTML = `<span class="text-neon-blue">$${amountTo9.toFixed(2)}</span> <span class="text-gray-400 text-sm">needed</span>`;
+            payTo10.innerHTML = `<span class="text-neon-pink">$${amountTo10.toFixed(2)}</span> <span class="text-gray-400 text-sm">needed</span>`;
         }
     } else {
-        payTo29.innerHTML = `<span class="text-neon-green">$0</span>`;
-        payTo9.innerHTML = `<span class="text-neon-blue">$0</span>`;
+        payTo30.innerHTML = `<span class="text-neon-green">$0</span>`;
+        payTo10.innerHTML = `<span class="text-neon-green">$0</span>`;
     }
     
     // Calculate the age of oldest credit line
