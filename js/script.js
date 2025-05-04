@@ -1,3 +1,61 @@
+// Global Tax Bracket Data (2025 projected brackets)
+const taxBrackets2025 = {
+    single: [
+        { min: 0, max: 11600, rate: 10 },
+        { min: 11600, max: 47150, rate: 12 },
+        { min: 47150, max: 100525, rate: 22 },
+        { min: 100525, max: 191950, rate: 24 },
+        { min: 191950, max: 243725, rate: 32 },
+        { min: 243725, max: 609350, rate: 35 },
+        { min: 609350, max: Infinity, rate: 37 }
+    ],
+    married: [
+        { min: 0, max: 23200, rate: 10 },
+        { min: 23200, max: 94300, rate: 12 },
+        { min: 94300, max: 201050, rate: 22 },
+        { min: 201050, max: 383900, rate: 24 },
+        { min: 383900, max: 487450, rate: 32 },
+        { min: 487450, max: 731200, rate: 35 },
+        { min: 731200, max: Infinity, rate: 37 }
+    ],
+    head: [
+        { min: 0, max: 16550, rate: 10 },
+        { min: 16550, max: 63100, rate: 12 },
+        { min: 63100, max: 100500, rate: 22 },
+        { min: 100500, max: 191950, rate: 24 },
+        { min: 191950, max: 243700, rate: 32 },
+        { min: 243700, max: 609350, rate: 35 },
+        { min: 609350, max: Infinity, rate: 37 }
+    ]
+};
+
+// Function to calculate federal tax using progressive tax brackets
+function calculateFederalTax(annualIncome, filingStatus) {
+    const brackets = taxBrackets2025[filingStatus] || taxBrackets2025.single;
+    let tax = 0;
+    let remainingIncome = annualIncome;
+    
+    for (const bracket of brackets) {
+        if (remainingIncome <= 0) break;
+        
+        const taxableAmountInBracket = Math.min(
+            bracket.max - bracket.min,
+            Math.max(0, remainingIncome)
+        );
+        
+        tax += taxableAmountInBracket * (bracket.rate / 100);
+        remainingIncome -= taxableAmountInBracket;
+    }
+    
+    return tax;
+}
+
+// Function to calculate effective tax rate
+function calculateEffectiveTaxRate(annualIncome, filingStatus) {
+    const tax = calculateFederalTax(annualIncome, filingStatus);
+    return (tax / annualIncome) * 100;
+}
+
 // Data storage
 let creditCards = [];
 let bills = [];
@@ -148,7 +206,11 @@ function initElements() {
     window.grossSalary = document.getElementById('grossSalary');
     window.payFrequency = document.getElementById('payFrequency');
     window.bonusPercentage = document.getElementById('bonusPercentage');
-    window.taxRate = document.getElementById('taxRate');
+    window.taxBracket = document.getElementById('taxBracket');
+    window.federalTaxRate = document.getElementById('federalTaxRate');
+    window.oasdiTaxRate = document.getElementById('oasdiTaxRate');
+    window.medicareTaxRate = document.getElementById('medicareTaxRate');
+    window.stateTaxRate = document.getElementById('stateTaxRate');
     window.retirementContribution = document.getElementById('retirementContribution');
     window.esppContribution = document.getElementById('esppContribution');
     window.salaryResults = document.getElementById('salaryResults');
@@ -991,7 +1053,10 @@ window.calculateSalary = function() {
     const gross = parseFloat(grossSalary.value);
     const periods = parseInt(payFrequency.value);
     const bonusPct = parseFloat(bonusPercentage.value);
-    const taxPct = parseFloat(taxRate.value);
+    const filingStatus = taxBracket.value;
+    const oasdiTaxPct = parseFloat(oasdiTaxRate.value);
+    const medicareTaxPct = parseFloat(medicareTaxRate.value);
+    const stateTaxPct = parseFloat(stateTaxRate.value);
     const retirementPct = parseFloat(retirementContribution.value);
     const esppPct = parseFloat(esppContribution.value);
     
@@ -1001,14 +1066,47 @@ window.calculateSalary = function() {
     }
     
     const grossPerPeriod = gross / periods;
-    const taxAmount = grossPerPeriod * (taxPct / 100);
+    
+    // Calculate federal tax using progressive tax brackets
+    const federalTaxPerYear = calculateFederalTax(gross, filingStatus);
+    const federalTaxAmount = federalTaxPerYear / periods;
+    
+    // Calculate effective federal tax rate and update the display field
+    const effectiveFederalRate = calculateEffectiveTaxRate(gross, filingStatus);
+    federalTaxRate.value = effectiveFederalRate.toFixed(2);
+    
+    // OASDI has a wage cap (for 2025, using estimated $168,600)
+    // Note: Adjust this annually based on actual Social Security wage base
+    const oasdiWageCap = 168600;
+    const oasdiTaxAmount = Math.min(grossPerPeriod, oasdiWageCap / periods) * (oasdiTaxPct / 100);
+    
+    // Medicare has no wage cap, but higher income has additional 0.9% for income above $200,000/$250,000
+    const medicareAdditionalRate = 0.9; // 0.9% additional for high earners
+    let medicareTaxAmount = grossPerPeriod * (medicareTaxPct / 100);
+    
+    // Add additional Medicare tax for high earners (simplified for individual filers)
+    if (gross > 200000) {
+        const excessAmount = (gross - 200000) / periods;
+        medicareTaxAmount += excessAmount * (medicareAdditionalRate / 100);
+    }
+    
+    // State tax calculation
+    const stateTaxAmount = grossPerPeriod * (stateTaxPct / 100);
+    
+    // Total tax and other deductions
+    const totalTaxAmount = federalTaxAmount + oasdiTaxAmount + medicareTaxAmount + stateTaxAmount;
     const retirementAmount = grossPerPeriod * (retirementPct / 100);
     const esppAmount = grossPerPeriod * (esppPct / 100);
-    const netPay = grossPerPeriod - taxAmount - retirementAmount - esppAmount;
+    const netPay = grossPerPeriod - totalTaxAmount - retirementAmount - esppAmount;
     const bonusAmount = gross * (bonusPct / 100);
     
+    // Update the UI with calculated values
     document.getElementById('grossPay').textContent = `$${grossPerPeriod.toFixed(2)}`;
-    document.getElementById('taxAmount').textContent = `$${taxAmount.toFixed(2)}`;
+    document.getElementById('federalTaxAmount').textContent = `$${federalTaxAmount.toFixed(2)}`;
+    document.getElementById('oasdiTaxAmount').textContent = `$${oasdiTaxAmount.toFixed(2)}`;
+    document.getElementById('medicareTaxAmount').textContent = `$${medicareTaxAmount.toFixed(2)}`;
+    document.getElementById('stateTaxAmount').textContent = `$${stateTaxAmount.toFixed(2)}`;
+    document.getElementById('taxAmount').textContent = `$${totalTaxAmount.toFixed(2)}`;
     document.getElementById('retirementAmount').textContent = `$${retirementAmount.toFixed(2)}`;
     document.getElementById('esppAmount').textContent = `$${esppAmount.toFixed(2)}`;
     document.getElementById('netPay').textContent = `$${netPay.toFixed(2)}`;

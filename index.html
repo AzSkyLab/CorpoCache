@@ -268,9 +268,36 @@
                     </div>
                     
                     <div>
+                        <!-- Tax Section with breakdown -->
                         <div class="input-container">
-                            <input type="number" id="taxRate" class="cyber-input w-full p-3 rounded-md" placeholder=" " value="25">
-                            <label class="floating-label">Tax Rate (%)</label>
+                            <select id="taxBracket" class="cyber-input w-full p-3 rounded-md" placeholder=" ">
+                                <option value="single">Single</option>
+                                <option value="married">Married Filing Jointly</option>
+                                <option value="head">Head of Household</option>
+                            </select>
+                            <label class="floating-label">Tax Filing Status</label>
+                        </div>
+                        
+                        <div class="input-container">
+                            <input type="number" id="federalTaxRate" class="cyber-input w-full p-3 rounded-md" placeholder=" " value="12">
+                            <label class="floating-label">Federal Tax Rate (%)</label>
+                        </div>
+                        
+                        <div class="grid grid-cols-3 gap-2">
+                            <div class="input-container">
+                                <input type="number" id="oasdiTaxRate" class="cyber-input w-full p-3 rounded-md" placeholder=" " value="6.2">
+                                <label class="floating-label">OASDI (%)</label>
+                            </div>
+                            
+                            <div class="input-container">
+                                <input type="number" id="medicareTaxRate" class="cyber-input w-full p-3 rounded-md" placeholder=" " value="1.45">
+                                <label class="floating-label">Medicare (%)</label>
+                            </div>
+                            
+                            <div class="input-container">
+                                <input type="number" id="stateTaxRate" class="cyber-input w-full p-3 rounded-md" placeholder=" " value="5">
+                                <label class="floating-label">State (%)</label>
+                            </div>
                         </div>
                         
                         <div class="input-container">
@@ -296,10 +323,33 @@
                             <span>Gross Pay:</span>
                             <span id="grossPay" class="font-medium">$0</span>
                         </div>
-                        <div class="flex justify-between">
-                            <span>Taxes:</span>
-                            <span id="taxAmount" class="font-medium">$0</span>
+                        
+                        <!-- Tax Breakdown Section -->
+                        <div class="border-t border-gray-700 pt-2">
+                            <div class="flex justify-between text-sm text-neon-blue font-semibold">
+                                <span>Tax Breakdown:</span>
+                                <span id="taxAmount" class="font-medium">$0</span>
+                            </div>
+                            <div class="ml-4 space-y-1 mt-1">
+                                <div class="flex justify-between text-sm">
+                                    <span>Federal Tax:</span>
+                                    <span id="federalTaxAmount" class="font-medium">$0</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span>Social Security (OASDI):</span>
+                                    <span id="oasdiTaxAmount" class="font-medium">$0</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span>Medicare:</span>
+                                    <span id="medicareTaxAmount" class="font-medium">$0</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span>State Tax:</span>
+                                    <span id="stateTaxAmount" class="font-medium">$0</span>
+                                </div>
+                            </div>
                         </div>
+                        
                         <div class="flex justify-between">
                             <span>401k Contribution:</span>
                             <span id="retirementAmount" class="font-medium">$0</span>
@@ -317,6 +367,78 @@
                             <span id="bonusAmount" class="font-medium text-neon-purple">$0</span>
                         </div>
                     </div>
+                </div>
+                
+                <!-- Tax Bracket Legend -->
+                <div class="mt-6 border-t border-gray-700 pt-4">
+                    <h4 class="text-lg font-medium text-white mb-3">
+                        <i class="fas fa-table mr-2 text-neon-blue"></i> 2025 Federal Tax Brackets
+                    </h4>
+                    
+                    <div class="bg-glass-blue p-4 rounded-lg">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left">
+                                <thead class="text-xs text-gray-300 uppercase">
+                                    <tr>
+                                        <th scope="col" class="px-3 py-2">Tax Rate</th>
+                                        <th scope="col" class="px-3 py-2">Single</th>
+                                        <th scope="col" class="px-3 py-2">Married Filing Jointly</th>
+                                        <th scope="col" class="px-3 py-2">Head of Household</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="border-b border-gray-700">
+                                        <td class="px-3 py-2"><span class="text-neon-green">10%</span></td>
+                                        <td class="px-3 py-2">$0 - $11,600</td>
+                                        <td class="px-3 py-2">$0 - $23,200</td>
+                                        <td class="px-3 py-2">$0 - $16,550</td>
+                                    </tr>
+                                    <tr class="border-b border-gray-700">
+                                        <td class="px-3 py-2"><span class="text-neon-green">12%</span></td>
+                                        <td class="px-3 py-2">$11,600 - $47,150</td>
+                                        <td class="px-3 py-2">$23,200 - $94,300</td>
+                                        <td class="px-3 py-2">$16,550 - $63,100</td>
+                                    </tr>
+                                    <tr class="border-b border-gray-700">
+                                        <td class="px-3 py-2"><span class="text-neon-blue">22%</span></td>
+                                        <td class="px-3 py-2">$47,150 - $100,525</td>
+                                        <td class="px-3 py-2">$94,300 - $201,050</td>
+                                        <td class="px-3 py-2">$63,100 - $100,500</td>
+                                    </tr>
+                                    <tr class="border-b border-gray-700">
+                                        <td class="px-3 py-2"><span class="text-neon-blue">24%</span></td>
+                                        <td class="px-3 py-2">$100,525 - $191,950</td>
+                                        <td class="px-3 py-2">$201,050 - $383,900</td>
+                                        <td class="px-3 py-2">$100,500 - $191,950</td>
+                                    </tr>
+                                    <tr class="border-b border-gray-700">
+                                        <td class="px-3 py-2"><span class="text-neon-yellow">32%</span></td>
+                                        <td class="px-3 py-2">$191,950 - $243,725</td>
+                                        <td class="px-3 py-2">$383,900 - $487,450</td>
+                                        <td class="px-3 py-2">$191,950 - $243,700</td>
+                                    </tr>
+                                    <tr class="border-b border-gray-700">
+                                        <td class="px-3 py-2"><span class="text-neon-yellow">35%</span></td>
+                                        <td class="px-3 py-2">$243,725 - $609,350</td>
+                                        <td class="px-3 py-2">$487,450 - $731,200</td>
+                                        <td class="px-3 py-2">$243,700 - $609,350</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-3 py-2"><span class="text-neon-pink">37%</span></td>
+                                        <td class="px-3 py-2">$609,350+</td>
+                                        <td class="px-3 py-2">$731,200+</td>
+                                        <td class="px-3 py-2">$609,350+</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <p class="text-sm text-gray-400 mt-3">
+                        <i class="fas fa-info-circle mr-1 text-neon-blue"></i>
+                        The calculator uses these progressive tax brackets to determine your federal tax amount.
+                        Your effective tax rate is automatically calculated based on your income.
+                    </p>
                 </div>
             </div>
 
