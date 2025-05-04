@@ -938,7 +938,6 @@ function updatePaymentSchedule() {
     const paycheck2Bills = document.getElementById('paycheck2Bills');
     const paycheck1Total = document.getElementById('paycheck1Total');
     const paycheck2Total = document.getElementById('paycheck2Total');
-    const totalBillsAmount = document.getElementById('totalBillsAmount');
     
     // Update bill names in payment schedule
     if (paycheck1Bills) {
@@ -1005,12 +1004,6 @@ function updatePaymentSchedule() {
     // Update total bills count
     if (totalBills) {
         totalBills.textContent = bills.length;
-    }
-    
-    // Update total bills amount
-    const totalBillsValue = paycheck1TotalAmount + paycheck2TotalAmount;
-    if (totalBillsAmount) {
-        totalBillsAmount.textContent = `$${totalBillsValue.toFixed(2)}`;
     }
     
     // Call updateExpenseSummary with a null check
@@ -1785,7 +1778,19 @@ function calculateGrossProfit() {
     
     // Get pay frequency and calculate monthly income
     const payFrequency = parseInt(document.getElementById('payFrequency')?.value) || 26;
-    const payPerMonth = (netPayPerPaycheck * payFrequency) / 12;
+    
+    // Calculate monthly income based on pay frequency
+    // For bi-weekly (26 pay periods), we account for the 2 extra paychecks per year
+    let payPerMonth;
+    if (payFrequency === 26) {
+        // For bi-weekly pay, there are 26 paychecks per year
+        // Most months have 2 paychecks, but 2 months have 3 paychecks
+        // So we calculate the annual income and divide by 12 for accurate monthly average
+        payPerMonth = (netPayPerPaycheck * payFrequency) / 12;
+    } else {
+        // For semi-monthly pay (24 pay periods), there are always 2 paychecks per month
+        payPerMonth = netPayPerPaycheck * 2;
+    }
     
     // Get annual salary and bonus
     const annualSalaryText = document.getElementById('annualSalary').textContent.replace('$', '').trim();
@@ -1807,14 +1812,26 @@ function calculateGrossProfit() {
     const annualBills = totalMonthlyBills * 12;
     
     // Calculate per-paycheck amounts
-    const payPerPaycheck = (netPayPerPaycheck * payFrequency) / (payFrequency / 12) / 2; // Divide monthly net by 2 to get per-paycheck
+    let payPerPaycheck;
+    
+    if (payFrequency === 26) {
+        // For bi-weekly pay, we distribute the monthly income across 2 paychecks
+        // even though some months will have 3 paychecks
+        payPerPaycheck = payPerMonth / 2;
+    } else {
+        // For semi-monthly pay, it's always half the monthly income
+        payPerPaycheck = payPerMonth / 2;
+    }
     
     // Calculate surplus/deficit
     const paycheck1Surplus = payPerPaycheck - paycheck1BillsAmount;
     const paycheck2Surplus = payPerPaycheck - paycheck2BillsAmount;
     const monthlySurplus = payPerMonth - totalMonthlyBills;
-    const annualSurplus = (netPayPerPaycheck * payFrequency) - annualBills; // Correct annual calculation
-    const annualSurplusWithBonus = annualSurplus + afterTaxBonus; // Use after-tax bonus amount
+    
+    // For annual surplus, we use the total annual income (based on frequency)
+    const annualNetIncome = netPayPerPaycheck * payFrequency;
+    const annualSurplus = annualNetIncome - annualBills;
+    const annualSurplusWithBonus = annualSurplus + afterTaxBonus;
     
     // Calculate profit ratio for progress bar (as a percentage)
     const profitRatio = totalMonthlyBills > 0 ? Math.min(100, Math.max(0, monthlySurplus / totalMonthlyBills * 100)) : 0;
@@ -1850,8 +1867,8 @@ function calculateGrossProfit() {
     gpPaycheck2Surplus.textContent = `${paycheck2SurplusSign}$${Math.abs(paycheck2Surplus).toFixed(2)}`;
     
     // Update annual projections
-    gpAnnualIncome.textContent = `$${(netPayPerPaycheck * payFrequency).toFixed(2)}`;
-    gpAnnualBonus.textContent = `$${afterTaxBonus.toFixed(2)}`; // Display after-tax bonus here too for consistency
+    gpAnnualIncome.textContent = `$${annualNetIncome.toFixed(2)}`;
+    gpAnnualBonus.textContent = `$${afterTaxBonus.toFixed(2)}`;
     gpAnnualBills.textContent = `$${annualBills.toFixed(2)}`;
     
     const annualSurplusColor = annualSurplus >= 0 ? "text-neon-green" : "text-neon-pink";
@@ -1865,6 +1882,29 @@ function calculateGrossProfit() {
     // Display the annual surplus with bonus as positive or deficit as negative
     const annualSurplusWithBonusSign = annualSurplusWithBonus >= 0 ? "" : "-";
     gpAnnualSurplusWithBonus.textContent = `${annualSurplusWithBonusSign}$${Math.abs(annualSurplusWithBonus).toFixed(2)}`;
+    
+    // Add explanation for bi-weekly pay frequency (only if it doesn't already exist)
+    if (payFrequency === 26) {
+        // Check if the explanation already exists
+        const existingExplanation = document.querySelector('.bi-weekly-explanation');
+        if (!existingExplanation) {
+            const biWeeklyExplanation = document.createElement('div');
+            biWeeklyExplanation.className = 'mt-2 text-xs text-neon-blue bi-weekly-explanation';
+            biWeeklyExplanation.innerHTML = `<i class="fas fa-info-circle mr-1"></i> Bi-weekly pay includes 2 extra paychecks per year (26 total), which are factored into your annual and monthly income calculations.`;
+            
+            // Add the explanation below the monthly cash flow section
+            const monthlySurplusParent = gpMonthlySurplus.closest('.space-y-3');
+            if (monthlySurplusParent) {
+                monthlySurplusParent.appendChild(biWeeklyExplanation);
+            }
+        }
+    } else {
+        // Remove the explanation if it exists and pay frequency is not bi-weekly
+        const existingExplanation = document.querySelector('.bi-weekly-explanation');
+        if (existingExplanation) {
+            existingExplanation.remove();
+        }
+    }
     
     // Update progress bar
     const progressFillColor = monthlySurplus >= 0 ? "cyber-green" : "cyber-pink";
