@@ -1600,7 +1600,33 @@ window.showSalaryModal = function() {
     }
     
     // Set up event handler for pay frequency selection
-    document.getElementById('modalPayFrequency').addEventListener('change', toggleLastPayDateField);
+    document.getElementById('modalPayFrequency').addEventListener('change', function() {
+        // Toggle last pay date field
+        toggleLastPayDateField();
+        
+        // Hide the gross profit results if they're visible
+        const grossProfitResults = document.getElementById('grossProfitResults');
+        if (grossProfitResults && !grossProfitResults.classList.contains('hidden')) {
+            grossProfitResults.classList.add('hidden');
+        }
+        
+        // Reset the container with a message to recalculate
+        const grossProfitContainer = document.getElementById('grossProfitContainer');
+        if (grossProfitContainer) {
+            grossProfitContainer.innerHTML = '<p class="text-center text-gray-400 py-4">Pay frequency changed. Please recalculate your salary.</p>';
+        }
+        
+        // --- Fix: update hidden payFrequency field temporarily ---
+        const hiddenPayFrequency = document.getElementById('payFrequency');
+        const originalValue = hiddenPayFrequency ? hiddenPayFrequency.value : null;
+        if (hiddenPayFrequency) {
+            hiddenPayFrequency.value = this.value;
+        }
+        calculateGrossProfit();
+        if (hiddenPayFrequency && originalValue !== null) {
+            hiddenPayFrequency.value = originalValue;
+        }
+    });
     
     document.getElementById('salaryModal').classList.remove('hidden');
 }
@@ -1611,9 +1637,23 @@ function toggleLastPayDateField() {
     const lastPayDateContainer = document.getElementById('lastPayDateContainer');
     
     if (payFrequency === '26') {
+        // Show last pay date field for bi-weekly pay
         lastPayDateContainer.classList.remove('hidden');
     } else {
+        // Hide last pay date field for other pay frequencies
         lastPayDateContainer.classList.add('hidden');
+    }
+    
+    // Reset the gross profit results when pay frequency changes
+    const grossProfitResults = document.getElementById('grossProfitResults');
+    if (grossProfitResults && !grossProfitResults.classList.contains('hidden')) {
+        grossProfitResults.classList.add('hidden');
+    }
+    
+    // Reset the container with a message to recalculate
+    const grossProfitContainer = document.getElementById('grossProfitContainer');
+    if (grossProfitContainer) {
+        grossProfitContainer.innerHTML = '<p class="text-center text-gray-400 py-4">Pay frequency changed. Please recalculate your salary.</p>';
     }
 }
 
@@ -1692,6 +1732,19 @@ window.calculateSalaryFromModal = function() {
         if (lastPayDate) {
             localStorage.setItem('lastPayDate', lastPayDate);
         }
+    } else {
+        // Remove lastPayDate from localStorage if not bi-weekly
+        localStorage.removeItem('lastPayDate');
+    }
+    // Always update the hidden payFrequency field before calculations
+    if (!document.getElementById('payFrequency')) {
+        const hiddenField = document.createElement('input');
+        hiddenField.type = 'hidden';
+        hiddenField.id = 'payFrequency';
+        hiddenField.value = periods;
+        document.body.appendChild(hiddenField);
+    } else {
+        document.getElementById('payFrequency').value = periods;
     }
     
     // Store the annual salary for use in future updates
@@ -1854,9 +1907,13 @@ function calculateGrossProfit() {
         payPerPaycheck = payPerMonth / 2;
     }
     
-    // Calculate surplus/deficit
+    // Calculate surplus/deficit for regular paychecks
     const paycheck1Surplus = payPerPaycheck - paycheck1BillsAmount;
     const paycheck2Surplus = payPerPaycheck - paycheck2BillsAmount;
+    
+    // Calculate third paycheck surplus (no bills assigned to it, pure income)
+    const paycheck3Surplus = payPerPaycheck;
+    
     const monthlySurplus = payPerMonth - totalMonthlyBills;
     
     // For annual surplus, we use the total annual income (based on frequency)
@@ -1879,6 +1936,9 @@ function calculateGrossProfit() {
     gpMonthlySurplus.textContent = `${monthlySurplusSign}$${Math.abs(monthlySurplus).toFixed(2)}`;
     
     // Update paycheck info and labels based on pay frequency
+    // Variable to track if we have a third paycheck in the same month
+    let hasThirdPaycheckInSameMonth = false;
+    
     if (payFrequency === 26) {
         // Get the last pay date from local storage
         const lastPayDateStr = localStorage.getItem('lastPayDate');
@@ -1906,6 +1966,12 @@ function calculateGrossProfit() {
         // Create completely new Date objects for calculations
         const nextPayDate1 = new Date(lastPayDate.getFullYear(), lastPayDate.getMonth(), lastPayDate.getDate() + 14);
         const nextPayDate2 = new Date(lastPayDate.getFullYear(), lastPayDate.getMonth(), lastPayDate.getDate() + 28);
+        // Calculate the third bi-weekly paycheck
+        const nextPayDate3 = new Date(lastPayDate.getFullYear(), lastPayDate.getMonth(), lastPayDate.getDate() + 42);
+        
+        // Check if the third paycheck is in the same month as the other paychecks
+        hasThirdPaycheckInSameMonth = (nextPayDate1.getMonth() === nextPayDate3.getMonth()) || 
+                                    (nextPayDate2.getMonth() === nextPayDate3.getMonth());
         
         // Format dates for display - Month/Day format
         const formatDate = (date) => {
@@ -1923,7 +1989,19 @@ function calculateGrossProfit() {
         console.log('Last pay date:', formatDateWithDay(lastPayDate), lastPayDate.toISOString());
         console.log('Next pay date 1:', formatDateWithDay(nextPayDate1), nextPayDate1.toISOString(), 'Day:', nextPayDate1.getDay());
         console.log('Next pay date 2:', formatDateWithDay(nextPayDate2), nextPayDate2.toISOString(), 'Day:', nextPayDate2.getDay());
+        console.log('Next pay date 3:', formatDateWithDay(nextPayDate3), nextPayDate3.toISOString(), 'Day:', nextPayDate3.getDay());
         console.log('Days between paychecks:', Math.round((nextPayDate2 - nextPayDate1) / (1000 * 60 * 60 * 24)));
+        console.log('Third paycheck in same month:', hasThirdPaycheckInSameMonth);
+        
+        // Show third paycheck section only if it's in the same month as another paycheck
+        const gpThirdPaycheckSection = document.getElementById('gpThirdPaycheckSection');
+        if (gpThirdPaycheckSection) {
+            if (hasThirdPaycheckInSameMonth) {
+                gpThirdPaycheckSection.classList.remove('hidden');
+            } else {
+                gpThirdPaycheckSection.classList.add('hidden');
+            }
+        }
         
         // Update the paycheck titles to show the dates with day of week
         const paycheck1TitleElement = document.querySelector('.bg-glass-blue h4.text-md');
@@ -1934,6 +2012,14 @@ function calculateGrossProfit() {
         const paycheck2TitleElement = document.querySelector('.bg-glass-purple h4.text-md');
         if (paycheck2TitleElement) {
             paycheck2TitleElement.textContent = `Paycheck ${formatDateWithDay(nextPayDate2)}`;
+        }
+        
+        // Update third paycheck title if it exists and is shown
+        if (hasThirdPaycheckInSameMonth) {
+            const paycheck3TitleElement = document.querySelector('#gpThirdPaycheckSection h4.text-md');
+            if (paycheck3TitleElement) {
+                paycheck3TitleElement.textContent = `Paycheck ${formatDateWithDay(nextPayDate3)}`;
+            }
         }
         
         // Also update the bill sections in the Monthly Bills card
@@ -1968,6 +2054,12 @@ function calculateGrossProfit() {
         if (billSection2Title) {
             billSection2Title.textContent = 'Paycheck 2 (End of Month)';
         }
+        
+        // Hide third paycheck section for non-bi-weekly pay
+        const gpThirdPaycheckSection = document.getElementById('gpThirdPaycheckSection');
+        if (gpThirdPaycheckSection) {
+            gpThirdPaycheckSection.classList.add('hidden');
+        }
     }
     
     // Update paycheck values
@@ -1988,6 +2080,21 @@ function calculateGrossProfit() {
     // Display the surplus as positive or deficit as negative
     const paycheck2SurplusSign = paycheck2Surplus >= 0 ? "" : "-";
     gpPaycheck2Surplus.textContent = `${paycheck2SurplusSign}$${Math.abs(paycheck2Surplus).toFixed(2)}`;
+    
+    // Update third paycheck values (for bi-weekly pay) when it's in the same month
+    if (payFrequency === 26 && hasThirdPaycheckInSameMonth) {
+        const gpPaycheck3Net = document.getElementById('gpPaycheck3Net');
+        const gpPaycheck3Bills = document.getElementById('gpPaycheck3Bills');
+        const gpPaycheck3Surplus = document.getElementById('gpPaycheck3Surplus');
+        
+        if (gpPaycheck3Net) gpPaycheck3Net.textContent = `$${payPerPaycheck.toFixed(2)}`;
+        if (gpPaycheck3Bills) gpPaycheck3Bills.textContent = `$0.00`;
+        
+        if (gpPaycheck3Surplus) {
+            gpPaycheck3Surplus.className = 'font-bold text-neon-green';
+            gpPaycheck3Surplus.textContent = `$${paycheck3Surplus.toFixed(2)}`;
+        }
+    }
     
     // Update annual projections
     gpAnnualIncome.textContent = `$${annualNetIncome.toFixed(2)}`;
@@ -2013,7 +2120,7 @@ function calculateGrossProfit() {
         if (!existingExplanation) {
             const biWeeklyExplanation = document.createElement('div');
             biWeeklyExplanation.className = 'mt-2 text-xs text-neon-blue bi-weekly-explanation';
-            biWeeklyExplanation.innerHTML = `<i class="fas fa-info-circle mr-1"></i> Bi-weekly pay includes 2 extra paychecks per year (26 total), which are factored into your annual and monthly income calculations.`;
+            biWeeklyExplanation.innerHTML = `<i class="fas fa-info-circle mr-1"></i> Bi-weekly pay includes 2 extra paychecks per year (26 total). Two months will have a 3rd paycheck with no bills assigned to it - pure extra income!`;
             
             // Add the explanation below the monthly cash flow section
             const monthlySurplusParent = gpMonthlySurplus.closest('.space-y-3');
