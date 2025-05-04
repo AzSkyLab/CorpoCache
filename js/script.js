@@ -238,6 +238,9 @@ function initElements() {
     window.currentSavings = document.getElementById('currentSavings');
     window.savingsInterest = document.getElementById('savingsInterest');
     window.savingsResults = document.getElementById('savingsResults');
+    
+    // Initialize gross profit calculator
+    initGrossProfitCalculator();
 }
 
 function initCyberEffects() {
@@ -1640,4 +1643,187 @@ window.calculateSalaryFromModal = function() {
     if (!monthlyIncome.value && netPay > 0) {
         monthlyIncome.value = (netPay * periods / 12).toFixed(2);
     }
+    
+    // Then calculate gross profit
+    calculateGrossProfit();
+}
+
+// Function to initialize gross profit calculator
+function initGrossProfitCalculator() {
+    // Elements from the HTML
+    window.grossProfitResults = document.getElementById('grossProfitResults');
+    window.grossProfitContainer = document.getElementById('grossProfitContainer');
+    window.gpMonthlyIncome = document.getElementById('gpMonthlyIncome');
+    window.gpMonthlyBills = document.getElementById('gpMonthlyBills');
+    window.gpMonthlySurplus = document.getElementById('gpMonthlySurplus');
+    window.gpPaycheck1Net = document.getElementById('gpPaycheck1Net');
+    window.gpPaycheck1Bills = document.getElementById('gpPaycheck1Bills');
+    window.gpPaycheck1Surplus = document.getElementById('gpPaycheck1Surplus');
+    window.gpPaycheck2Net = document.getElementById('gpPaycheck2Net');
+    window.gpPaycheck2Bills = document.getElementById('gpPaycheck2Bills');
+    window.gpPaycheck2Surplus = document.getElementById('gpPaycheck2Surplus');
+    window.gpAnnualIncome = document.getElementById('gpAnnualIncome');
+    window.gpAnnualBonus = document.getElementById('gpAnnualBonus');
+    window.gpAnnualBills = document.getElementById('gpAnnualBills');
+    window.gpAnnualSurplus = document.getElementById('gpAnnualSurplus');
+    window.gpAnnualSurplusWithBonus = document.getElementById('gpAnnualSurplusWithBonus');
+    window.profitProgress = document.getElementById('profitProgress');
+    window.profitStatus = document.getElementById('profitStatus');
+    
+    // Check if salaryResults is already visible and calculate profit if it is
+    const salaryResults = document.getElementById('salaryResults');
+    if (salaryResults && !salaryResults.classList.contains('hidden')) {
+        calculateGrossProfit();
+    }
+}
+
+// Function to calculate gross profit based on salary and bills data
+function calculateGrossProfit() {
+    // Check if salary data is available
+    const netPayElement = document.getElementById('netPay');
+    if (!netPayElement) return;
+    
+    const netPayText = netPayElement.textContent.replace('$', '').trim();
+    const netPayPerPaycheck = parseFloat(netPayText) || 0;
+    
+    if (netPayPerPaycheck <= 0) {
+        grossProfitContainer.innerHTML = '<p class="text-center text-gray-400 py-4">Please calculate your salary first</p>';
+        return;
+    }
+    
+    // Get pay frequency and calculate monthly income
+    const payFrequency = parseInt(document.getElementById('modalPayFrequency')?.value) || 26;
+    const payPerMonth = (netPayPerPaycheck * payFrequency) / 12;
+    
+    // Get annual salary and bonus
+    const annualSalaryText = document.getElementById('annualSalary').textContent.replace('$', '').trim();
+    const annualSalary = parseFloat(annualSalaryText) || 0;
+    
+    const bonusText = document.getElementById('bonusAmount').textContent.replace('$', '').trim();
+    const annualBonus = parseFloat(bonusText) || 0;
+    
+    // Get bills information
+    // Split bills between two paychecks (15th and end of month)
+    const paycheck1Bills = bills.filter(bill => bill.dueDate <= 15);
+    const paycheck2Bills = bills.filter(bill => bill.dueDate > 15);
+    
+    // Calculate bills amounts
+    const paycheck1BillsAmount = paycheck1Bills.reduce((sum, bill) => sum + bill.amount, 0);
+    const paycheck2BillsAmount = paycheck2Bills.reduce((sum, bill) => sum + bill.amount, 0);
+    const totalMonthlyBills = paycheck1BillsAmount + paycheck2BillsAmount;
+    const annualBills = totalMonthlyBills * 12;
+    
+    // Calculate per-paycheck amounts
+    const payPerPaycheck = (netPayPerPaycheck * payFrequency) / (payFrequency / 12) / 2; // Divide monthly net by 2 to get per-paycheck
+    
+    // Calculate surplus/deficit
+    const paycheck1Surplus = payPerPaycheck - paycheck1BillsAmount;
+    const paycheck2Surplus = payPerPaycheck - paycheck2BillsAmount;
+    const monthlySurplus = payPerMonth - totalMonthlyBills;
+    const annualSurplus = (netPayPerPaycheck * payFrequency) - annualBills; // Correct annual calculation
+    const annualSurplusWithBonus = annualSurplus + annualBonus;
+    
+    // Calculate profit ratio for progress bar (as a percentage)
+    const profitRatio = totalMonthlyBills > 0 ? Math.min(100, Math.max(0, monthlySurplus / totalMonthlyBills * 100)) : 0;
+    
+    // Update UI
+    gpMonthlyIncome.textContent = `$${payPerMonth.toFixed(2)}`;
+    gpMonthlyBills.textContent = `$${totalMonthlyBills.toFixed(2)}`;
+    
+    // Set color based on surplus or deficit
+    const monthlySurplusColor = monthlySurplus >= 0 ? "text-neon-green" : "text-neon-pink";
+    gpMonthlySurplus.className = `font-bold ${monthlySurplusColor}`;
+    gpMonthlySurplus.textContent = `$${Math.abs(monthlySurplus).toFixed(2)} ${monthlySurplus >= 0 ? 'surplus' : 'deficit'}`;
+    
+    // Update paycheck info
+    gpPaycheck1Net.textContent = `$${payPerPaycheck.toFixed(2)}`;
+    gpPaycheck1Bills.textContent = `$${paycheck1BillsAmount.toFixed(2)}`;
+    
+    const paycheck1SurplusColor = paycheck1Surplus >= 0 ? "text-neon-green" : "text-neon-pink";
+    gpPaycheck1Surplus.className = `font-bold ${paycheck1SurplusColor}`;
+    gpPaycheck1Surplus.textContent = `$${Math.abs(paycheck1Surplus).toFixed(2)} ${paycheck1Surplus >= 0 ? 'surplus' : 'deficit'}`;
+    
+    gpPaycheck2Net.textContent = `$${payPerPaycheck.toFixed(2)}`;
+    gpPaycheck2Bills.textContent = `$${paycheck2BillsAmount.toFixed(2)}`;
+    
+    const paycheck2SurplusColor = paycheck2Surplus >= 0 ? "text-neon-green" : "text-neon-pink";
+    gpPaycheck2Surplus.className = `font-bold ${paycheck2SurplusColor}`;
+    gpPaycheck2Surplus.textContent = `$${Math.abs(paycheck2Surplus).toFixed(2)} ${paycheck2Surplus >= 0 ? 'surplus' : 'deficit'}`;
+    
+    // Update annual projections
+    gpAnnualIncome.textContent = `$${(netPayPerPaycheck * payFrequency).toFixed(2)}`;
+    gpAnnualBonus.textContent = `$${annualBonus.toFixed(2)}`;
+    gpAnnualBills.textContent = `$${annualBills.toFixed(2)}`;
+    
+    const annualSurplusColor = annualSurplus >= 0 ? "text-neon-green" : "text-neon-pink";
+    gpAnnualSurplus.className = `font-bold ${annualSurplusColor}`;
+    gpAnnualSurplus.textContent = `$${Math.abs(annualSurplus).toFixed(2)} ${annualSurplus >= 0 ? 'surplus' : 'deficit'}`;
+    
+    const annualSurplusWithBonusColor = annualSurplusWithBonus >= 0 ? "text-neon-green" : "text-neon-pink";
+    gpAnnualSurplusWithBonus.className = `font-bold ${annualSurplusWithBonusColor}`;
+    gpAnnualSurplusWithBonus.textContent = `$${Math.abs(annualSurplusWithBonus).toFixed(2)} ${annualSurplusWithBonus >= 0 ? 'surplus' : 'deficit'}`;
+    
+    // Update progress bar
+    const progressFillColor = monthlySurplus >= 0 ? "cyber-green" : "cyber-pink";
+    profitProgress.className = `cyber-progress-fill ${progressFillColor}`;
+    profitProgress.style.width = `${Math.min(100, Math.abs(profitRatio))}%`;
+    
+    // Update status text
+    if (monthlySurplus >= 0) {
+        profitStatus.textContent = `${profitRatio.toFixed(1)}% surplus ratio - Your monthly income exceeds your bills`;
+    } else {
+        profitStatus.textContent = `${Math.abs(profitRatio).toFixed(1)}% deficit ratio - Your monthly bills exceed your income`;
+    }
+    
+    // Show results
+    grossProfitResults.classList.remove('hidden');
+}
+
+// Hook into the salary calculator to trigger gross profit calculation
+const originalCalculateSalaryFromModal = window.calculateSalaryFromModal;
+window.calculateSalaryFromModal = function() {
+    // Call original function first
+    originalCalculateSalaryFromModal.apply(this, arguments);
+    
+    // Then calculate gross profit
+    calculateGrossProfit();
+};
+
+// Initialize on document load
+document.addEventListener('DOMContentLoaded', function() {
+    // Add gross profit calculator initialization to the existing initialization
+    const originalInitElements = window.initElements;
+    window.initElements = function() {
+        // Call original function first
+        originalInitElements.apply(this, arguments);
+        
+        // Initialize gross profit calculator
+        initGrossProfitCalculator();
+    };
+    
+    // Also call bill update to trigger gross profit calculation
+    const originalUpdatePaymentSchedule = window.updatePaymentSchedule;
+    window.updatePaymentSchedule = function() {
+        // Call original function first
+        originalUpdatePaymentSchedule.apply(this, arguments);
+        
+        // Update gross profit if salary results are showing
+        const salaryResults = document.getElementById('salaryResults');
+        if (salaryResults && !salaryResults.classList.contains('hidden')) {
+            calculateGrossProfit();
+        }
+    };
+});
+
+// Function to update the Gross Profit Calculator when the Update Profit button is clicked
+window.updateGrossProfit = function() {
+    // Check if salary has been calculated
+    const salaryResults = document.getElementById('salaryResults');
+    if (salaryResults && salaryResults.classList.contains('hidden')) {
+        alert('Please calculate your salary first');
+        return;
+    }
+    
+    // Call the gross profit calculation function
+    calculateGrossProfit();
 }

@@ -421,108 +421,100 @@
 
             <!-- Savings Estimator -->
             <div class="cyber-card rounded-lg p-6">
-                <h2 class="text-xl font-semibold text-white mb-6">
-                    <i class="fas fa-piggy-bank mr-2 text-neon-blue"></i> Savings Estimator
-                </h2>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <div class="input-container">
-                            <input type="number" id="monthlyIncome" class="cyber-input w-full p-3 rounded-md" placeholder=" ">
-                            <label class="floating-label">Monthly Net Income</label>
-                        </div>
-                        
-                        <div class="input-container">
-                            <input type="number" id="savingsGoal" class="cyber-input w-full p-3 rounded-md" placeholder=" " value="20">
-                            <label class="floating-label">Monthly Savings Goal (%)</label>
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <div class="input-container">
-                            <input type="number" id="currentSavings" class="cyber-input w-full p-3 rounded-md" placeholder=" " value="0">
-                            <label class="floating-label">Current Savings Balance</label>
-                        </div>
-                        
-                        <div class="input-container">
-                            <input type="number" id="savingsInterest" class="cyber-input w-full p-3 rounded-md" placeholder=" " value="3">
-                            <label class="floating-label">Annual Interest Rate (%)</label>
-                        </div>
-                    </div>
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-semibold text-white">
+                        <i class="fas fa-chart-line mr-2 text-neon-blue"></i> Gross Profit Calculator
+                    </h2>
+                    <a href="#" onclick="updateGrossProfit()" class="text-white px-4 py-2 bg-glass-blue hover:bg-opacity-90 rounded-md transition">
+                        <i class="fas fa-sync-alt mr-1"></i> Update Profit
+                    </a>
                 </div>
                 
-                <!-- Monthly Expenses Section -->
-                <div class="mt-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-medium text-white">Monthly Expenses</h3>
-                        <a href="#" onclick="showAddExpenseModal()" class="text-white px-4 py-2 bg-glass-blue hover:bg-opacity-90 rounded-md transition">
-                            <i class="fas fa-plus mr-1"></i> Add Expense
-                        </a>
-                    </div>
-                    
-                    <div id="expensesContainer" class="mb-4">
-                        <!-- Expenses will be added here -->
-                    </div>
-                    
-                    <div class="bg-glass-blue p-4 rounded-lg">
-                        <div class="flex justify-between mb-2 text-white">
-                            <span class="font-medium">Total Bills:</span>
-                            <span id="totalBillsAmount">$0</span>
-                        </div>
-                        <div class="flex justify-between mb-2 text-white">
-                            <span class="font-medium">Total Expenses:</span>
-                            <span id="totalExpensesAmount">$0</span>
-                        </div>
-                        <div class="flex justify-between border-t border-gray-700 pt-2 text-white">
-                            <span class="font-semibold">Total Monthly Outgoings:</span>
-                            <span id="totalOutgoings" class="font-bold">$0</span>
-                        </div>
-                    </div>
+                <div id="grossProfitContainer">
+                    <p class="text-center text-gray-400 py-4">Complete the Salary Calculator to see your profit analysis</p>
                 </div>
                 
-                <button onclick="calculateSavings()" class="w-full mt-6 cyber-secondary-btn py-3 rounded-md hover:bg-opacity-90 transition">
-                    Estimate Savings
-                </button>
-                
-                <div id="savingsResults" class="mt-6 hidden">
-                    <h3 class="text-lg font-medium text-white mb-3">Savings Projection</h3>
+                <div id="grossProfitResults" class="mt-6 hidden">
+                    <h3 class="text-lg font-medium text-white mb-3">Monthly Cash Flow</h3>
                     <div class="space-y-3 text-white">
                         <div class="flex justify-between">
                             <span>Monthly Net Income:</span>
-                            <span id="monthlyNetIncome" class="font-medium">$0</span>
+                            <span id="gpMonthlyIncome" class="font-medium">$0</span>
                         </div>
                         <div class="flex justify-between">
-                            <span>Total Monthly Outgoings:</span>
-                            <span id="monthlyOutgoings" class="font-medium">$0</span>
+                            <span>Total Monthly Bills:</span>
+                            <span id="gpMonthlyBills" class="font-medium">$0</span>
                         </div>
                         <div class="flex justify-between border-b border-gray-700 pb-2 mb-2">
-                            <span class="font-semibold">Disposable Income:</span>
-                            <span id="disposableIncome" class="font-bold text-neon-blue">$0</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>Monthly Savings Amount:</span>
-                            <span id="monthlySavings" class="font-medium">$0</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>Projected 1 Year Savings:</span>
-                            <span id="year1Savings" class="font-medium">$0</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>Projected 5 Year Savings:</span>
-                            <span id="year5Savings" class="font-medium">$0</span>
-                        </div>
-                        <div class="flex justify-between border-t border-gray-700 pt-2 mt-2">
-                            <span class="font-semibold">Total with Interest:</span>
-                            <span id="totalWithInterest" class="font-bold text-lg text-neon-green">$0</span>
+                            <span class="font-semibold">Monthly Surplus/Deficit:</span>
+                            <span id="gpMonthlySurplus" class="font-bold text-neon-blue">$0</span>
                         </div>
                     </div>
                     
-                    <div class="mt-4">
-                        <h4 class="text-md font-medium text-white mb-2">Savings Progress</h4>
-                        <div class="cyber-progress-bar">
-                            <div id="savingsProgress" class="cyber-progress-fill cyber-blue" style="width: 0%"></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        <div class="bg-glass-blue p-4 rounded-lg">
+                            <h4 class="text-md font-medium text-white mb-2">Paycheck 1 (15th)</h4>
+                            <div class="flex justify-between mb-2">
+                                <span>Net Pay:</span>
+                                <span id="gpPaycheck1Net" class="font-medium">$0</span>
+                            </div>
+                            <div class="flex justify-between mb-2">
+                                <span>Bills:</span>
+                                <span id="gpPaycheck1Bills" class="font-medium">$0</span>
+                            </div>
+                            <div class="flex justify-between border-t border-gray-700 pt-2">
+                                <span class="font-semibold">Surplus/Deficit:</span>
+                                <span id="gpPaycheck1Surplus" class="font-bold">$0</span>
+                            </div>
                         </div>
-                        <p id="savingsStatus" class="text-sm text-gray-400 mt-1">0% of monthly goal achieved</p>
+                        
+                        <div class="bg-glass-purple p-4 rounded-lg">
+                            <h4 class="text-md font-medium text-white mb-2">Paycheck 2 (End of Month)</h4>
+                            <div class="flex justify-between mb-2">
+                                <span>Net Pay:</span>
+                                <span id="gpPaycheck2Net" class="font-medium">$0</span>
+                            </div>
+                            <div class="flex justify-between mb-2">
+                                <span>Bills:</span>
+                                <span id="gpPaycheck2Bills" class="font-medium">$0</span>
+                            </div>
+                            <div class="flex justify-between border-t border-gray-700 pt-2">
+                                <span class="font-semibold">Surplus/Deficit:</span>
+                                <span id="gpPaycheck2Surplus" class="font-bold">$0</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h3 class="text-lg font-medium text-white mt-6 mb-3">Annual Projection</h3>
+                    <div class="space-y-3 text-white">
+                        <div class="flex justify-between">
+                            <span>Annual Net Income:</span>
+                            <span id="gpAnnualIncome" class="font-medium">$0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Potential Annual Bonus:</span>
+                            <span id="gpAnnualBonus" class="font-medium">$0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Annual Bills:</span>
+                            <span id="gpAnnualBills" class="font-medium">$0</span>
+                        </div>
+                        <div class="flex justify-between border-b border-gray-700 pb-2 mb-2">
+                            <span class="font-semibold">Annual Surplus/Deficit (without bonus):</span>
+                            <span id="gpAnnualSurplus" class="font-bold text-neon-blue">$0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="font-semibold">Annual Surplus/Deficit (with bonus):</span>
+                            <span id="gpAnnualSurplusWithBonus" class="font-bold text-neon-green">$0</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6">
+                        <h4 class="text-md font-medium text-white mb-2">Monthly Profit Status</h4>
+                        <div class="cyber-progress-bar">
+                            <div id="profitProgress" class="cyber-progress-fill" style="width: 0%"></div>
+                        </div>
+                        <p id="profitStatus" class="text-sm text-gray-400 mt-1">Calculating your profit ratio...</p>
                     </div>
                 </div>
             </div>
