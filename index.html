@@ -247,8 +247,8 @@
                 </div>
             </div>
 
-            <!-- Bills Section -->
-            <div class="cyber-card rounded-lg p-6 bills-section">
+            <!-- Bills Section - Now spans full width -->
+            <div class="cyber-card rounded-lg p-6 bills-section lg:col-span-2">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-xl font-semibold text-white">
                         <i class="fas fa-file-invoice-dollar mr-2 text-neon-green"></i> Monthly Bills
@@ -263,10 +263,10 @@
                     </div>
                 </div>
                 
-                <div class="bills-wrapper" style="min-height: 335px; max-height: 550px; overflow-y: auto;">
-                    <div id="billsContainer" class="bills-container">
+                <div class="bills-wrapper" style="min-height: 400px; max-height: 650px; overflow-y: auto;">
+                    <div id="billsContainer" class="bills-container grid grid-cols-1 md:grid-cols-2 gap-3">
                         <!-- Bills will be added here -->
-                        <p class="text-gray-400 text-center py-4">No bills added yet</p>
+                        <p class="text-gray-400 text-center py-4 md:col-span-2">No bills added yet</p>
                     </div>
                 </div>
                 
@@ -315,7 +315,7 @@
                 </div>
             </div>
 
-            <!-- Salary Calculator -->
+            <!-- Salary Calculator - Now moved next to Net Profit Calculator -->
             <div class="cyber-card rounded-lg p-6">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-xl font-semibold text-white">
@@ -500,7 +500,7 @@
                 </div>
             </div>
 
-            <!-- Savings Estimator -->
+            <!-- Net Profit Calculator -->
             <div class="cyber-card rounded-lg p-6">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-xl font-semibold text-white">
