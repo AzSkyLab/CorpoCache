@@ -2854,3 +2854,15 @@ function resetMortgageFields() {
 window.closeSalaryModal = function() {
     document.getElementById('salaryModal').classList.add('hidden');
 }
+
+// Function to toggle the paid status of a bill
+window.toggleBillPaidStatus = function(index) {
+    // Toggle the paid status
+    bills[index].isPaid = !bills[index].isPaid;
+    
+    // Re-render the bills to update the UI
+    renderBills();
+    
+    // Update the payment schedule since paid status affects calculations
+    updatePaymentSchedule();
+}
