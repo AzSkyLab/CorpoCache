@@ -1113,6 +1113,40 @@
         </div>
     </div>
 
+    <!-- Zero Amount Bill Confirmation Modal -->
+    <div id="zeroBillModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="modal-cyber rounded-lg p-6 w-full max-w-md">
+            <h3 class="text-xl font-semibold mb-4 text-white">Confirm Bill Amount</h3>
+            
+            <div class="p-4 mb-4 bg-glass-blue rounded-lg">
+                <div class="text-white">
+                    <p class="mb-2"><i class="fas fa-info-circle text-neon-blue mr-2"></i><span id="zeroBillName">This bill</span> has a $0.00 amount.</p>
+                    <p>Is this correct or would you like to enter the amount you paid?</p>
+                </div>
+            </div>
+            
+            <div id="zeroBillAmountContainer" class="space-y-4 hidden">
+                <div class="input-container">
+                    <input type="number" id="zeroBillAmount" class="cyber-input w-full p-3 rounded-md" placeholder=" " min="0" step="any">
+                    <label class="floating-label">Amount Paid ($)</label>
+                </div>
+            </div>
+            
+            <div class="flex justify-end space-x-3 mt-6">
+                <button onclick="closeZeroBillModal()" class="px-4 py-2 border border-gray-600 text-white rounded-md hover:bg-gray-800">
+                    Cancel
+                </button>
+                <button id="zeroBillEditBtn" onclick="showZeroBillAmountField()" class="px-4 py-2 cyber-secondary-btn rounded-md">
+                    Enter Amount
+                </button>
+                <button onclick="confirmZeroBill(true)" class="px-4 py-2 cyber-primary-btn rounded-md">
+                    Confirm Zero
+                </button>
+            </div>
+            <input type="hidden" id="zeroBillIndex" value="-1">
+        </div>
+    </div>
+
     <!-- External JavaScript -->
     <script src="js/script.js"></script>
 </body>

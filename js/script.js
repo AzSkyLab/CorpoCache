@@ -2857,12 +2857,122 @@ window.closeSalaryModal = function() {
 
 // Function to toggle the paid status of a bill
 window.toggleBillPaidStatus = function(index) {
-    // Toggle the paid status
-    bills[index].isPaid = !bills[index].isPaid;
+    // Get the bill at the specified index
+    const bill = bills[index];
     
-    // Re-render the bills to update the UI
-    renderBills();
+    // Check if bill amount is zero
+    if (bill.amount === 0) {
+        // Show our custom zero bill modal instead of browser confirm
+        showZeroBillModal(index);
+    } else {
+        // If bill amount is not zero, simply toggle the paid status
+        bill.isPaid = !bill.isPaid;
+        
+        // Re-render the bills to update the UI
+        renderBills();
+        
+        // Update the payment schedule since paid status affects calculations
+        updatePaymentSchedule();
+    }
+}
+
+// Function to show the zero bill confirmation modal
+window.showZeroBillModal = function(index) {
+    const bill = bills[index];
     
-    // Update the payment schedule since paid status affects calculations
-    updatePaymentSchedule();
+    // Set the bill name in the modal
+    document.getElementById('zeroBillName').textContent = bill.name;
+    
+    // Store the bill index for later use
+    document.getElementById('zeroBillIndex').value = index;
+    
+    // Hide the amount field container initially
+    document.getElementById('zeroBillAmountContainer').classList.add('hidden');
+    
+    // Show the "Enter Amount" button and reset its text
+    const editBtn = document.getElementById('zeroBillEditBtn');
+    editBtn.classList.remove('hidden');
+    editBtn.textContent = 'Enter Amount';
+    
+    // Show the modal
+    document.getElementById('zeroBillModal').classList.remove('hidden');
+}
+
+// Function to close the zero bill modal
+window.closeZeroBillModal = function() {
+    document.getElementById('zeroBillModal').classList.add('hidden');
+}
+
+// Function to show the amount input field
+window.showZeroBillAmountField = function() {
+    // Show the amount field container
+    document.getElementById('zeroBillAmountContainer').classList.remove('hidden');
+    
+    // Focus the input field
+    document.getElementById('zeroBillAmount').focus();
+    
+    // Change the button text and action
+    const editBtn = document.getElementById('zeroBillEditBtn');
+    editBtn.textContent = 'Apply Amount';
+    editBtn.onclick = function() {
+        // Try to parse the entered amount
+        const amountValue = parseFloat(document.getElementById('zeroBillAmount').value);
+        
+        if (isNaN(amountValue) || amountValue < 0) {
+            // If invalid input, show error with cyber styling
+            const container = document.getElementById('zeroBillAmountContainer');
+            
+            // Clear any existing error message
+            const existingError = container.querySelector('.error-message');
+            if (existingError) {
+                existingError.remove();
+            }
+            
+            // Create and add error message
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message text-neon-pink text-sm mt-1';
+            errorDiv.innerHTML = '<i class="fas fa-exclamation-triangle mr-1"></i> Please enter a valid positive number';
+            container.appendChild(errorDiv);
+            
+            return;
+        }
+        
+        // Get the bill index
+        const index = parseInt(document.getElementById('zeroBillIndex').value);
+        
+        // Update the bill amount
+        bills[index].amount = amountValue;
+        
+        // Mark the bill as paid
+        bills[index].isPaid = true;
+        
+        // Re-render the bills to update the UI
+        renderBills();
+        
+        // Update the payment schedule
+        updatePaymentSchedule();
+        
+        // Close the modal
+        closeZeroBillModal();
+    };
+}
+
+// Function to confirm zero amount and mark as paid
+window.confirmZeroBill = function(shouldToggle) {
+    // Get the bill index
+    const index = parseInt(document.getElementById('zeroBillIndex').value);
+    
+    if (shouldToggle) {
+        // Toggle the paid status
+        bills[index].isPaid = !bills[index].isPaid;
+        
+        // Re-render the bills to update the UI
+        renderBills();
+        
+        // Update the payment schedule
+        updatePaymentSchedule();
+    }
+    
+    // Close the modal
+    closeZeroBillModal();
 }
