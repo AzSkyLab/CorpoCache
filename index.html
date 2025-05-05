@@ -266,7 +266,7 @@
             </div>
 
             <!-- Loan Information Section -->
-            <div class="cyber-card rounded-lg p-6 loan-info-section">
+            <div class="cyber-card rounded-lg p-6 loan-info-section" style="display: flex; flex-direction: column;">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-xl font-semibold text-white">
                         <i class="fas fa-money-bill-wave mr-2 text-neon-purple"></i> Loan Information
@@ -276,7 +276,7 @@
                     </a>
                 </div>
                 
-                <div class="loans-wrapper" style="min-height: 335px; max-height: 550px; overflow-y: auto;">
+                <div class="loans-wrapper" style="min-height: 335px; max-height: 550px; overflow-y: auto; flex-grow: 1;">
                     <div id="loansContainer" class="loans-container">
                         <!-- Loans will be added here -->
                         <p class="text-gray-400 text-center py-4">No loans added yet</p>
@@ -590,7 +590,7 @@
                             <span id="gpAnnualIncome" class="font-medium">$0</span>
                         </div>
                         <div class="flex justify-between">
-                            <span>Potential Annual Bonus:</span>
+                            <span>Potential After-Tax Annual Bonus (<span id="gpAnnualBonusTaxRate" class="text-neon-purple">25%</span>):</span>
                             <span id="gpAnnualBonus" class="font-medium">$0</span>
                         </div>
                         <div class="flex justify-between">

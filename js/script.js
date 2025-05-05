@@ -1781,6 +1781,9 @@ window.calculateSalaryFromModal = function() {
     document.getElementById('bonusAmount').textContent = `$${bonusAmount.toFixed(2)}`;
     document.getElementById('afterTaxBonusAmount').textContent = `$${afterTaxBonusAmount.toFixed(2)}`;
     
+    // Update the bonus tax rate display to show the rate used in calculations
+    document.getElementById('bonusTaxRate').textContent = `(${bonusTaxRate}% tax)`;
+    
     // Update the Calculate Salary button to show "Update Salary" now that we have calculated results
     const calculateButton = document.querySelector('button[onclick="showSalaryModal()"]');
     if (calculateButton) {
@@ -1830,6 +1833,7 @@ function initGrossProfitCalculator() {
     window.gpPaycheck2Surplus = document.getElementById('gpPaycheck2Surplus');
     window.gpAnnualIncome = document.getElementById('gpAnnualIncome');
     window.gpAnnualBonus = document.getElementById('gpAnnualBonus');
+    window.gpAnnualBonusTaxRate = document.getElementById('gpAnnualBonusTaxRate');
     window.gpAnnualBills = document.getElementById('gpAnnualBills');
     window.gpAnnualSurplus = document.getElementById('gpAnnualSurplus');
     window.gpAnnualSurplusWithBonus = document.getElementById('gpAnnualSurplusWithBonus');
@@ -1883,6 +1887,15 @@ function calculateGrossProfit() {
     // Get the after-tax bonus amount instead of pre-tax bonus
     const afterTaxBonusText = document.getElementById('afterTaxBonusAmount').textContent.replace('$', '').trim();
     const afterTaxBonus = parseFloat(afterTaxBonusText) || 0;
+    
+    // Get the bonus tax rate from the UI
+    const bonusTaxRateText = document.getElementById('bonusTaxRate').textContent.replace(/[()%]/g, '').trim().split(' ')[0];
+    const bonusTaxRate = parseFloat(bonusTaxRateText) || 25;
+    
+    // Update the annual bonus tax rate display
+    if (gpAnnualBonusTaxRate) {
+        gpAnnualBonusTaxRate.textContent = `${bonusTaxRate}%`;
+    }
     
     // Get bills information
     // Split bills between two paychecks (15th and end of month)
