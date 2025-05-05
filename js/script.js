@@ -81,6 +81,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize elements
     initElements();
     
+    // Set current month and year
+    updateCurrentMonthAndYear();
+    
     // Load sample data
     loadSampleData();
     
@@ -100,6 +103,22 @@ document.addEventListener('DOMContentLoaded', () => {
     // Setup scroll detection for containers
     setupScrollDetection();
 });
+
+// Function to update the month and year display in the Monthly Bills section
+function updateCurrentMonthAndYear() {
+    const currentDate = new Date();
+    const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+    const monthElement = document.getElementById('currentMonth');
+    const yearElement = document.getElementById('currentYear');
+    
+    if (monthElement) {
+        monthElement.textContent = months[currentDate.getMonth()];
+    }
+    
+    if (yearElement) {
+        yearElement.textContent = currentDate.getFullYear();
+    }
+}
 
 /**
  * Gets the appropriate color class for the credit utilization percentage
@@ -724,7 +743,6 @@ window.showAddBillModal = function() {
     document.getElementById('billAmount').value = '';
     document.getElementById('billDueDate').value = '';
     document.getElementById('billType').value = 'housing';
-    document.getElementById('billPriority').value = 'normal';
     document.getElementById('editBillIndex').value = '-1';
     
     // Hide any previous validation errors
@@ -743,7 +761,6 @@ window.editBill = function(index) {
     document.getElementById('billDueDate').value = bill.dueDate;
     // Set bill type if it exists, otherwise default to 'other'
     document.getElementById('billType').value = bill.type || 'other';
-    document.getElementById('billPriority').value = bill.priority;
     
     document.getElementById('editBillIndex').value = index;
     
@@ -808,7 +825,7 @@ window.saveBill = function() {
         amount: parseFloat(billAmount.value),
         dueDate: parseInt(billDueDate.value),
         type: billType.value,
-        priority: billPriority.value,
+        priority: 'normal', // Set default priority since we removed the field
         isPaid: false // Add isPaid property, default to false
     };
     
@@ -817,6 +834,10 @@ window.saveBill = function() {
     if (editIndex >= 0 && editIndex < bills.length) {
         // Edit existing bill, preserve the paid status if it exists
         bill.isPaid = bills[editIndex].isPaid || false;
+        // Also preserve the existing priority if available
+        if (bills[editIndex].priority) {
+            bill.priority = bills[editIndex].priority;
+        }
         bills[editIndex] = bill;
     } else {
         // Add new bill
@@ -843,9 +864,6 @@ function renderBills() {
     
     let html = '';
     bills.forEach((bill, index) => {
-        const priorityIcon = bill.priority === 'high' ? 'fa-exclamation-circle text-neon-pink' : 
-                           bill.priority === 'low' ? 'fa-info-circle text-neon-blue' : 'fa-check-circle text-neon-purple';
-        
         // Get bill type icon
         const typeIcon = getBillTypeIcon(bill.type || 'other');
         
@@ -864,7 +882,6 @@ function renderBills() {
                     </div>
                     <div class="flex items-center">
                         <span class="font-medium mr-4">$${bill.amount.toFixed(2)}</span>
-                        <i class="fas ${priorityIcon} mr-2 cyber-neon"></i>
                         <button onclick="editBill(${index})" class="text-neon-blue hover:text-neon-purple mr-3">
                             <i class="fas fa-edit"></i>
                         </button>
@@ -1473,18 +1490,60 @@ window.resetAllPayments = function() {
     updatePaymentSchedule();
 }
 
-// Function to toggle the paid status of a bill
-function toggleBillPaidStatus(index) {
-    // Make sure the index is valid
-    if (index >= 0 && index < bills.length) {
-        // Toggle the paid status
-        bills[index].isPaid = !bills[index].isPaid;
+// Function to check if all bills are marked as paid
+function areAllBillsPaid() {
+    return bills.every(bill => bill.isPaid === true);
+}
+
+// Function to show the complete month confirmation modal
+window.completeMonthConfirm = function() {
+    const allPaid = areAllBillsPaid();
+    
+    // Show the appropriate message based on whether all bills are paid
+    document.getElementById('completeMonthMessage').classList.toggle('hidden', allPaid);
+    document.getElementById('allPaidMessage').classList.toggle('hidden', !allPaid);
+    
+    // Show the modal
+    document.getElementById('completeMonthModal').classList.remove('hidden');
+}
+
+// Function to close the complete month modal
+window.closeCompleteMonthModal = function() {
+    document.getElementById('completeMonthModal').classList.add('hidden');
+}
+
+// Function to complete the month and reset all bills
+window.completeMonth = function() {
+    const allPaid = areAllBillsPaid();
+    
+    // If not all bills are paid, mark them as paid
+    if (!allPaid) {
+        // Mark all bills as paid
+        bills.forEach(bill => {
+            bill.isPaid = true;
+        });
         
         // Re-render bills to update the UI
         renderBills();
         
-        // Update the payment schedule since paid status may affect calculations
+        // Update the payment schedule
         updatePaymentSchedule();
+        
+        // Reset all payments after a slight delay to show that all bills were marked as paid
+        setTimeout(() => {
+            resetAllPayments();
+            // Update the month and year display
+            updateCurrentMonthAndYear();
+            // Close the modal
+            closeCompleteMonthModal();
+        }, 800);
+    } else {
+        // All bills are already paid, just reset
+        resetAllPayments();
+        // Update the month and year display
+        updateCurrentMonthAndYear();
+        // Close the modal
+        closeCompleteMonthModal();
     }
 }
 

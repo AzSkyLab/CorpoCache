@@ -79,20 +79,26 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <!-- Bills Section - Now placed above credit and loan sections -->
             <div class="cyber-card rounded-lg p-6 bills-section lg:col-span-2">
-                <div class="flex justify-between items-center mb-6">
+                <div class="flex items-center justify-between mb-6 relative">
                     <h2 class="text-xl font-semibold text-white">
                         <i class="fas fa-file-invoice-dollar mr-2 text-neon-green"></i> Monthly Bills
                     </h2>
+                    
+                    <div class="font-orbitron text-2xl tracking-wider font-bold absolute left-0 right-0 text-center pointer-events-none">
+                        <span id="currentMonth" class="text-neon-blue drop-shadow-glow">MAY</span>
+                        <span id="currentYear" class="text-neon-pink drop-shadow-glow">2025</span>
+                    </div>
+                    
                     <div class="flex space-x-2">
-                        <a href="#" onclick="resetAllPayments()" class="text-white px-4 py-2 bg-glass-blue hover:bg-opacity-90 rounded-md transition">
-                            <i class="fas fa-redo-alt mr-1"></i> Reset Payments
-                        </a>
                         <a href="#" onclick="showAddBillModal()" class="text-white px-4 py-2 bg-glass-purple hover:bg-opacity-90 rounded-md transition">
                             <i class="fas fa-plus mr-1"></i> Add Bill
                         </a>
+                        <a href="#" onclick="completeMonthConfirm()" class="text-white px-4 py-2 bg-glass-blue hover:bg-opacity-90 rounded-md transition">
+                            <i class="fas fa-check-circle mr-1"></i> Complete Month
+                        </a>
                     </div>
                 </div>
-                
+
                 <div class="bills-wrapper" style="min-height: 400px; max-height: 650px; overflow-y: auto;">
                     <div id="billsContainer" class="bills-container grid grid-cols-1 md:grid-cols-2 gap-3">
                         <!-- Bills will be added here -->
@@ -717,15 +723,6 @@
                     <input type="number" id="billDueDate" class="cyber-input w-full p-3 rounded-md" placeholder=" " min="1" max="31">
                     <label class="floating-label">Due Date (Day of Month)</label>
                 </div>
-                
-                <div class="input-container">
-                    <select id="billPriority" class="cyber-input w-full p-3 rounded-md">
-                        <option value="normal">Normal Priority</option>
-                        <option value="high">High Priority</option>
-                        <option value="low">Low Priority</option>
-                    </select>
-                    <label class="floating-label">Priority</label>
-                </div>
             </div>
             
             <div class="flex justify-end space-x-3 mt-6">
@@ -1086,6 +1083,33 @@
                 </button>
             </div>
             <input type="hidden" id="editLoanIndex" value="-1">
+        </div>
+    </div>
+    
+    <!-- Complete Month Confirmation Modal -->
+    <div id="completeMonthModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="modal-cyber rounded-lg p-6 w-full max-w-md">
+            <h3 class="text-xl font-semibold mb-4 text-white">Complete Monthly Bills</h3>
+            
+            <div class="p-4 mb-4 border border-neon-blue rounded-lg">
+                <div id="completeMonthMessage" class="text-white mb-3">
+                    <p class="mb-2"><i class="fas fa-info-circle text-neon-blue mr-2"></i>Not all bills are marked as paid.</p>
+                    <p>Would you like to mark all bills as paid before completing the month?</p>
+                </div>
+                <div id="allPaidMessage" class="text-white mb-3 hidden">
+                    <p class="mb-2"><i class="fas fa-check-circle text-neon-green mr-2"></i>All bills are marked as paid.</p>
+                    <p>Completing the month will reset all bills to unpaid. Are you ready to start a new month?</p>
+                </div>
+            </div>
+            
+            <div class="flex justify-end space-x-3 mt-6">
+                <button onclick="closeCompleteMonthModal()" class="px-4 py-2 border border-gray-600 text-white rounded-md hover:bg-gray-800">
+                    Cancel
+                </button>
+                <button onclick="completeMonth()" class="px-4 py-2 cyber-primary-btn rounded-md">
+                    <i class="fas fa-check-circle mr-1"></i> Complete Month
+                </button>
+            </div>
         </div>
     </div>
 
