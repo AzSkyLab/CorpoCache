@@ -2027,9 +2027,6 @@ function calculateGrossProfit() {
                 // If invalid date, default to today
                 lastPayDate = new Date();
             }
-            
-            // For debug purposes, log original day of week
-            console.log('Original last pay date day:', lastPayDate.getDay(), '(0=Sun, 6=Sat)');
         } else {
             // Default to today if no stored date
             lastPayDate = new Date();
@@ -2056,14 +2053,6 @@ function calculateGrossProfit() {
             const dayName = days[date.getDay()];
             return `${formatDate(date)} (${dayName})`;
         };
-        
-        // For debugging - log the calculated dates and their days of week
-        console.log('Last pay date:', formatDateWithDay(lastPayDate), lastPayDate.toISOString());
-        console.log('Next pay date 1:', formatDateWithDay(nextPayDate1), nextPayDate1.toISOString(), 'Day:', nextPayDate1.getDay());
-        console.log('Next pay date 2:', formatDateWithDay(nextPayDate2), nextPayDate2.toISOString(), 'Day:', nextPayDate2.getDay());
-        console.log('Next pay date 3:', formatDateWithDay(nextPayDate3), nextPayDate3.toISOString(), 'Day:', nextPayDate3.getDay());
-        console.log('Days between paychecks:', Math.round((nextPayDate2 - nextPayDate1) / (1000 * 60 * 60 * 24)));
-        console.log('Third paycheck in same month:', hasThirdPaycheckInSameMonth);
         
         // Show third paycheck section only if it's in the same month as another paycheck
         const gpThirdPaycheckSection = document.getElementById('gpThirdPaycheckSection');
