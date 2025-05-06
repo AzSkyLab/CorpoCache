@@ -48,7 +48,7 @@ body {
 
 .text-neon-green {
     color: var(--neon-green);
-    text-shadow: 0 0 5px var(--neon-green);
+    text-shadow: 0 0 5px var (--neon-green);
 }
 
 .text-neon-yellow {
@@ -407,6 +407,53 @@ input[type="number"] {
     .cyber-card {
         margin-bottom: 1.5rem;
     }
+    
+    /* Modal responsiveness for mobile */
+    .modal-cyber {
+        width: 90% !important;
+        max-height: 85vh;
+        overflow-y: auto;
+        margin: 0 auto;
+    }
+
+    /* Fix spacing between items in modals for better touch targets */
+    .modal-cyber .space-y-4 > div {
+        margin-bottom: 1rem;
+    }
+
+    /* Make select dropdowns more touch-friendly */
+    .modal-cyber select {
+        padding: 10px;
+    }
+
+    /* Prevent header content from overlapping on mobile */
+    .bills-section .flex.items-center.justify-between.mb-6 {
+        flex-direction: column;
+        align-items: stretch !important;
+    }
+
+    .bills-section .flex.items-center.justify-between.mb-6 > div {
+        margin-top: 10px;
+        margin-bottom: 10px;
+        text-align: center;
+    }
+
+    .bills-section .font-orbitron.text-2xl {
+        position: static !important;
+        margin-bottom: 10px;
+        padding: 5px;
+    }
+
+    /* Improve button layout on mobile */
+    .bills-section .flex.space-x-2 {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .bills-section .flex.space-x-2 a {
+        margin: 5px 0;
+        text-align: center;
+    }
 }
 
 /* Credit and Bills cards specific styling */
@@ -519,4 +566,30 @@ input[type="number"] {
 
 #lastSavedTime:hover {
     color: var(--neon-silver);
+}
+
+/* Fix for modal dialogs on smaller screens */
+@media (max-width: 480px) {
+    /* Make modal content scrollable on very small screens */
+    .modal-cyber {
+        max-height: 80vh;
+        overflow-y: auto;
+        padding: 15px;
+    }
+
+    /* Ensure modal buttons don't overflow */
+    .modal-cyber .flex.justify-end.space-x-3 {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .modal-cyber .flex.justify-end.space-x-3 button {
+        margin: 5px 0;
+        margin-left: 0 !important;
+    }
+
+    /* Make card image selection grid more mobile-friendly */
+    #cardImageOptions {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
