@@ -48,7 +48,12 @@ body {
 
 .text-neon-green {
     color: var(--neon-green);
-    text-shadow: 0 0 5px var (--neon-green);
+    text-shadow: 0 0 5px var(--neon-green);
+}
+
+/* Fix for missing space in text-shadow property */
+.text-neon-green {
+    text-shadow: 0 0 5px var(--neon-green);
 }
 
 .text-neon-yellow {
@@ -592,4 +597,31 @@ input[type="number"] {
     #cardImageOptions {
         grid-template-columns: repeat(2, 1fr);
     }
+}
+
+/* Fix for collapsible sections */
+#creditRatingLegendHeader,
+#taxBracketHeader {
+    cursor: pointer;
+}
+
+#creditRatingLegendHeader i,
+#taxBracketHeader i {
+    transition: transform 0.3s ease;
+}
+
+#creditRatingLegendHeader.active i,
+#taxBracketHeader.active i {
+    transform: rotate(180deg);
+}
+
+/* Ensure collapsible content is properly hidden/shown */
+#creditRatingLegendContent.hidden,
+#taxBracketContent.hidden {
+    display: none;
+}
+
+#creditRatingLegendContent,
+#taxBracketContent {
+    display: block;
 }

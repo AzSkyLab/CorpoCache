@@ -2861,9 +2861,9 @@ function initCollapsibleSections() {
         
         creditRatingLegendHeader.addEventListener('click', function() {
             creditRatingLegendContent.classList.toggle('hidden');
+            creditRatingLegendHeader.classList.toggle('active');
             if (creditRatingChevron) {
-                creditRatingChevron.classList.toggle('transform');
-                creditRatingChevron.classList.toggle('rotate-180');
+                creditRatingChevron.style.transform = creditRatingLegendContent.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
             }
         });
     }
@@ -2877,9 +2877,9 @@ function initCollapsibleSections() {
         
         taxBracketHeader.addEventListener('click', function() {
             taxBracketContent.classList.toggle('hidden');
+            taxBracketHeader.classList.toggle('active');
             if (taxBracketChevron) {
-                taxBracketChevron.classList.toggle('transform');
-                taxBracketChevron.classList.toggle('rotate-180');
+                taxBracketChevron.style.transform = taxBracketContent.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
             }
         });
     }
