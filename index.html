@@ -72,6 +72,25 @@
                     System v2.5.0 <span class="text-neon-green">// ONLINE</span>
                 </span>
             </div>
+            
+            <!-- Data Management Panel -->
+            <div class="flex justify-center mt-4">
+                <div class="bg-glass-blue p-2 rounded-lg flex space-x-2 items-center">
+                    <button onclick="saveToLocalStorage()" class="px-3 py-1 bg-glass-purple hover:bg-opacity-90 rounded-md transition text-sm">
+                        <i class="fas fa-save mr-1"></i> Save
+                    </button>
+                    <button onclick="exportData()" class="px-3 py-1 bg-glass-purple hover:bg-opacity-90 rounded-md transition text-sm">
+                        <i class="fas fa-file-export mr-1"></i> Export
+                    </button>
+                    <button onclick="importData()" class="px-3 py-1 bg-glass-purple hover:bg-opacity-90 rounded-md transition text-sm">
+                        <i class="fas fa-file-import mr-1"></i> Import
+                    </button>
+                    <button onclick="clearAllData()" class="px-3 py-1 bg-glass-pink hover:bg-opacity-90 rounded-md transition text-sm">
+                        <i class="fas fa-trash mr-1"></i> Reset
+                    </button>
+                    <span id="lastSavedTime" class="text-xs text-gray-400 hidden ml-2"></span>
+                </div>
+            </div>
         </div>
     </header>
 
@@ -847,8 +866,8 @@
                 
                 <div class="input-container">
                     <select id="modalPayFrequency" class="cyber-input w-full p-3 rounded-md" placeholder=" ">
-                        <option value="24">Semi-Monthly (24 pay periods)</option>
-                        <option value="26" selected>Bi-Weekly (26 pay periods)</option>
+                        <option value="24" selected>Semi-Monthly (24 pay periods)</option>
+                        <option value="26">Bi-Weekly (26 pay periods)</option>
                     </select>
                     <label class="floating-label">Pay Frequency</label>
                 </div>
@@ -1148,6 +1167,6 @@
     </div>
 
     <!-- External JavaScript -->
-    <script src="js/script.js"></script>
+    <script src="js/script.js?v=2.5.1"></script>
 </body>
 </html>

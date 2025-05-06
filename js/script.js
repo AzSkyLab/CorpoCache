@@ -75,6 +75,583 @@ let creditCards = [];
 let bills = [];
 let expenses = [];
 let loans = []; // Add loans array for loan tracking
+let salaryData = {}; // Object to store salary calculation data
+let profitData = {}; // Object to store profit calculation data
+
+// Persistence functions for localStorage
+function saveToLocalStorage() {
+    try {
+        localStorage.setItem('creditCards', JSON.stringify(creditCards));
+        localStorage.setItem('bills', JSON.stringify(bills));
+        localStorage.setItem('expenses', JSON.stringify(expenses));
+        localStorage.setItem('loans', JSON.stringify(loans));
+        localStorage.setItem('salaryData', JSON.stringify(salaryData));
+        localStorage.setItem('profitData', JSON.stringify(profitData));
+        
+        // Save the last save timestamp
+        localStorage.setItem('lastSaved', new Date().toISOString());
+        
+        // Show a brief save confirmation
+        showSaveConfirmation();
+    } catch (error) {
+        console.error('Error saving data to localStorage:', error);
+        alert('Failed to save your data. Your browser storage might be full or restricted.');
+    }
+}
+
+function loadFromLocalStorage() {
+    try {
+        // Load credit cards
+        const savedCreditCards = localStorage.getItem('creditCards');
+        if (savedCreditCards) {
+            creditCards = JSON.parse(savedCreditCards);
+        }
+        
+        // Load bills
+        const savedBills = localStorage.getItem('bills');
+        if (savedBills) {
+            bills = JSON.parse(savedBills);
+        }
+        
+        // Load expenses
+        const savedExpenses = localStorage.getItem('expenses');
+        if (savedExpenses) {
+            expenses = JSON.parse(savedExpenses);
+        }
+        
+        // Load loans
+        const savedLoans = localStorage.getItem('loans');
+        if (savedLoans) {
+            loans = JSON.parse(savedLoans);
+        }
+        
+        // Load salary data
+        const savedSalaryData = localStorage.getItem('salaryData');
+        if (savedSalaryData) {
+            salaryData = JSON.parse(savedSalaryData);
+        }
+        
+        // Load profit data
+        const savedProfitData = localStorage.getItem('profitData');
+        if (savedProfitData) {
+            profitData = JSON.parse(savedProfitData);
+        }
+        
+        // Update UI with loaded data
+        renderCreditCards();
+        updateCreditSummary();
+        renderBills();
+        updatePaymentSchedule();
+        renderExpenses();
+        updateExpenseSummary();
+        if (typeof renderLoans === 'function') {
+            renderLoans();
+            updateLoanSummary();
+        }
+        
+        // Load salary data if available
+        loadSalaryDataToUI();
+        
+        // Show last saved time if available
+        updateLastSavedInfo();
+        
+        return true;
+    } catch (error) {
+        console.error('Error loading data from localStorage:', error);
+        return false;
+    }
+}
+
+// Function to load salary data to the UI
+function loadSalaryDataToUI() {
+    if (Object.keys(salaryData).length > 0) {
+        // Show the salary results container
+        const salaryResults = document.getElementById('salaryResults');
+        if (salaryResults) {
+            salaryResults.classList.remove('hidden');
+        }
+        
+        // Populate the salary fields with saved data
+        if (salaryData.annualSalary) {
+            document.getElementById('annualSalary').textContent = salaryData.annualSalary;
+        }
+        
+        if (salaryData.grossPay) {
+            document.getElementById('grossPay').textContent = salaryData.grossPay;
+        }
+        
+        if (salaryData.netPay) {
+            document.getElementById('netPay').textContent = salaryData.netPay;
+        }
+        
+        if (salaryData.bonusAmount) {
+            document.getElementById('bonusAmount').textContent = salaryData.bonusAmount;
+        }
+        
+        if (salaryData.afterTaxBonusAmount) {
+            document.getElementById('afterTaxBonusAmount').textContent = salaryData.afterTaxBonusAmount;
+        }
+        
+        if (salaryData.federalTaxAmount) {
+            document.getElementById('federalTaxAmount').textContent = salaryData.federalTaxAmount;
+        }
+        
+        if (salaryData.oasdiTaxAmount) {
+            document.getElementById('oasdiTaxAmount').textContent = salaryData.oasdiTaxAmount;
+        }
+        
+        if (salaryData.medicareTaxAmount) {
+            document.getElementById('medicareTaxAmount').textContent = salaryData.medicareTaxAmount;
+        }
+        
+        if (salaryData.stateTaxAmount) {
+            document.getElementById('stateTaxAmount').textContent = salaryData.stateTaxAmount;
+        }
+        
+        if (salaryData.taxAmount) {
+            document.getElementById('taxAmount').textContent = salaryData.taxAmount;
+        }
+        
+        if (salaryData.retirementAmount) {
+            document.getElementById('retirementAmount').textContent = salaryData.retirementAmount;
+        }
+        
+        if (salaryData.esppAmount) {
+            document.getElementById('esppAmount').textContent = salaryData.esppAmount;
+        }
+        
+        if (salaryData.savingsTotal) {
+            document.getElementById('savingsTotal').textContent = salaryData.savingsTotal;
+        }
+        
+        if (salaryData.healthAmount) {
+            document.getElementById('healthAmount').textContent = salaryData.healthAmount;
+        }
+        
+        if (salaryData.dentalAmount) {
+            document.getElementById('dentalAmount').textContent = salaryData.dentalAmount;
+        }
+        
+        if (salaryData.visionAmount) {
+            document.getElementById('visionAmount').textContent = salaryData.visionAmount;
+        }
+        
+        if (salaryData.insuranceTotal) {
+            document.getElementById('insuranceTotal').textContent = salaryData.insuranceTotal;
+        }
+        
+        if (salaryData.federalTaxRate) {
+            document.getElementById('federalTaxRate').textContent = salaryData.federalTaxRate;
+        }
+        
+        if (salaryData.oasdiRate) {
+            document.getElementById('oasdiRate').textContent = salaryData.oasdiRate;
+        }
+        
+        if (salaryData.medicareRate) {
+            document.getElementById('medicareRate').textContent = salaryData.medicareRate;
+        }
+        
+        if (salaryData.stateRate) {
+            document.getElementById('stateRate').textContent = salaryData.stateRate;
+        }
+        
+        if (salaryData.bonusTaxRate) {
+            document.getElementById('bonusTaxRate').textContent = salaryData.bonusTaxRate;
+        }
+        
+        // UPDATE: Modify the Calculate Salary button to show Update Salary
+        const calculateButton = document.querySelector('button[onclick="showSalaryModal()"]');
+        if (calculateButton) {
+            calculateButton.innerHTML = '<i class="fas fa-calculator mr-1"></i> Update Salary';
+        }
+        
+        // After loading salary data, try to load the profit data
+        loadProfitDataToUI();
+    }
+}
+
+// Function to load profit data to the UI
+function loadProfitDataToUI() {
+    if (Object.keys(profitData).length > 0 && salaryData.netPay) {
+        // Show the profit results container
+        const profitResults = document.getElementById('grossProfitResults');
+        if (profitResults) {
+            profitResults.classList.remove('hidden');
+        }
+        
+        // Hide the placeholder message
+        const profitContainer = document.getElementById('grossProfitContainer');
+        if (profitContainer) {
+            profitContainer.innerHTML = '';
+        }
+        
+        // Populate the profit fields with saved data
+        if (profitData.gpMonthlyIncome) {
+            document.getElementById('gpMonthlyIncome').textContent = profitData.gpMonthlyIncome;
+        }
+        
+        if (profitData.gpMonthlyBills) {
+            document.getElementById('gpMonthlyBills').textContent = profitData.gpMonthlyBills;
+        }
+        
+        if (profitData.gpMonthlySurplus) {
+            const element = document.getElementById('gpMonthlySurplus');
+            if (element) {
+                element.textContent = profitData.gpMonthlySurplus;
+                // Apply the correct class based on surplus or deficit
+                element.className = profitData.gpMonthlySurplusClass || 'font-bold text-neon-blue';
+            }
+        }
+        
+        if (profitData.gpPaycheck1Net) {
+            document.getElementById('gpPaycheck1Net').textContent = profitData.gpPaycheck1Net;
+        }
+        
+        if (profitData.gpPaycheck1Bills) {
+            document.getElementById('gpPaycheck1Bills').textContent = profitData.gpPaycheck1Bills;
+        }
+        
+        if (profitData.gpPaycheck1Surplus) {
+            const element = document.getElementById('gpPaycheck1Surplus');
+            if (element) {
+                element.textContent = profitData.gpPaycheck1Surplus;
+                element.className = profitData.gpPaycheck1SurplusClass || 'font-bold';
+            }
+        }
+        
+        if (profitData.gpPaycheck2Net) {
+            document.getElementById('gpPaycheck2Net').textContent = profitData.gpPaycheck2Net;
+        }
+        
+        if (profitData.gpPaycheck2Bills) {
+            document.getElementById('gpPaycheck2Bills').textContent = profitData.gpPaycheck2Bills;
+        }
+        
+        if (profitData.gpPaycheck2Surplus) {
+            const element = document.getElementById('gpPaycheck2Surplus');
+            if (element) {
+                element.textContent = profitData.gpPaycheck2Surplus;
+                element.className = profitData.gpPaycheck2SurplusClass || 'font-bold';
+            }
+        }
+        
+        if (profitData.gpAnnualIncome) {
+            document.getElementById('gpAnnualIncome').textContent = profitData.gpAnnualIncome;
+        }
+        
+        if (profitData.gpAnnualBonus) {
+            document.getElementById('gpAnnualBonus').textContent = profitData.gpAnnualBonus;
+        }
+        
+        if (profitData.gpAnnualBonusTaxRate) {
+            document.getElementById('gpAnnualBonusTaxRate').textContent = profitData.gpAnnualBonusTaxRate;
+        }
+        
+        if (profitData.gpAnnualBills) {
+            document.getElementById('gpAnnualBills').textContent = profitData.gpAnnualBills;
+        }
+        
+        if (profitData.gpAnnualSurplus) {
+            const element = document.getElementById('gpAnnualSurplus');
+            if (element) {
+                element.textContent = profitData.gpAnnualSurplus;
+                element.className = profitData.gpAnnualSurplusClass || 'font-bold text-neon-blue';
+            }
+        }
+        
+        if (profitData.gpAnnualSurplusWithBonus) {
+            const element = document.getElementById('gpAnnualSurplusWithBonus');
+            if (element) {
+                element.textContent = profitData.gpAnnualSurplusWithBonus;
+                element.className = profitData.gpAnnualSurplusWithBonusClass || 'font-bold text-neon-green';
+            }
+        }
+        
+        // Set the progress bar
+        if (typeof profitData.profitRatio !== 'undefined') {
+            const progressBar = document.getElementById('profitProgress');
+            const progressStatus = document.getElementById('profitStatus');
+            
+            if (progressBar) {
+                progressBar.style.width = `${Math.min(100, Math.abs(profitData.profitRatio))}%`;
+                progressBar.className = `cyber-progress-fill ${profitData.progressFillColor || 'cyber-blue'}`;
+            }
+            
+            if (progressStatus && profitData.profitStatusText) {
+                progressStatus.textContent = profitData.profitStatusText;
+            }
+        }
+        
+        // Show third paycheck section if needed
+        if (profitData.hasThirdPaycheckInSameMonth) {
+            const thirdPaycheckSection = document.getElementById('gpThirdPaycheckSection');
+            if (thirdPaycheckSection) {
+                thirdPaycheckSection.classList.remove('hidden');
+                
+                if (profitData.gpPaycheck3Net) {
+                    document.getElementById('gpPaycheck3Net').textContent = profitData.gpPaycheck3Net;
+                }
+                
+                if (profitData.gpPaycheck3Bills) {
+                    document.getElementById('gpPaycheck3Bills').textContent = profitData.gpPaycheck3Bills;
+                }
+                
+                if (profitData.gpPaycheck3Surplus) {
+                    const element = document.getElementById('gpPaycheck3Surplus');
+                    if (element) {
+                        element.textContent = profitData.gpPaycheck3Surplus;
+                        element.className = profitData.gpPaycheck3SurplusClass || 'font-bold text-neon-green';
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Clear all data from localStorage and reset the application
+function clearAllData() {
+    if (confirm('Are you sure you want to delete all your data? This cannot be undone.')) {
+        try {
+            // Clear all CorpoCache data but keep other localStorage items
+            localStorage.removeItem('creditCards');
+            localStorage.removeItem('bills');
+            localStorage.removeItem('expenses');
+            localStorage.removeItem('loans');
+            localStorage.removeItem('salaryData');
+            localStorage.removeItem('profitData');
+            localStorage.removeItem('lastSaved');
+            
+            // Reset arrays
+            creditCards = [];
+            bills = [];
+            expenses = [];
+            loans = [];
+            salaryData = {};
+            profitData = {};
+            
+            // Update UI
+            renderCreditCards();
+            updateCreditSummary();
+            renderBills();
+            updatePaymentSchedule();
+            renderExpenses();
+            updateExpenseSummary();
+            if (typeof renderLoans === 'function') {
+                renderLoans();
+                updateLoanSummary();
+            }
+            
+            // Hide salary and profit results
+            document.getElementById('salaryResults').classList.add('hidden');
+            document.getElementById('grossProfitResults').classList.add('hidden');
+            
+            // Reset profit container
+            document.getElementById('grossProfitContainer').innerHTML = '<p class="text-center text-gray-400 py-4">Complete the Salary Calculator to see your profit analysis</p>';
+            
+            // Hide last saved info
+            const lastSavedElement = document.getElementById('lastSavedTime');
+            if (lastSavedElement) {
+                lastSavedElement.classList.add('hidden');
+            }
+            
+            alert('All data has been cleared.');
+        } catch (error) {
+            console.error('Error clearing data:', error);
+            alert('An error occurred while clearing your data.');
+        }
+    }
+}
+
+// Export data to a JSON file for backup
+function exportData() {
+    try {
+        const data = {
+            creditCards,
+            bills,
+            expenses, 
+            loans,
+            salaryData,
+            profitData,
+            exportDate: new Date().toISOString()
+        };
+        
+        const dataStr = JSON.stringify(data, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const dataUrl = URL.createObjectURL(dataBlob);
+        
+        // Create a date string for the filename
+        const today = new Date();
+        const dateStr = today.toISOString().split('T')[0]; // YYYY-MM-DD format
+        
+        // Create a download link and trigger it
+        const downloadLink = document.createElement('a');
+        downloadLink.href = dataUrl;
+        downloadLink.download = `corpocache-backup-${dateStr}.json`;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+    } catch (error) {
+        console.error('Error exporting data:', error);
+        alert('Failed to export your data.');
+    }
+}
+
+// Import data from a previously exported JSON file
+function importData() {
+    // Create a file input element
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.json';
+    
+    fileInput.onchange = function(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = JSON.parse(e.target.result);
+                
+                // Validate the data structure
+                if (!data.creditCards || !data.bills || !data.expenses) {
+                    throw new Error('Invalid data format');
+                }
+                
+                // Confirm import
+                if (confirm('This will replace all your current data. Continue?')) {
+                    // Import the data
+                    creditCards = data.creditCards || [];
+                    bills = data.bills || [];
+                    expenses = data.expenses || [];
+                    loans = data.loans || [];
+                    
+                    // Import salary and profit data if available
+                    salaryData = data.salaryData || {};
+                    profitData = data.profitData || {};
+                    
+                    // Update UI
+                    renderCreditCards();
+                    updateCreditSummary();
+                    renderBills();
+                    updatePaymentSchedule();
+                    renderExpenses();
+                    updateExpenseSummary();
+                    if (typeof renderLoans === 'function') {
+                        renderLoans();
+                        updateLoanSummary();
+                    }
+                    
+                    // Load salary and profit data if available
+                    loadSalaryDataToUI();
+                    
+                    // Save the imported data to localStorage
+                    saveToLocalStorage();
+                    
+                    alert('Data imported successfully!');
+                }
+            } catch (error) {
+                console.error('Error importing data:', error);
+                alert('Failed to import data: Invalid file format.');
+            }
+        };
+        reader.readAsText(file);
+    };
+    
+    fileInput.click();
+}
+
+function updateLastSavedInfo() {
+    const lastSaved = localStorage.getItem('lastSaved');
+    const lastSavedElement = document.getElementById('lastSavedTime');
+    
+    if (lastSavedElement && lastSaved) {
+        const savedDate = new Date(lastSaved);
+        const now = new Date();
+        
+        // Format the date and time
+        const options = { 
+            month: 'short', 
+            day: 'numeric', 
+            year: 'numeric',
+            hour: '2-digit', 
+            minute: '2-digit'
+        };
+        const formattedDate = savedDate.toLocaleDateString(undefined, options);
+        
+        // Calculate time difference
+        const diffMs = now - savedDate;
+        const diffMins = Math.round(diffMs / 60000);
+        
+        let timeAgo;
+        if (diffMins < 1) {
+            timeAgo = 'just now';
+        } else if (diffMins < 60) {
+            timeAgo = `${diffMins} ${diffMins === 1 ? 'minute' : 'minutes'} ago`;
+        } else {
+            const diffHours = Math.floor(diffMins / 60);
+            if (diffHours < 24) {
+                timeAgo = `${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`;
+            } else {
+                const diffDays = Math.floor(diffHours / 24);
+                timeAgo = `${diffDays} ${diffDays === 1 ? 'day' : 'days'} ago`;
+            }
+        }
+        
+        lastSavedElement.textContent = `Last saved: ${formattedDate} (${timeAgo})`;
+        lastSavedElement.classList.remove('hidden');
+    }
+}
+
+function showSaveConfirmation() {
+    const saveConfirm = document.getElementById('saveConfirmation');
+    if (saveConfirm) {
+        saveConfirm.classList.remove('hidden');
+        setTimeout(() => {
+            saveConfirm.classList.add('hidden');
+        }, 2000);
+    } else {
+        // Create a save confirmation message if it doesn't exist
+        const saveConfirm = document.createElement('div');
+        saveConfirm.id = 'saveConfirmation';
+        saveConfirm.className = 'fixed bottom-4 right-4 bg-glass-green p-3 rounded shadow-lg z-50 text-white cyber-text-glow transition-opacity duration-300';
+        saveConfirm.innerHTML = '<i class="fas fa-save mr-2"></i> Data saved successfully';
+        document.body.appendChild(saveConfirm);
+        
+        setTimeout(() => {
+            saveConfirm.classList.add('hidden');
+        }, 2000);
+    }
+    
+    // Update the last saved info
+    updateLastSavedInfo();
+}
+
+// Auto-save functionality
+let autoSaveTimer;
+
+function setupAutoSave(interval = 60000) { // Default: save every minute
+    // Clear any existing timer
+    if (autoSaveTimer) {
+        clearInterval(autoSaveTimer);
+    }
+    
+    // Set up new timer
+    autoSaveTimer = setInterval(() => {
+        saveToLocalStorage();
+    }, interval);
+}
+
+// Immediately check for stored data when the script loads (outside any event listener)
+(function() {
+    console.log("Script initialized - checking for stored data...");
+    const dataLoaded = loadFromLocalStorage();
+    if (dataLoaded) {
+        console.log("Data loaded from localStorage successfully");
+    } else {
+        console.log("No saved data found in localStorage");
+    }
+})();
 
 // DOM Elements
 document.addEventListener('DOMContentLoaded', () => {
@@ -84,8 +661,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Set current month and year
     updateCurrentMonthAndYear();
     
-    // Load sample data
-    loadSampleData();
+    // Try to load data from localStorage
+    const dataLoaded = loadFromLocalStorage();
+    
+    // If no data was loaded, use sample data
+    if (!dataLoaded) {
+        loadSampleData();
+    }
     
     // Initial renders
     renderCreditCards();
@@ -94,14 +676,24 @@ document.addEventListener('DOMContentLoaded', () => {
     updatePaymentSchedule();
     renderExpenses();
     updateExpenseSummary();
-    renderLoans(); // Add loan rendering
-    updateLoanSummary(); // Add loan summary update
+    renderLoans(); 
+    updateLoanSummary(); 
     
     // Add cyber effects
     initCyberEffects();
     
     // Setup scroll detection for containers
     setupScrollDetection();
+    
+    // Setup auto-save (save every minute)
+    setupAutoSave();
+    
+    // Any additional initialization that was in other DOMContentLoaded event listeners
+    // Initialize gross profit calculator
+    initGrossProfitCalculator();
+    
+    // Initialize collapsible sections
+    initCollapsibleSections();
 });
 
 // Function to update the month and year display in the Monthly Bills section
@@ -441,6 +1033,9 @@ window.saveCreditCard = function() {
     updateCreditSummary();
     closeCreditCardModal();
     
+    // Save data to localStorage
+    saveToLocalStorage();
+    
     // Dispatch event to trigger scroll detection check
     document.dispatchEvent(new Event('cardsChanged'));
 }
@@ -510,7 +1105,7 @@ function renderCreditCards() {
                     accountAge = `<span class="${accountAgeClass}">${ageYears}</span> ${ageYears === 1 ? 'year' : 'years'} old`;
                 }
             } else {
-                accountAge = `<span class="text-neon-pink">${ageMonths}</span> ${ageMonths === 1 ? 'month' : 'months'} old`;
+                oldestCreditLine.innerHTML = `<span class="text-neon-pink">${months}</span> <span class="text-gray-400 text-sm">months</span>`;
             }
         } else {
             accountAge = '<span class="text-neon-pink">Age unknown</span>';
@@ -622,6 +1217,9 @@ window.deleteCreditCard = function(index) {
     
     renderCreditCards();
     updateCreditSummary();
+    
+    // Save changes to localStorage
+    saveToLocalStorage();
 }
 
 function updateCreditSummary() {
@@ -849,6 +1447,9 @@ window.saveBill = function() {
     updateExpenseSummary();
     closeBillModal();
     
+    // Save data to localStorage
+    saveToLocalStorage();
+    
     // Dispatch event to trigger scroll detection check
     document.dispatchEvent(new Event('billsChanged'));
 }
@@ -931,6 +1532,9 @@ window.deleteBill = function(index) {
     renderBills();
     updatePaymentSchedule();
     updateExpenseSummary();
+    
+    // Save changes to localStorage
+    saveToLocalStorage();
     
     // Dispatch event to trigger scroll detection check
     document.dispatchEvent(new Event('billsChanged'));
@@ -1043,6 +1647,9 @@ window.saveExpense = function() {
     renderExpenses();
     updateExpenseSummary();
     closeExpenseModal();
+    
+    // Save data to localStorage
+    saveToLocalStorage();
 }
 
 function renderExpenses() {
@@ -1116,6 +1723,9 @@ window.deleteExpense = function(index) {
     expenses.splice(index, 1);
     renderExpenses();
     updateExpenseSummary();
+    
+    // Save changes to localStorage
+    saveToLocalStorage();
 }
 
 function updateExpenseSummary() {
@@ -1581,63 +2191,99 @@ function getUtilizationColorClass(utilization) {
 window.showSalaryModal = function() {
     // Check if the salary results are already displayed
     const salaryResults = document.getElementById('salaryResults');
-    const calculateButton = document.querySelector('#salaryModal button.cyber-primary-btn');
     const hasExistingData = salaryResults && !salaryResults.classList.contains('hidden');
+    const calculateButton = document.querySelector('#salaryModal button.cyber-primary-btn');
     
-    if (hasExistingData) {
+    // Get all the required elements safely first
+    const annualSalaryElement = document.getElementById('annualSalary');
+    const bonusAmountElement = document.getElementById('bonusAmount');
+    const bonusTaxRateElement = document.getElementById('bonusTaxRate');
+    const retirementAmountElement = document.getElementById('retirementAmount');
+    const esppAmountElement = document.getElementById('esppAmount');
+    const healthAmountElement = document.getElementById('healthAmount');
+    const dentalAmountElement = document.getElementById('dentalAmount');
+    const visionAmountElement = document.getElementById('visionAmount');
+    const payFrequencyElement = document.getElementById('payFrequency');
+    
+    if (hasExistingData && annualSalaryElement && annualSalaryElement.textContent) {
         // If we have existing salary data, transfer current values to the modal
         
         // Get annual salary directly instead of calculating from gross pay per period
-        const annualSalary = parseFloat(document.getElementById('annualSalary').textContent.replace('$', ''));
+        const annualSalary = parseFloat(annualSalaryElement.textContent.replace('$', ''));
         
         // Set gross salary from the stored annual value
         document.getElementById('modalGrossSalary').value = annualSalary;
         
         // Set pay frequency from previous value (either 24 for Semi-Monthly or 26 for Bi-Weekly)
-        const payFrequencyValue = document.getElementById('payFrequency').value || '26';
+        const payFrequencyValue = payFrequencyElement ? payFrequencyElement.value : '26';
         document.getElementById('modalPayFrequency').value = payFrequencyValue === '24' ? '24' : '26';
         
         // Check if we need to show the last pay date field
         toggleLastPayDateField();
         
         // Get bonus percentage from the display (divide by annual salary)
-        const bonusAmount = parseFloat(document.getElementById('bonusAmount').textContent.replace('$', ''));
-        const bonusPct = (bonusAmount / annualSalary) * 100;
-        document.getElementById('modalBonusPercentage').value = bonusPct.toFixed(2);
+        if (bonusAmountElement && bonusAmountElement.textContent) {
+            const bonusAmount = parseFloat(bonusAmountElement.textContent.replace('$', ''));
+            const bonusPct = (bonusAmount / annualSalary) * 100;
+            document.getElementById('modalBonusPercentage').value = bonusPct.toFixed(2);
+        }
         
         // Set the bonus tax rate from the display, preserving the current value
-        const bonusTaxRateText = document.getElementById('bonusTaxRate').textContent.replace(/[()%]/g, '').trim();
-        const bonusTaxRate = parseFloat(bonusTaxRateText) || 25;
-        document.getElementById('modalBonusTax').value = bonusTaxRate;
+        if (bonusTaxRateElement && bonusTaxRateElement.textContent) {
+            const bonusTaxRateText = bonusTaxRateElement.textContent.replace(/[()%]/g, '').trim();
+            const bonusTaxRate = parseFloat(bonusTaxRateText) || 25;
+            document.getElementById('modalBonusTax').value = bonusTaxRate;
+        }
         
         // For retirement and ESPP, calculate back from the amount shown
-        const periods = parseInt(payFrequencyValue) || 26;
-        const grossPerPeriod = annualSalary / periods;
-        
-        const retirementAmount = parseFloat(document.getElementById('retirementAmount').textContent.replace('$', ''));
-        const retirementPct = (retirementAmount / grossPerPeriod) * 100;
-        document.getElementById('modalRetirementContribution').value = retirementPct.toFixed(2);
-        
-        const esppAmount = parseFloat(document.getElementById('esppAmount').textContent.replace('$', ''));
-        const esppPct = (esppAmount / grossPerPeriod) * 100;
-        document.getElementById('modalEsppContribution').value = esppPct.toFixed(2);
+        if (payFrequencyElement) {
+            const periods = parseInt(payFrequencyValue) || 26;
+            const grossPerPeriod = annualSalary / periods;
+            
+            if (retirementAmountElement && retirementAmountElement.textContent) {
+                const retirementAmount = parseFloat(retirementAmountElement.textContent.replace('$', ''));
+                const retirementPct = (retirementAmount / grossPerPeriod) * 100;
+                document.getElementById('modalRetirementContribution').value = retirementPct.toFixed(2);
+            }
+            
+            if (esppAmountElement && esppAmountElement.textContent) {
+                const esppAmount = parseFloat(esppAmountElement.textContent.replace('$', ''));
+                const esppPct = (esppAmount / grossPerPeriod) * 100;
+                document.getElementById('modalEsppContribution').value = esppPct.toFixed(2);
+            }
+        }
         
         // For insurance, just copy over the current values
-        document.getElementById('modalHealthInsurance').value = parseFloat(document.getElementById('healthAmount').textContent.replace('$', ''));
-        document.getElementById('modalDentalInsurance').value = parseFloat(document.getElementById('dentalAmount').textContent.replace('$', ''));
-        document.getElementById('modalVisionInsurance').value = parseFloat(document.getElementById('visionAmount').textContent.replace('$', ''));
+        if (healthAmountElement && healthAmountElement.textContent) {
+            document.getElementById('modalHealthInsurance').value = parseFloat(healthAmountElement.textContent.replace('$', ''));
+        }
+        
+        if (dentalAmountElement && dentalAmountElement.textContent) {
+            document.getElementById('modalDentalInsurance').value = parseFloat(dentalAmountElement.textContent.replace('$', ''));
+        }
+        
+        if (visionAmountElement && visionAmountElement.textContent) {
+            document.getElementById('modalVisionInsurance').value = parseFloat(visionAmountElement.textContent.replace('$', ''));
+        }
         
         // Load the last pay date if we have it stored
         const lastPayDate = localStorage.getItem('lastPayDate');
-        if (lastPayDate && document.getElementById('modalPayFrequency').value === '26') {
-            document.getElementById('lastPayDate').value = lastPayDate;
+        const modalPayFrequency = document.getElementById('modalPayFrequency');
+        if (lastPayDate && modalPayFrequency && modalPayFrequency.value === '26') {
+            const lastPayDateInput = document.getElementById('lastPayDate');
+            if (lastPayDateInput) {
+                lastPayDateInput.value = lastPayDate;
+            }
         }
         
         // Update button text
-        calculateButton.textContent = 'Update Salary';
+        if (calculateButton) {
+            calculateButton.textContent = 'Update Salary';
+        }
     } else {
         // For new calculations, set default values
-        document.getElementById('modalGrossSalary').value = grossSalary && grossSalary.value ? grossSalary.value : '';
+        const grossSalaryElement = document.getElementById('grossSalary');
+        document.getElementById('modalGrossSalary').value = grossSalaryElement && grossSalaryElement.value ? grossSalaryElement.value : '';
         document.getElementById('modalPayFrequency').value = '26'; // Default to Bi-Weekly
         document.getElementById('modalBonusPercentage').value = 10;
         document.getElementById('modalBonusTax').value = 25;
@@ -1649,45 +2295,61 @@ window.showSalaryModal = function() {
         document.getElementById('modalVisionInsurance').value = 0;
         
         // Set a default last pay date to today
-        document.getElementById('lastPayDate').value = new Date().toISOString().split('T')[0];
+        const lastPayDateInput = document.getElementById('lastPayDate');
+        if (lastPayDateInput) {
+            lastPayDateInput.value = new Date().toISOString().split('T')[0];
+        }
         
         // Show/hide last pay date field based on pay frequency
         toggleLastPayDateField();
         
         // Set button text for initial calculation
-        calculateButton.textContent = 'Calculate';
+        if (calculateButton) {
+            calculateButton.textContent = 'Calculate';
+        }
     }
     
     // Set up event handler for pay frequency selection
-    document.getElementById('modalPayFrequency').addEventListener('change', function() {
-        // Toggle last pay date field
-        toggleLastPayDateField();
-        
-        // Hide the gross profit results if they're visible
-        const grossProfitResults = document.getElementById('grossProfitResults');
-        if (grossProfitResults && !grossProfitResults.classList.contains('hidden')) {
-            grossProfitResults.classList.add('hidden');
-        }
-        
-        // Reset the container with a message to recalculate
-        const grossProfitContainer = document.getElementById('grossProfitContainer');
-        if (grossProfitContainer) {
-            grossProfitContainer.innerHTML = '<p class="text-center text-gray-400 py-4">Pay frequency changed. Please recalculate your salary.</p>';
-        }
-        
-        // --- Fix: update hidden payFrequency field temporarily ---
-        const hiddenPayFrequency = document.getElementById('payFrequency');
-        const originalValue = hiddenPayFrequency ? hiddenPayFrequency.value : null;
-        if (hiddenPayFrequency) {
-            hiddenPayFrequency.value = this.value;
-        }
-        calculateGrossProfit();
-        if (hiddenPayFrequency && originalValue !== null) {
-            hiddenPayFrequency.value = originalValue;
-        }
-    });
+    const modalPayFrequency = document.getElementById('modalPayFrequency');
+    if (modalPayFrequency) {
+        modalPayFrequency.addEventListener('change', function() {
+            // Toggle last pay date field
+            toggleLastPayDateField();
+            
+            // Hide the gross profit results if they're visible
+            const grossProfitResults = document.getElementById('grossProfitResults');
+            if (grossProfitResults && !grossProfitResults.classList.contains('hidden')) {
+                grossProfitResults.classList.add('hidden');
+            }
+            
+            // Reset the container with a message to recalculate
+            const grossProfitContainer = document.getElementById('grossProfitContainer');
+            if (grossProfitContainer) {
+                grossProfitContainer.innerHTML = '<p class="text-center text-gray-400 py-4">Pay frequency changed. Please recalculate your salary.</p>';
+            }
+            
+            // --- Fix: update hidden payFrequency field temporarily ---
+            const hiddenPayFrequency = document.getElementById('payFrequency');
+            const originalValue = hiddenPayFrequency ? hiddenPayFrequency.value : null;
+            if (hiddenPayFrequency) {
+                hiddenPayFrequency.value = this.value;
+            }
+            
+            // Only call calculate if it's defined
+            if (typeof calculateGrossProfit === 'function') {
+                calculateGrossProfit();
+            }
+            
+            if (hiddenPayFrequency && originalValue !== null) {
+                hiddenPayFrequency.value = originalValue;
+            }
+        });
+    }
     
-    document.getElementById('salaryModal').classList.remove('hidden');
+    const salaryModal = document.getElementById('salaryModal');
+    if (salaryModal) {
+        salaryModal.classList.remove('hidden');
+    }
 }
 
 // Function to toggle the visibility of the last pay date field based on pay frequency
@@ -1718,10 +2380,11 @@ function toggleLastPayDateField() {
 
 // Function to calculate salary from modal inputs
 window.calculateSalaryFromModal = function() {
+    // Get input values
     const gross = parseFloat(document.getElementById('modalGrossSalary').value);
     const periods = parseInt(document.getElementById('modalPayFrequency').value);
     const bonusPct = parseFloat(document.getElementById('modalBonusPercentage').value);
-    const bonusTaxRate = parseFloat(document.getElementById('modalBonusTax').value) || 25; // Default to 25% if not provided
+    const bonusTaxRate = parseFloat(document.getElementById('modalBonusTax').value) || 25;
     const filingStatus = document.getElementById('modalTaxBracket').value;
     const retirementPct = parseFloat(document.getElementById('modalRetirementContribution').value);
     const esppPct = parseFloat(document.getElementById('modalEsppContribution').value);
@@ -1740,33 +2403,27 @@ window.calculateSalaryFromModal = function() {
     const visionCost = parseFloat(document.getElementById('modalVisionInsurance').value) || 0;
     const totalInsuranceCost = healthCost + dentalCost + visionCost;
     
+    // Validation
     if (isNaN(gross) || gross <= 0) {
         alert('Please enter a valid gross salary');
         return;
     }
     
+    // Perform calculations
     const grossPerPeriod = gross / periods;
-    
-    // Calculate federal tax using progressive tax brackets
     const federalTaxPerYear = calculateFederalTax(gross, filingStatus);
     const federalTaxAmount = federalTaxPerYear / periods;
-    
-    // Calculate effective federal tax rate and display it
     const effectiveFederalRate = calculateEffectiveTaxRate(gross, filingStatus);
     
     // OASDI has a wage cap (for 2025, using estimated $168,600)
-    // Note: Adjust this annually based on actual Social Security wage base
     const oasdiWageCap = 168600;
     const oasdiTaxAmount = Math.min(grossPerPeriod, oasdiWageCap / periods) * (oasdiTaxPct / 100);
     
-    // Medicare has no wage cap, but higher income has additional 0.9% for income above $200,000/$250,000
-    const medicareAdditionalRate = 0.9; // 0.9% additional for high earners
+    // Medicare has no wage cap, but higher income has additional 0.9% 
     let medicareTaxAmount = grossPerPeriod * (medicareTaxPct / 100);
-    
-    // Add additional Medicare tax for high earners (simplified for individual filers)
     if (gross > 200000) {
         const excessAmount = (gross - 200000) / periods;
-        medicareTaxAmount += excessAmount * (medicareAdditionalRate / 100);
+        medicareTaxAmount += excessAmount * (0.9 / 100);
     }
     
     // State tax calculation
@@ -1777,7 +2434,7 @@ window.calculateSalaryFromModal = function() {
     const esppAmount = grossPerPeriod * (esppPct / 100);
     const savingsTotal = retirementAmount + esppAmount;
     
-    // Calculate net pay after all deductions including insurance
+    // Calculate net pay after all deductions
     const totalTaxAmount = federalTaxAmount + oasdiTaxAmount + medicareTaxAmount + stateTaxAmount;
     const netPay = grossPerPeriod - totalTaxAmount - retirementAmount - esppAmount - totalInsuranceCost;
     const bonusAmount = gross * (bonusPct / 100);
@@ -1785,17 +2442,17 @@ window.calculateSalaryFromModal = function() {
     // Calculate after-tax bonus amount with flat tax rate
     const afterTaxBonusAmount = bonusAmount * (1 - (bonusTaxRate / 100));
     
-    // If bi-weekly pay is selected, save the last pay date
+    // Handle bi-weekly pay date
     if (periods === 26) {
         const lastPayDate = document.getElementById('lastPayDate').value;
         if (lastPayDate) {
             localStorage.setItem('lastPayDate', lastPayDate);
         }
     } else {
-        // Remove lastPayDate from localStorage if not bi-weekly
         localStorage.removeItem('lastPayDate');
     }
-    // Always update the hidden payFrequency field before calculations
+    
+    // Update hidden pay frequency field
     if (!document.getElementById('payFrequency')) {
         const hiddenField = document.createElement('input');
         hiddenField.type = 'hidden';
@@ -1806,104 +2463,81 @@ window.calculateSalaryFromModal = function() {
         document.getElementById('payFrequency').value = periods;
     }
     
-    // Store the annual salary for use in future updates
-    document.getElementById('annualSalary').textContent = `$${gross.toFixed(2)}`;
-    
     // Update the UI with calculated values
+    document.getElementById('annualSalary').textContent = `$${gross.toFixed(2)}`;
     document.getElementById('grossPay').textContent = `$${grossPerPeriod.toFixed(2)}`;
-    
-    // Update tax rate displays
     document.getElementById('federalTaxRate').textContent = `(${effectiveFederalRate.toFixed(2)}%)`;
     document.getElementById('oasdiRate').textContent = `(${oasdiTaxPct}%)`;
     document.getElementById('medicareRate').textContent = `(${medicareTaxPct}%)`;
     document.getElementById('stateRate').textContent = `(${stateTaxPct}%)`;
-    
-    // Update tax amount displays
     document.getElementById('federalTaxAmount').textContent = `$${federalTaxAmount.toFixed(2)}`;
     document.getElementById('oasdiTaxAmount').textContent = `$${oasdiTaxAmount.toFixed(2)}`;
-    document.getElementById('medicareTaxAmount').textContent = `$${stateTaxAmount.toFixed(2)}`;
+    document.getElementById('medicareTaxAmount').textContent = `$${medicareTaxAmount.toFixed(2)}`;
     document.getElementById('stateTaxAmount').textContent = `$${stateTaxAmount.toFixed(2)}`;
     document.getElementById('taxAmount').textContent = `$${totalTaxAmount.toFixed(2)}`;
-    
-    // Update savings contributions
     document.getElementById('retirementAmount').textContent = `$${retirementAmount.toFixed(2)}`;
     document.getElementById('esppAmount').textContent = `$${esppAmount.toFixed(2)}`;
     document.getElementById('savingsTotal').textContent = `$${savingsTotal.toFixed(2)}`;
-    
-    // Update the insurance amounts
     document.getElementById('healthAmount').textContent = `$${healthCost.toFixed(2)}`;
     document.getElementById('dentalAmount').textContent = `$${dentalCost.toFixed(2)}`;
     document.getElementById('visionAmount').textContent = `$${visionCost.toFixed(2)}`;
     document.getElementById('insuranceTotal').textContent = `$${totalInsuranceCost.toFixed(2)}`;
-    
     document.getElementById('netPay').textContent = `$${netPay.toFixed(2)}`;
     document.getElementById('bonusAmount').textContent = `$${bonusAmount.toFixed(2)}`;
     document.getElementById('afterTaxBonusAmount').textContent = `$${afterTaxBonusAmount.toFixed(2)}`;
-    
-    // Update the bonus tax rate display to show the rate used in calculations
     document.getElementById('bonusTaxRate').textContent = `(${bonusTaxRate}% tax)`;
     
-    // Update the Calculate Salary button to show "Update Salary" now that we have calculated results
+    // Update the Calculate Salary button text and handler
     const calculateButton = document.querySelector('button[onclick="showSalaryModal()"]');
     if (calculateButton) {
         calculateButton.innerHTML = '<i class="fas fa-calculator mr-1"></i> Update Salary';
-        // Change the onclick handler from showSalaryModal to directly showSalaryModal with update flag
         calculateButton.setAttribute('onclick', 'showSalaryModal(true)');
-        
-        // Save the pay frequency to a hidden field for future reference
-        if (!document.getElementById('payFrequency')) {
-            const hiddenField = document.createElement('input');
-            hiddenField.type = 'hidden';
-            hiddenField.id = 'payFrequency';
-            hiddenField.value = periods;
-            document.body.appendChild(hiddenField);
-        } else {
-            document.getElementById('payFrequency').value = periods;
-        }
     }
     
-    // Show the salary results and close the modal
+    // Show results and close modal
     document.getElementById('salaryResults').classList.remove('hidden');
     closeSalaryModal();
     
-    // Update monthly income in savings estimator if it exists and is empty
+    // Update monthly income in savings estimator if available
     const monthlyIncomeElement = document.getElementById('monthlyIncome');
     if (monthlyIncomeElement && !monthlyIncomeElement.value && netPay > 0) {
         monthlyIncomeElement.value = (netPay * periods / 12).toFixed(2);
     }
     
+    // Save salary data to our global object
+    salaryData = {
+        annualSalary: `$${gross.toFixed(2)}`,
+        grossPay: `$${grossPerPeriod.toFixed(2)}`,
+        netPay: `$${netPay.toFixed(2)}`,
+        bonusAmount: `$${bonusAmount.toFixed(2)}`,
+        afterTaxBonusAmount: `$${afterTaxBonusAmount.toFixed(2)}`,
+        federalTaxAmount: `$${federalTaxAmount.toFixed(2)}`,
+        oasdiTaxAmount: `$${oasdiTaxAmount.toFixed(2)}`,
+        medicareTaxAmount: `$${medicareTaxAmount.toFixed(2)}`,
+        stateTaxAmount: `$${stateTaxAmount.toFixed(2)}`,
+        taxAmount: `$${totalTaxAmount.toFixed(2)}`,
+        retirementAmount: `$${retirementAmount.toFixed(2)}`,
+        esppAmount: `$${esppAmount.toFixed(2)}`,
+        savingsTotal: `$${savingsTotal.toFixed(2)}`,
+        healthAmount: `$${healthCost.toFixed(2)}`,
+        dentalAmount: `$${dentalCost.toFixed(2)}`,
+        visionAmount: `$${visionCost.toFixed(2)}`,
+        insuranceTotal: `$${totalInsuranceCost.toFixed(2)}`,
+        federalTaxRate: `(${effectiveFederalRate.toFixed(2)}%)`,
+        oasdiRate: `(${oasdiTaxPct}%)`,
+        medicareRate: `(${medicareTaxPct}%)`,
+        stateRate: `(${stateTaxPct}%)`,
+        bonusTaxRate: `(${bonusTaxRate}% tax)`,
+        payFrequency: periods,
+        gross: gross,
+        filingStatus: filingStatus
+    };
+    
+    // Save to localStorage
+    saveToLocalStorage();
+    
     // Then calculate gross profit
     calculateGrossProfit();
-}
-
-// Function to initialize gross profit calculator
-function initGrossProfitCalculator() {
-    // Elements from the HTML
-    window.grossProfitResults = document.getElementById('grossProfitResults');
-    window.grossProfitContainer = document.getElementById('grossProfitContainer');
-    window.gpMonthlyIncome = document.getElementById('gpMonthlyIncome');
-    window.gpMonthlyBills = document.getElementById('gpMonthlyBills');
-    window.gpMonthlySurplus = document.getElementById('gpMonthlySurplus');
-    window.gpPaycheck1Net = document.getElementById('gpPaycheck1Net');
-    window.gpPaycheck1Bills = document.getElementById('gpPaycheck1Bills');
-    window.gpPaycheck1Surplus = document.getElementById('gpPaycheck1Surplus');
-    window.gpPaycheck2Net = document.getElementById('gpPaycheck2Net');
-    window.gpPaycheck2Bills = document.getElementById('gpPaycheck2Bills');
-    window.gpPaycheck2Surplus = document.getElementById('gpPaycheck2Surplus');
-    window.gpAnnualIncome = document.getElementById('gpAnnualIncome');
-    window.gpAnnualBonus = document.getElementById('gpAnnualBonus');
-    window.gpAnnualBonusTaxRate = document.getElementById('gpAnnualBonusTaxRate');
-    window.gpAnnualBills = document.getElementById('gpAnnualBills');
-    window.gpAnnualSurplus = document.getElementById('gpAnnualSurplus');
-    window.gpAnnualSurplusWithBonus = document.getElementById('gpAnnualSurplusWithBonus');
-    window.profitProgress = document.getElementById('profitProgress');
-    window.profitStatus = document.getElementById('profitStatus');
-    
-    // Check if salaryResults is already visible and calculate profit if it is
-    const salaryResults = document.getElementById('salaryResults');
-    if (salaryResults && !salaryResults.classList.contains('hidden')) {
-        calculateGrossProfit();
-    }
 }
 
 // Function to calculate gross profit based on salary and bills data
@@ -1916,34 +2550,31 @@ function calculateGrossProfit() {
     const netPayPerPaycheck = parseFloat(netPayText) || 0;
     
     if (netPayPerPaycheck <= 0) {
-        grossProfitContainer.innerHTML = '<p class="text-center text-gray-400 py-4">Please calculate your salary first</p>';
         return;
     }
     
     // Clear the initial message
-    grossProfitContainer.innerHTML = '';
+    const grossProfitContainer = document.getElementById('grossProfitContainer');
+    if (grossProfitContainer) {
+        grossProfitContainer.innerHTML = '';
+    }
     
     // Get pay frequency and calculate monthly income
     const payFrequency = parseInt(document.getElementById('payFrequency')?.value) || 26;
     
     // Calculate monthly income based on pay frequency
-    // For bi-weekly (26 pay periods), we account for the 2 extra paychecks per year
     let payPerMonth;
     if (payFrequency === 26) {
-        // For bi-weekly pay, there are 26 paychecks per year
-        // Most months have 2 paychecks, but 2 months have 3 paychecks
-        // So we calculate the annual income and divide by 12 for accurate monthly average
-        payPerMonth = (netPayPerPaycheck * payFrequency) / 12;
+        payPerMonth = netPayPerPaycheck * 26 / 12;
     } else {
-        // For semi-monthly pay (24 pay periods), there are always 2 paychecks per month
-        payPerMonth = netPayPerPaycheck * 2;
+        payPerMonth = netPayPerPaycheck * payFrequency / 12;
     }
     
     // Get annual salary and bonus
     const annualSalaryText = document.getElementById('annualSalary').textContent.replace('$', '').trim();
     const annualSalary = parseFloat(annualSalaryText) || 0;
     
-    // Get the after-tax bonus amount instead of pre-tax bonus
+    // Get the after-tax bonus amount
     const afterTaxBonusText = document.getElementById('afterTaxBonusAmount').textContent.replace('$', '').trim();
     const afterTaxBonus = parseFloat(afterTaxBonusText) || 0;
     
@@ -1952,6 +2583,7 @@ function calculateGrossProfit() {
     const bonusTaxRate = parseFloat(bonusTaxRateText) || 25;
     
     // Update the annual bonus tax rate display
+    const gpAnnualBonusTaxRate = document.getElementById('gpAnnualBonusTaxRate');
     if (gpAnnualBonusTaxRate) {
         gpAnnualBonusTaxRate.textContent = `${bonusTaxRate}%`;
     }
@@ -1962,8 +2594,8 @@ function calculateGrossProfit() {
     const paycheck2Bills = bills.filter(bill => bill.dueDate > 15);
     
     // Calculate bills amounts
-    const paycheck1BillsAmount = paycheck1Bills.reduce((sum, bill) => sum + bill.amount, 0);
-    const paycheck2BillsAmount = paycheck2Bills.reduce((sum, bill) => sum + bill.amount, 0);
+    const paycheck1BillsAmount = paycheck1Bills.reduce((sum, bill) => sum + parseFloat(bill.amount || 0), 0);
+    const paycheck2BillsAmount = paycheck2Bills.reduce((sum, bill) => sum + parseFloat(bill.amount || 0), 0);
     const totalMonthlyBills = paycheck1BillsAmount + paycheck2BillsAmount;
     const annualBills = totalMonthlyBills * 12;
     
@@ -1971,12 +2603,9 @@ function calculateGrossProfit() {
     let payPerPaycheck;
     
     if (payFrequency === 26) {
-        // For bi-weekly pay, we distribute the monthly income across 2 paychecks
-        // even though some months will have 3 paychecks
-        payPerPaycheck = payPerMonth / 2;
+        payPerPaycheck = netPayPerPaycheck;
     } else {
-        // For semi-monthly pay, it's always half the monthly income
-        payPerPaycheck = payPerMonth / 2;
+        payPerPaycheck = payPerMonth * 12 / payFrequency;
     }
     
     // Calculate surplus/deficit for regular paychecks
@@ -1996,221 +2625,177 @@ function calculateGrossProfit() {
     // Calculate profit ratio for progress bar (as a percentage)
     const profitRatio = totalMonthlyBills > 0 ? Math.min(100, Math.max(0, monthlySurplus / totalMonthlyBills * 100)) : 0;
     
-    // Update UI
-    gpMonthlyIncome.textContent = `$${payPerMonth.toFixed(2)}`;
-    gpMonthlyBills.textContent = `$${totalMonthlyBills.toFixed(2)}`;
+    // Update UI elements
+    const gpMonthlyIncome = document.getElementById('gpMonthlyIncome');
+    const gpMonthlyBills = document.getElementById('gpMonthlyBills');
+    const gpMonthlySurplus = document.getElementById('gpMonthlySurplus');
+    const gpPaycheck1Net = document.getElementById('gpPaycheck1Net');
+    const gpPaycheck1Bills = document.getElementById('gpPaycheck1Bills');
+    const gpPaycheck1Surplus = document.getElementById('gpPaycheck1Surplus');
+    const gpPaycheck2Net = document.getElementById('gpPaycheck2Net');
+    const gpPaycheck2Bills = document.getElementById('gpPaycheck2Bills');
+    const gpPaycheck2Surplus = document.getElementById('gpPaycheck2Surplus');
+    const gpPaycheck3Net = document.getElementById('gpPaycheck3Net');
+    const gpPaycheck3Bills = document.getElementById('gpPaycheck3Bills');
+    const gpPaycheck3Surplus = document.getElementById('gpPaycheck3Surplus');
+    const gpAnnualIncome = document.getElementById('gpAnnualIncome');
+    const gpAnnualBonus = document.getElementById('gpAnnualBonus');
+    const gpAnnualBills = document.getElementById('gpAnnualBills');
+    const gpAnnualSurplus = document.getElementById('gpAnnualSurplus');
+    const gpAnnualSurplusWithBonus = document.getElementById('gpAnnualSurplusWithBonus');
+    const profitProgress = document.getElementById('profitProgress');
+    const profitStatus = document.getElementById('profitStatus');
+    const grossProfitResults = document.getElementById('grossProfitResults');
+    
+    // Update UI with calculated values
+    if (gpMonthlyIncome) gpMonthlyIncome.textContent = `$${payPerMonth.toFixed(2)}`;
+    if (gpMonthlyBills) gpMonthlyBills.textContent = `$${totalMonthlyBills.toFixed(2)}`;
     
     // Set color based on surplus or deficit
     const monthlySurplusColor = monthlySurplus >= 0 ? "text-neon-green" : "text-neon-pink";
-    gpMonthlySurplus.className = `font-bold ${monthlySurplusColor}`;
-    // Display the surplus as positive or deficit as negative
-    const monthlySurplusSign = monthlySurplus >= 0 ? "" : "-";
-    gpMonthlySurplus.textContent = `${monthlySurplusSign}$${Math.abs(monthlySurplus).toFixed(2)}`;
+    if (gpMonthlySurplus) {
+        gpMonthlySurplus.className = `font-bold ${monthlySurplusColor}`;
+        // Display the surplus as positive or deficit as negative
+        const monthlySurplusSign = monthlySurplus >= 0 ? "" : "-";
+        gpMonthlySurplus.textContent = `${monthlySurplusSign}$${Math.abs(monthlySurplus).toFixed(2)}`;
+    }
     
-    // Update paycheck info and labels based on pay frequency
     // Variable to track if we have a third paycheck in the same month
     let hasThirdPaycheckInSameMonth = false;
     
     if (payFrequency === 26) {
-        // Get the last pay date from local storage
-        const lastPayDateStr = localStorage.getItem('lastPayDate');
-        let lastPayDate;
-        
-        if (lastPayDateStr) {
-            // Create a properly formatted date string to avoid timezone issues
-            // Format: YYYY-MM-DDT00:00:00 to ensure consistent parsing across browsers
-            const [year, month, day] = lastPayDateStr.split('-').map(Number);
-            lastPayDate = new Date(year, month - 1, day); // month is 0-indexed in JavaScript Date
+        // Check if we have a third paycheck in the same month
+        const lastPayDate = localStorage.getItem('lastPayDate');
+        if (lastPayDate) {
+            const payDate = new Date(lastPayDate);
+            const today = new Date();
             
-            // Make sure it's a valid date
-            if (isNaN(lastPayDate.getTime())) {
-                // If invalid date, default to today
-                lastPayDate = new Date();
-            }
-        } else {
-            // Default to today if no stored date
-            lastPayDate = new Date();
-        }
-        
-        // Create completely new Date objects for calculations
-        const nextPayDate1 = new Date(lastPayDate.getFullYear(), lastPayDate.getMonth(), lastPayDate.getDate() + 14);
-        const nextPayDate2 = new Date(lastPayDate.getFullYear(), lastPayDate.getMonth(), lastPayDate.getDate() + 28);
-        // Calculate the third bi-weekly paycheck
-        const nextPayDate3 = new Date(lastPayDate.getFullYear(), lastPayDate.getMonth(), lastPayDate.getDate() + 42);
-        
-        // Check if the third paycheck is in the same month as the other paychecks
-        hasThirdPaycheckInSameMonth = (nextPayDate1.getMonth() === nextPayDate3.getMonth()) || 
-                                    (nextPayDate2.getMonth() === nextPayDate3.getMonth());
-        
-        // Format dates for display - Month/Day format
-        const formatDate = (date) => {
-            return `${date.getMonth() + 1}/${date.getDate()}`;
-        };
-        
-        // Add day of week to the display format
-        const formatDateWithDay = (date) => {
-            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-            const dayName = days[date.getDay()];
-            return `${formatDate(date)} (${dayName})`;
-        };
-        
-        // Show third paycheck section only if it's in the same month as another paycheck
-        const gpThirdPaycheckSection = document.getElementById('gpThirdPaycheckSection');
-        if (gpThirdPaycheckSection) {
-            if (hasThirdPaycheckInSameMonth) {
-                gpThirdPaycheckSection.classList.remove('hidden');
-            } else {
-                gpThirdPaycheckSection.classList.add('hidden');
-            }
-        }
-        
-        // Update the paycheck titles to show the dates with day of week
-        const paycheck1TitleElement = document.querySelector('.bg-glass-blue h4.text-md');
-        if (paycheck1TitleElement) {
-            paycheck1TitleElement.textContent = `Paycheck ${formatDateWithDay(nextPayDate1)}`;
-        }
-        
-        const paycheck2TitleElement = document.querySelector('.bg-glass-purple h4.text-md');
-        if (paycheck2TitleElement) {
-            paycheck2TitleElement.textContent = `Paycheck ${formatDateWithDay(nextPayDate2)}`;
-        }
-        
-        // Update third paycheck title if it exists and is shown
-        if (hasThirdPaycheckInSameMonth) {
-            const paycheck3TitleElement = document.querySelector('#gpThirdPaycheckSection h4.text-md');
-            if (paycheck3TitleElement) {
-                paycheck3TitleElement.textContent = `Paycheck ${formatDateWithDay(nextPayDate3)}`;
-            }
-        }
-        
-        // Also update the bill sections in the Monthly Bills card
-        const billSection1Title = document.querySelector('.bg-glass-blue p.text-sm.text-gray-300');
-        if (billSection1Title) {
-            billSection1Title.textContent = `Paycheck ${formatDateWithDay(nextPayDate1)}`;
-        }
-        
-        const billSection2Title = document.querySelector('.bg-glass-purple p.text-sm.text-gray-300');
-        if (billSection2Title) {
-            billSection2Title.textContent = `Paycheck ${formatDateWithDay(nextPayDate2)}`;
-        }
-    } else {
-        // For semi-monthly, use the default labels
-        const paycheck1TitleElement = document.querySelector('.bg-glass-blue h4.text-md');
-        if (paycheck1TitleElement) {
-            paycheck1TitleElement.textContent = 'Paycheck 1 (15th)';
-        }
-        
-        const paycheck2TitleElement = document.querySelector('.bg-glass-purple h4.text-md');
-        if (paycheck2TitleElement) {
-            paycheck2TitleElement.textContent = 'Paycheck 2 (End of Month)';
-        }
-        
-        // Also update the bill sections in the Monthly Bills card
-        const billSection1Title = document.querySelector('.bg-glass-blue p.text-sm.text-gray-300');
-        if (billSection1Title) {
-            billSection1Title.textContent = 'Paycheck 1 (15th)';
-        }
-        
-        const billSection2Title = document.querySelector('.bg-glass-purple p.text-sm.text-gray-300');
-        if (billSection2Title) {
-            billSection2Title.textContent = 'Paycheck 2 (End of Month)';
-        }
-        
-        // Hide third paycheck section for non-bi-weekly pay
-        const gpThirdPaycheckSection = document.getElementById('gpThirdPaycheckSection');
-        if (gpThirdPaycheckSection) {
-            gpThirdPaycheckSection.classList.add('hidden');
+            // For simplicity, we'll just check if the current month has 3 paycheck weeks
+            // This is a placeholder for actual third paycheck detection logic
+            hasThirdPaycheckInSameMonth = (today.getMonth() % 2 === 0);
         }
     }
     
     // Update paycheck values
-    gpPaycheck1Net.textContent = `$${payPerPaycheck.toFixed(2)}`;
-    gpPaycheck1Bills.textContent = `$${paycheck1BillsAmount.toFixed(2)}`;
+    if (gpPaycheck1Net) gpPaycheck1Net.textContent = `$${payPerPaycheck.toFixed(2)}`;
+    if (gpPaycheck1Bills) gpPaycheck1Bills.textContent = `$${paycheck1BillsAmount.toFixed(2)}`;
     
     const paycheck1SurplusColor = paycheck1Surplus >= 0 ? "text-neon-green" : "text-neon-pink";
-    gpPaycheck1Surplus.className = `font-bold ${paycheck1SurplusColor}`;
-    // Display the surplus as positive or deficit as negative
-    const paycheck1SurplusSign = paycheck1Surplus >= 0 ? "" : "-";
-    gpPaycheck1Surplus.textContent = `${paycheck1SurplusSign}$${Math.abs(paycheck1Surplus).toFixed(2)}`;
+    if (gpPaycheck1Surplus) {
+        gpPaycheck1Surplus.className = `font-bold ${paycheck1SurplusColor}`;
+        const paycheck1SurplusSign = paycheck1Surplus >= 0 ? "" : "-";
+        gpPaycheck1Surplus.textContent = `${paycheck1SurplusSign}$${Math.abs(paycheck1Surplus).toFixed(2)}`;
+    }
     
-    gpPaycheck2Net.textContent = `$${payPerPaycheck.toFixed(2)}`;
-    gpPaycheck2Bills.textContent = `$${paycheck2BillsAmount.toFixed(2)}`;
+    if (gpPaycheck2Net) gpPaycheck2Net.textContent = `$${payPerPaycheck.toFixed(2)}`;
+    if (gpPaycheck2Bills) gpPaycheck2Bills.textContent = `$${paycheck2BillsAmount.toFixed(2)}`;
     
     const paycheck2SurplusColor = paycheck2Surplus >= 0 ? "text-neon-green" : "text-neon-pink";
-    gpPaycheck2Surplus.className = `font-bold ${paycheck2SurplusColor}`;
-    // Display the surplus as positive or deficit as negative
-    const paycheck2SurplusSign = paycheck2Surplus >= 0 ? "" : "-";
-    gpPaycheck2Surplus.textContent = `${paycheck2SurplusSign}$${Math.abs(paycheck2Surplus).toFixed(2)}`;
+    if (gpPaycheck2Surplus) {
+        gpPaycheck2Surplus.className = `font-bold ${paycheck2SurplusColor}`;
+        const paycheck2SurplusSign = paycheck2Surplus >= 0 ? "" : "-";
+        gpPaycheck2Surplus.textContent = `${paycheck2SurplusSign}$${Math.abs(paycheck2Surplus).toFixed(2)}`;
+    }
     
-    // Update third paycheck values (for bi-weekly pay) when it's in the same month
-    if (payFrequency === 26 && hasThirdPaycheckInSameMonth) {
-        const gpPaycheck3Net = document.getElementById('gpPaycheck3Net');
-        const gpPaycheck3Bills = document.getElementById('gpPaycheck3Bills');
-        const gpPaycheck3Surplus = document.getElementById('gpPaycheck3Surplus');
-        
+    // Update third paycheck section if applicable
+    const gpThirdPaycheckSection = document.getElementById('gpThirdPaycheckSection');
+    if (payFrequency === 26 && hasThirdPaycheckInSameMonth && gpThirdPaycheckSection) {
+        gpThirdPaycheckSection.classList.remove('hidden');
         if (gpPaycheck3Net) gpPaycheck3Net.textContent = `$${payPerPaycheck.toFixed(2)}`;
         if (gpPaycheck3Bills) gpPaycheck3Bills.textContent = `$0.00`;
         
         if (gpPaycheck3Surplus) {
-            gpPaycheck3Surplus.className = 'font-bold text-neon-green';
+            gpPaycheck3Surplus.className = "font-bold text-neon-green";
             gpPaycheck3Surplus.textContent = `$${paycheck3Surplus.toFixed(2)}`;
         }
+    } else if (gpThirdPaycheckSection) {
+        gpThirdPaycheckSection.classList.add('hidden');
     }
     
     // Update annual projections
-    gpAnnualIncome.textContent = `$${annualNetIncome.toFixed(2)}`;
-    gpAnnualBonus.textContent = `$${afterTaxBonus.toFixed(2)}`;
-    gpAnnualBills.textContent = `$${annualBills.toFixed(2)}`;
+    if (gpAnnualIncome) gpAnnualIncome.textContent = `$${annualNetIncome.toFixed(2)}`;
+    if (gpAnnualBonus) gpAnnualBonus.textContent = `$${afterTaxBonus.toFixed(2)}`;
+    if (gpAnnualBills) gpAnnualBills.textContent = `$${annualBills.toFixed(2)}`;
     
     const annualSurplusColor = annualSurplus >= 0 ? "text-neon-green" : "text-neon-pink";
-    gpAnnualSurplus.className = `font-bold ${annualSurplusColor}`;
-    // Display the annual surplus as positive or deficit as negative
-    const annualSurplusSign = annualSurplus >= 0 ? "" : "-";
-    gpAnnualSurplus.textContent = `${annualSurplusSign}$${Math.abs(annualSurplus).toFixed(2)}`;
+    if (gpAnnualSurplus) {
+        gpAnnualSurplus.className = `font-bold ${annualSurplusColor}`;
+        const annualSurplusSign = annualSurplus >= 0 ? "" : "-";
+        gpAnnualSurplus.textContent = `${annualSurplusSign}$${Math.abs(annualSurplus).toFixed(2)}`;
+    }
     
     const annualSurplusWithBonusColor = annualSurplusWithBonus >= 0 ? "text-neon-green" : "text-neon-pink";
-    gpAnnualSurplusWithBonus.className = `font-bold ${annualSurplusWithBonusColor}`;
-    // Display the annual surplus with bonus as positive or deficit as negative
-    const annualSurplusWithBonusSign = annualSurplusWithBonus >= 0 ? "" : "-";
-    gpAnnualSurplusWithBonus.textContent = `${annualSurplusWithBonusSign}$${Math.abs(annualSurplusWithBonus).toFixed(2)}`;
-    
-    // Add explanation for bi-weekly pay frequency (only if it doesn't already exist)
-    if (payFrequency === 26) {
-        // Check if the explanation already exists
-        const existingExplanation = document.querySelector('.bi-weekly-explanation');
-        if (!existingExplanation) {
-            const biWeeklyExplanation = document.createElement('div');
-            biWeeklyExplanation.className = 'mt-2 text-xs text-neon-blue bi-weekly-explanation';
-            biWeeklyExplanation.innerHTML = `<i class="fas fa-info-circle mr-1"></i> Bi-weekly pay includes 2 extra paychecks per year (26 total). Two months will have a 3rd paycheck with no bills assigned to it - pure extra income!`;
-            
-            // Add the explanation below the monthly cash flow section
-            const monthlySurplusParent = gpMonthlySurplus.closest('.space-y-3');
-            if (monthlySurplusParent) {
-                monthlySurplusParent.appendChild(biWeeklyExplanation);
-            }
-        }
-    } else {
-        // Remove the explanation if it exists and pay frequency is not bi-weekly
-        const existingExplanation = document.querySelector('.bi-weekly-explanation');
-        if (existingExplanation) {
-            existingExplanation.remove();
-        }
+    if (gpAnnualSurplusWithBonus) {
+        gpAnnualSurplusWithBonus.className = `font-bold ${annualSurplusWithBonusColor}`;
+        const annualSurplusWithBonusSign = annualSurplusWithBonus >= 0 ? "" : "-";
+        gpAnnualSurplusWithBonus.textContent = `${annualSurplusWithBonusSign}$${Math.abs(annualSurplusWithBonus).toFixed(2)}`;
     }
     
     // Update progress bar
     const progressFillColor = monthlySurplus >= 0 ? "cyber-green" : "cyber-pink";
-    profitProgress.className = `cyber-progress-fill ${progressFillColor}`;
-    profitProgress.style.width = `${Math.min(100, Math.abs(profitRatio))}%`;
-    
-    // Update status text
-    if (monthlySurplus >= 0) {
-        profitStatus.textContent = `${profitRatio.toFixed(1)}% surplus ratio - Your monthly income exceeds your bills`;
-    } else {
-        profitStatus.textContent = `${Math.abs(profitRatio).toFixed(1)}% deficit ratio - Your monthly bills exceed your income`;
+    if (profitProgress) {
+        profitProgress.className = `cyber-progress-fill ${progressFillColor}`;
+        profitProgress.style.width = `${Math.min(100, Math.abs(profitRatio))}%`;
     }
     
+    // Update status text
+    let profitStatusText = '';
+    if (monthlySurplus >= 0) {
+        const savingRate = (monthlySurplus / payPerMonth * 100).toFixed(1);
+        profitStatusText = `You're saving ${savingRate}% of your monthly income (surplus: $${monthlySurplus.toFixed(2)})`;
+    } else {
+        const deficit = Math.abs(monthlySurplus);
+        const deficitRate = (deficit / totalMonthlyBills * 100).toFixed(1);
+        profitStatusText = `You're spending ${deficitRate}% more than your income (deficit: $${deficit.toFixed(2)})`;
+    }
+    if (profitStatus) profitStatus.textContent = profitStatusText;
+    
+    // Store profit calculation data
+    profitData = {
+        gpMonthlyIncome: `$${payPerMonth.toFixed(2)}`,
+        gpMonthlyBills: `$${totalMonthlyBills.toFixed(2)}`,
+        gpMonthlySurplus: `${monthlySurplus >= 0 ? '' : '-'}$${Math.abs(monthlySurplus).toFixed(2)}`,
+        gpMonthlySurplusClass: `font-bold ${monthlySurplusColor}`,
+        
+        gpPaycheck1Net: `$${payPerPaycheck.toFixed(2)}`,
+        gpPaycheck1Bills: `$${paycheck1BillsAmount.toFixed(2)}`,
+        gpPaycheck1Surplus: `${paycheck1Surplus >= 0 ? '' : '-'}$${Math.abs(paycheck1Surplus).toFixed(2)}`,
+        gpPaycheck1SurplusClass: `font-bold ${paycheck1SurplusColor}`,
+        
+        gpPaycheck2Net: `$${payPerPaycheck.toFixed(2)}`,
+        gpPaycheck2Bills: `$${paycheck2BillsAmount.toFixed(2)}`,
+        gpPaycheck2Surplus: `${paycheck2Surplus >= 0 ? '' : '-'}$${Math.abs(paycheck2Surplus).toFixed(2)}`,
+        gpPaycheck2SurplusClass: `font-bold ${paycheck2SurplusColor}`,
+        
+        gpAnnualIncome: `$${annualNetIncome.toFixed(2)}`,
+        gpAnnualBonus: `$${afterTaxBonus.toFixed(2)}`,
+        gpAnnualBills: `$${annualBills.toFixed(2)}`,
+        gpAnnualSurplus: `${annualSurplus >= 0 ? '' : '-'}$${Math.abs(annualSurplus).toFixed(2)}`,
+        gpAnnualSurplusClass: `font-bold ${annualSurplusColor}`,
+        gpAnnualSurplusWithBonus: `${annualSurplusWithBonus >= 0 ? '' : '-'}$${Math.abs(annualSurplusWithBonus).toFixed(2)}`,
+        gpAnnualSurplusWithBonusClass: `font-bold ${annualSurplusWithBonusColor}`,
+        
+        profitRatio: profitRatio,
+        progressFillColor: progressFillColor,
+        profitStatusText: profitStatusText,
+        payFrequency: payFrequency,
+        hasThirdPaycheckInSameMonth: hasThirdPaycheckInSameMonth,
+        gpAnnualBonusTaxRate: `${bonusTaxRate}%`
+    };
+    
+    // If we have a third paycheck, save its data
+    if (payFrequency === 26 && hasThirdPaycheckInSameMonth) {
+        profitData.gpPaycheck3Net = `$${payPerPaycheck.toFixed(2)}`;
+        profitData.gpPaycheck3Bills = `$0.00`;
+        profitData.gpPaycheck3Surplus = `$${paycheck3Surplus.toFixed(2)}`;
+        profitData.gpPaycheck3SurplusClass = "font-bold text-neon-green";
+    }
+    
+    // Save to localStorage
+    saveToLocalStorage();
+    
     // Show results
-    grossProfitResults.classList.remove('hidden');
+    if (grossProfitResults) grossProfitResults.classList.remove('hidden');
 }
 
 // Hook into the salary calculator to trigger gross profit calculation
@@ -2529,6 +3114,9 @@ window.saveLoan = function() {
     renderLoans();
     updateLoanSummary();
     closeLoanModal();
+    
+    // Save changes to localStorage
+    saveToLocalStorage();
     
     // Dispatch event to trigger scroll detection check
     document.dispatchEvent(new Event('loansChanged'));
@@ -2865,103 +3453,22 @@ window.toggleBillPaidStatus = function(index) {
     }
 }
 
-// Function to show the zero bill confirmation modal
-window.showZeroBillModal = function(index) {
-    const bill = bills[index];
-    
-    // Set the bill name in the modal
-    document.getElementById('zeroBillName').textContent = bill.name;
-    
-    // Store the bill index for later use
-    document.getElementById('zeroBillIndex').value = index;
-    
-    // Hide the amount field container initially
-    document.getElementById('zeroBillAmountContainer').classList.add('hidden');
-    
-    // Show the "Enter Amount" button and reset its text
-    const editBtn = document.getElementById('zeroBillEditBtn');
-    editBtn.classList.remove('hidden');
-    editBtn.textContent = 'Enter Amount';
-    
-    // Show the modal
-    document.getElementById('zeroBillModal').classList.remove('hidden');
-}
-
-// Function to close the zero bill modal
-window.closeZeroBillModal = function() {
-    document.getElementById('zeroBillModal').classList.add('hidden');
-}
-
-// Function to show the amount input field
-window.showZeroBillAmountField = function() {
-    // Show the amount field container
-    document.getElementById('zeroBillAmountContainer').classList.remove('hidden');
-    
-    // Focus the input field
-    document.getElementById('zeroBillAmount').focus();
-    
-    // Change the button text and action
-    const editBtn = document.getElementById('zeroBillEditBtn');
-    editBtn.textContent = 'Apply Amount';
-    editBtn.onclick = function() {
-        // Try to parse the entered amount
-        const amountValue = parseFloat(document.getElementById('zeroBillAmount').value);
-        
-        if (isNaN(amountValue) || amountValue < 0) {
-            // If invalid input, show error with cyber styling
-            const container = document.getElementById('zeroBillAmountContainer');
-            
-            // Clear any existing error message
-            const existingError = container.querySelector('.error-message');
-            if (existingError) {
-                existingError.remove();
-            }
-            
-            // Create and add error message
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'error-message text-neon-pink text-sm mt-1';
-            errorDiv.innerHTML = '<i class="fas fa-exclamation-triangle mr-1"></i> Please enter a valid positive number';
-            container.appendChild(errorDiv);
-            
-            return;
-        }
-        
-        // Get the bill index
-        const index = parseInt(document.getElementById('zeroBillIndex').value);
-        
-        // Update the bill amount
-        bills[index].amount = amountValue;
-        
-        // Mark the bill as paid
-        bills[index].isPaid = true;
-        
-        // Re-render the bills to update the UI
-        renderBills();
-        
-        // Update the payment schedule
-        updatePaymentSchedule();
-        
-        // Close the modal
-        closeZeroBillModal();
-    };
-}
-
-// Function to confirm zero amount and mark as paid
-window.confirmZeroBill = function(shouldToggle) {
-    // Get the bill index
-    const index = parseInt(document.getElementById('zeroBillIndex').value);
-    
-    if (shouldToggle) {
-        // Toggle the paid status
-        bills[index].isPaid = !bills[index].isPaid;
-        
-        // Re-render the bills to update the UI
-        renderBills();
-        
-        // Update the payment schedule
-        updatePaymentSchedule();
+// Function to initialize the gross profit calculator
+function initGrossProfitCalculator() {
+    // Set up event listeners for the gross profit calculator
+    const updateProfitButton = document.getElementById('updateProfitButton');
+    if (updateProfitButton) {
+        updateProfitButton.addEventListener('click', function() {
+            updateGrossProfit();
+        });
     }
-    
-    // Close the modal
-    closeZeroBillModal();
+
+    // If salary data exists, try to calculate gross profit automatically
+    const salaryResults = document.getElementById('salaryResults');
+    if (salaryResults && !salaryResults.classList.contains('hidden')) {
+        // Call with a slight delay to ensure all DOM elements are loaded
+        setTimeout(function() {
+            calculateGrossProfit();
+        }, 300);
+    }
 }

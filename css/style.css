@@ -12,6 +12,8 @@
     --cyber-yellow: #ffd319;
     --glass-blue: rgba(0, 255, 255, 0.15);
     --glass-purple: rgba(185, 103, 255, 0.15);
+    --glass-pink: rgba(255, 0, 255, 0.15);
+    --glass-green: rgba(57, 255, 20, 0.15);
 }
 
 body {
@@ -468,4 +470,53 @@ input[type="number"] {
 .bill-paid span,
 .bill-paid i {
     color: #000000 !important;
+}
+
+/* Data Management Panel Styles */
+.bg-glass-blue {
+    background-color: var(--glass-blue);
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(0, 255, 255, 0.3);
+}
+
+.bg-glass-purple {
+    background-color: var(--glass-purple);
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(185, 103, 255, 0.3);
+}
+
+.bg-glass-pink {
+    background-color: var(--glass-pink);
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 0, 255, 0.3);
+}
+
+.bg-glass-green {
+    background-color: var(--glass-green);
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(57, 255, 20, 0.3);
+}
+
+/* Save confirmation animation */
+#saveConfirmation {
+    animation: fadeInOut 2s ease-in-out;
+    z-index: 9999;
+}
+
+@keyframes fadeInOut {
+    0% { opacity: 0; transform: translateY(20px); }
+    20% { opacity: 1; transform: translateY(0); }
+    80% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-20px); }
+}
+
+/* Last saved time styling */
+#lastSavedTime {
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+}
+
+#lastSavedTime:hover {
+    color: var(--neon-silver);
 }
