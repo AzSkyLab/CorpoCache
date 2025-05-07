@@ -3497,58 +3497,60 @@ function initGrossProfitCalculator() {
 
 // Function to calculate bi-weekly paycheck dates for a given month
 function calculateBiWeeklyPaycheckDates(lastPayDate) {
-    // Parse the last pay date
-    const lastPay = new Date(lastPayDate);
+    // Parse the last pay date with time zone normalization
+    // Create date at noon local time to avoid any DST issues
+    const lastPayString = lastPayDate.split('T')[0]; // Get just the date part
+    const lastPay = new Date(`${lastPayString}T12:00:00`);
     
     // Get current month and year
     const currentDate = new Date();
     const currentMonth = currentDate.getMonth();
     const currentYear = currentDate.getFullYear();
     
-    // Create a date object for the 1st of the current month
-    const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
-    
-    // Create a date object for the last day of the current month
-    const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0);
+    // Create date objects for the first and last day of the current month (at noon)
+    const firstDayOfMonth = new Date(currentYear, currentMonth, 1, 12, 0, 0);
+    const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0, 12, 0, 0);
     
     // Array to store pay dates in the current month
     const payDates = [];
     
-    // Calculate dates by counting forward and backward from the known pay date
-    const payPeriodDays = 14; // bi-weekly
+    // Calculate days between pay periods (bi-weekly = 14 days)
+    const daysInPayPeriod = 14;
     
-    // Start from the last known pay date
-    let tempDate = new Date(lastPay);
+    // Find pay dates before and after the reference date
+    let prevDate = new Date(lastPay);
     
-    // First go backward until we're before the current month
-    while (tempDate >= firstDayOfMonth) {
-        // If this date is in our target month, add it to our list
-        if (tempDate.getMonth() === currentMonth && tempDate.getFullYear() === currentYear) {
-            payDates.push(new Date(tempDate));
-        }
-        
-        // Move back by one pay period
-        tempDate = new Date(tempDate);
-        tempDate.setDate(tempDate.getDate() - payPeriodDays);
+    // First, go backward until we are before the first day of the month
+    while (prevDate >= firstDayOfMonth) {
+        const newDate = new Date(prevDate);
+        newDate.setDate(prevDate.getDate() - daysInPayPeriod);
+        prevDate = newDate;
     }
     
-    // Now go forward from the last known pay date
-    tempDate = new Date(lastPay);
-    tempDate.setDate(tempDate.getDate() + payPeriodDays); // Start with next period
+    // Now, move forward by one pay period to potentially get our first date in the month
+    let currentDate1 = new Date(prevDate);
+    currentDate1.setDate(currentDate1.getDate() + daysInPayPeriod);
     
-    while (tempDate <= lastDayOfMonth) {
-        // If this date is in our target month, add it to our list
-        if (tempDate.getMonth() === currentMonth && tempDate.getFullYear() === currentYear) {
-            payDates.push(new Date(tempDate));
+    // Now collect all pay dates in the current month
+    while (currentDate1 <= lastDayOfMonth) {
+        if (currentDate1 >= firstDayOfMonth) {
+            // Add a copy of the date to avoid reference issues
+            // Make sure to normalize the date to midnight on the correct day
+            const normalizedDate = new Date(currentDate1);
+            payDates.push(normalizedDate);
         }
         
-        // Move forward by one pay period
-        tempDate = new Date(tempDate);
-        tempDate.setDate(tempDate.getDate() + payPeriodDays);
+        // Move to next pay period
+        const nextDate = new Date(currentDate1);
+        nextDate.setDate(currentDate1.getDate() + daysInPayPeriod);
+        currentDate1 = nextDate;
     }
     
     // Sort the pay dates chronologically
     payDates.sort((a, b) => a - b);
+    
+    // Log dates to confirm they're correct
+    console.log("Calculated normalized pay dates:", payDates.map(d => d.toDateString()));
     
     return payDates;
 }
@@ -3573,39 +3575,50 @@ function updatePaycheckLabels() {
     
     // If pay frequency is bi-weekly and we have a last pay date
     if (payFrequency === 26 && lastPayDate) {
-        // Calculate the bi-weekly pay dates for the current month
-        const payDates = calculateBiWeeklyPaycheckDates(lastPayDate);
-        
-        // If we have at least two pay dates in the month
-        if (payDates.length >= 2) {
-            // Update the labels with the actual dates
-            paycheck1Label.textContent = `Paycheck 1 (${payDates[0].getDate()}${getOrdinalSuffix(payDates[0].getDate())})`;
-            paycheck2Label.textContent = `Paycheck 2 (${payDates[1].getDate()}${getOrdinalSuffix(payDates[1].getDate())})`;
+        try {
+            // Calculate the bi-weekly pay dates for the current month
+            const payDates = calculateBiWeeklyPaycheckDates(lastPayDate);
             
-            // Update Net Profit Calculator labels
-            gpPaycheck1Label.textContent = `Paycheck 1 (${payDates[0].getDate()}${getOrdinalSuffix(payDates[0].getDate())})`;
-            gpPaycheck2Label.textContent = `Paycheck 2 (${payDates[1].getDate()}${getOrdinalSuffix(payDates[1].getDate())})`;
-            
-            // If there's a third paycheck in the month
-            if (payDates.length >= 3) {
-                // Make sure the third paycheck section exists
-                const gpThirdPaycheckSection = document.getElementById('gpThirdPaycheckSection');
-                const gpPaycheck3Label = gpThirdPaycheckSection ? gpThirdPaycheckSection.querySelector('h4') : null;
+            // If we have at least two pay dates in the month
+            if (payDates.length >= 2) {
+                // Format dates properly
+                const date1 = payDates[0].getDate();
+                const date2 = payDates[1].getDate();
                 
-                if (gpPaycheck3Label) {
-                    gpPaycheck3Label.textContent = `Paycheck 3 (${payDates[2].getDate()}${getOrdinalSuffix(payDates[2].getDate())})`;
+                // Update the labels with the actual dates
+                paycheck1Label.textContent = `Paycheck 1 (${date1}${getOrdinalSuffix(date1)})`;
+                paycheck2Label.textContent = `Paycheck 2 (${date2}${getOrdinalSuffix(date2)})`;
+                
+                // Update Net Profit Calculator labels
+                gpPaycheck1Label.textContent = `Paycheck 1 (${date1}${getOrdinalSuffix(date1)})`;
+                gpPaycheck2Label.textContent = `Paycheck 2 (${date2}${getOrdinalSuffix(date2)})`;
+                
+                // Log calculated pay dates for debugging
+                console.log('Calculated pay dates:', payDates.map(d => d.toDateString()));
+                
+                // If there's a third paycheck in the month, update that label too
+                const gpPaycheck3Label = document.querySelector('#gpThirdPaycheckSection h4');
+                if (payDates.length >= 3 && gpPaycheck3Label) {
+                    const date3 = payDates[2].getDate();
+                    gpPaycheck3Label.textContent = `Paycheck 3 (${date3}${getOrdinalSuffix(date3)})`;
                 }
+                
+                // Successfully updated with bi-weekly dates
+                return;
             }
+        } catch (e) {
+            console.error('Error calculating bi-weekly pay dates:', e);
+            // Fall back to default labels if there was an error
         }
-    } else {
-        // Use default semi-monthly labels
-        paycheck1Label.textContent = 'Paycheck 1 (15th)';
-        paycheck2Label.textContent = 'Paycheck 2 (End of Month)';
-        
-        // Update Net Profit Calculator labels to default
-        gpPaycheck1Label.textContent = 'Paycheck 1 (15th)';
-        gpPaycheck2Label.textContent = 'Paycheck 2 (End of Month)';
     }
+    
+    // Default semi-monthly labels
+    paycheck1Label.textContent = 'Paycheck 1 (15th)';
+    paycheck2Label.textContent = 'Paycheck 2 (End of Month)';
+    
+    // Update Net Profit Calculator labels to default
+    gpPaycheck1Label.textContent = 'Paycheck 1 (15th)';
+    gpPaycheck2Label.textContent = 'Paycheck 2 (End of Month)';
 }
 
 // Call this function whenever we need to update the paycheck labels
