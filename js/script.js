@@ -1500,10 +1500,12 @@ function renderBills() {
     // Add click event listener to each bill item for marking as paid
     document.querySelectorAll('.bill-item').forEach(item => {
         item.addEventListener('click', function(e) {
-            // Don't toggle if click was on a button
-            if (e.target.closest('button')) return;
+            // Prevent triggering if clicking on a button
+            if (e.target.closest('button')) {
+                return;
+            }
             
-            const index = parseInt(this.getAttribute('data-bill-index'));
+            const index = parseInt(this.dataset.billIndex);
             toggleBillPaidStatus(index);
         });
     });
@@ -1512,8 +1514,6 @@ function renderBills() {
 function getBillTypeIcon(type) {
     const icons = {
         'housing': 'fa-home',
-        'utilities': 'fa-bolt',
-        'internet': 'fa-wifi',
         'phone': 'fa-mobile-alt',
         'insurance': 'fa-shield-alt',
         'loan': 'fa-money-bill-wave',
@@ -2727,6 +2727,43 @@ function calculateGrossProfit() {
     if (payFrequency === 26 && lastPayDate) {
         const payDates = calculateBiWeeklyPaycheckDates(lastPayDate);
         hasThirdPaycheckInSameMonth = payDates.length >= 3;
+        
+        // Get the third paycheck section
+        const gpThirdPaycheckSection = document.getElementById('gpThirdPaycheckSection');
+        
+        // If we have 3 paychecks, make sure the third paycheck section is visible
+        if (hasThirdPaycheckInSameMonth && gpThirdPaycheckSection) {
+            // Make sure to remove the hidden class
+            gpThirdPaycheckSection.classList.remove('hidden');
+            
+            // Update third paycheck values
+            if (gpPaycheck3Net) gpPaycheck3Net.textContent = `$${payPerPaycheck.toFixed(2)}`;
+            if (gpPaycheck3Bills) gpPaycheck3Bills.textContent = `$0.00`;
+            if (gpPaycheck3Surplus) {
+                gpPaycheck3Surplus.textContent = `$${paycheck3Surplus.toFixed(2)}`;
+                gpPaycheck3Surplus.className = 'font-bold text-neon-green';
+            }
+            
+            // Update the heading for the third paycheck section
+            const heading = gpThirdPaycheckSection.querySelector('h4');
+            if (heading) {
+                if (payDates.length >= 3) {
+                    const date3 = payDates[2].getDate();
+                    heading.textContent = `Paycheck 3 (${date3}${getOrdinalSuffix(date3)})`;
+                } else {
+                    heading.textContent = 'Extra Bi-Weekly Paycheck';
+                }
+            }
+        } else if (gpThirdPaycheckSection) {
+            // Hide the section if there's no third paycheck
+            gpThirdPaycheckSection.classList.add('hidden');
+        }
+    } else {
+        // Hide the third paycheck section for semi-monthly pay
+        const gpThirdPaycheckSection = document.getElementById('gpThirdPaycheckSection');
+        if (gpThirdPaycheckSection) {
+            gpThirdPaycheckSection.classList.add('hidden');
+        }
     }
     
     // Update paycheck values
@@ -2747,25 +2784,6 @@ function calculateGrossProfit() {
         gpPaycheck2Surplus.textContent = `${paycheck2Surplus >= 0 ? '' : '-'}$${Math.abs(paycheck2Surplus).toFixed(2)}`;
         gpPaycheck2Surplus.className = `font-bold ${paycheck2SurplusColor}`;
     }
-    
-    // Update third paycheck section if applicable
-    const gpThirdPaycheckSection = document.getElementById('gpThirdPaycheckSection');
-    if (payFrequency === 26 && hasThirdPaycheckInSameMonth && gpThirdPaycheckSection) {
-        gpThirdPaycheckSection.classList.remove('hidden');
-        
-        if (gpPaycheck3Net) gpPaycheck3Net.textContent = `$${payPerPaycheck.toFixed(2)}`;
-        if (gpPaycheck3Bills) gpPaycheck3Bills.textContent = `$0.00`;
-        
-        if (gpPaycheck3Surplus) {
-            gpPaycheck3Surplus.textContent = `$${payPerPaycheck.toFixed(2)}`;
-            gpPaycheck3Surplus.className = 'font-bold text-neon-green';
-        }
-    } else if (gpThirdPaycheckSection) {
-        gpThirdPaycheckSection.classList.add('hidden');
-    }
-    
-    // Update paycheck labels based on pay frequency and last pay date
-    updatePaycheckLabels();
     
     // Update annual projections
     if (gpAnnualIncome) gpAnnualIncome.textContent = `$${annualNetIncome.toFixed(2)}`;
@@ -2834,7 +2852,7 @@ function calculateGrossProfit() {
     };
     
     // If we have a third paycheck, save its data
-    if (payFrequency === 26 && hasThirdPaycheckInSameMonth) {
+    if (hasThirdPaycheckInSameMonth) {
         profitData.gpPaycheck3Net = `$${payPerPaycheck.toFixed(2)}`;
         profitData.gpPaycheck3Bills = `$0.00`;
         profitData.gpPaycheck3Surplus = `$${payPerPaycheck.toFixed(2)}`;
@@ -3461,19 +3479,123 @@ window.toggleBillPaidStatus = function(index) {
     
     // Check if bill amount is zero
     if (bill.amount === 0) {
-        // Show our custom zero bill modal instead of browser confirm
+        // For zero amount bills, show the zero bill confirmation modal
         showZeroBillModal(index);
     } else {
-        // If bill amount is not zero, simply toggle the paid status
+        // Toggle the paid status for non-zero bills
         bill.isPaid = !bill.isPaid;
         
-        // Re-render the bills to update the UI
-        renderBills();
+        // If this is a credit card bill and we're setting it to unpaid, reset the amount to zero
+        if (bill.type === 'credit' && !bill.isPaid) {
+            bill.amount = 0;
+        }
         
-        // Update the payment schedule since paid status affects calculations
+        // Update the display
+        renderBills();
         updatePaymentSchedule();
+        
+        // Save changes to localStorage
+        saveToLocalStorage();
     }
 }
+
+// Function to show modal for zero-amount bills
+function showZeroBillModal(billIndex) {
+    // Get the bill at the specified index
+    const bill = bills[billIndex];
+    
+    // Set bill index in modal
+    document.getElementById('zeroBillIndex').value = billIndex;
+    
+    // Update modal title with bill name
+    document.getElementById('zeroBillModalTitle').textContent = `Pay ${bill.name}`;
+    
+    // Clear any previous value
+    document.getElementById('zeroBillAmount').value = '';
+    
+    // Hide amount input field initially
+    document.getElementById('zeroBillAmountField').classList.add('hidden');
+    
+    // Make sure the initial buttons are visible and the amount entry buttons are hidden
+    document.getElementById('initialButtonsContainer').classList.remove('hidden');
+    document.getElementById('amountEntryButtonsContainer').classList.add('hidden');
+    
+    // Show the modal
+    document.getElementById('zeroBillModal').classList.remove('hidden');
+}
+
+// Function to show the amount field in the zero bill modal
+window.showZeroBillAmountField = function() {
+    // Show the amount field
+    document.getElementById('zeroBillAmountField').classList.remove('hidden');
+    
+    // Focus on the amount input
+    document.getElementById('zeroBillAmount').focus();
+    
+    // Hide the initial buttons
+    document.getElementById('initialButtonsContainer').classList.add('hidden');
+    
+    // Show the amount entry buttons
+    document.getElementById('amountEntryButtonsContainer').classList.remove('hidden');
+}
+
+// Function to close the zero bill modal
+window.closeZeroBillModal = function() {
+    document.getElementById('zeroBillModal').classList.add('hidden');
+}
+
+// Function to save zero bill payment
+window.saveZeroBillPayment = function(confirmZero = false) {
+    // Get bill index from hidden field
+    const billIndex = parseInt(document.getElementById('zeroBillIndex').value);
+    
+    // Get payment amount from input field
+    const paymentAmount = document.getElementById('zeroBillAmount').value;
+    
+    // Validate amount (zero or positive number) if not confirming zero
+    if (!confirmZero) {
+        const amount = parseFloat(paymentAmount);
+        if (paymentAmount === '' || isNaN(amount) || amount < 0) {
+            alert('Please enter a valid payment amount (zero or positive number)');
+            return;
+        }
+    }
+    
+    // Update the bill
+    if (billIndex >= 0 && billIndex < bills.length) {
+        // If confirming zero, simply mark as paid
+        if (confirmZero) {
+            bills[billIndex].isPaid = true;
+        } else {
+            // Otherwise update the amount and mark as paid
+            const amount = parseFloat(paymentAmount);
+            bills[billIndex].amount = amount;
+            bills[billIndex].isPaid = true;
+        }
+        
+        // Update the UI
+        renderBills();
+        updatePaymentSchedule();
+        
+        // Save changes to localStorage
+        saveToLocalStorage();
+    }
+    
+    // Close the modal
+    closeZeroBillModal();
+}
+
+// Function to handle "Enter Amount" button click
+window.enterZeroBillAmount = function() {
+    saveZeroBillPayment(false);
+}
+
+// Function to handle "Confirm Zero" button click
+window.confirmZeroBill = function() {
+    saveZeroBillPayment(true);
+}
+
+// Salary Modal Functions
 
 // Function to initialize the gross profit calculator
 function initGrossProfitCalculator() {
@@ -3658,3 +3780,35 @@ document.addEventListener('DOMContentLoaded', function() {
         updatePaycheckLabels();
     };
 });
+
+// Function to close the zero bill modal
+window.closeZeroBillModal = function() {
+    document.getElementById('zeroBillModal').classList.add('hidden');
+}
+
+// Function to show the amount field in the zero bill modal
+window.showZeroBillAmountField = function() {
+    // Show the amount field
+    document.getElementById('zeroBillAmountField').classList.remove('hidden');
+    
+    // Focus on the amount input
+    document.getElementById('zeroBillAmount').focus();
+    
+    // Hide the initial buttons
+    document.getElementById('initialButtonsContainer').classList.add('hidden');
+    
+    // Show the amount entry buttons
+    document.getElementById('amountEntryButtonsContainer').classList.remove('hidden');
+}
+
+// Function to confirm zero bill amount
+window.confirmZeroBill = function() {
+    const index = parseInt(document.getElementById('zeroBillIndex').value);
+    if (index >= 0 && index < bills.length) {
+        // Mark the bill as paid without changing amount
+        bills[index].isPaid = true;
+        renderBills();
+        updatePaymentSchedule();
+    }
+    closeZeroBillModal();
+}
