@@ -592,7 +592,7 @@
                     </div>
                     
                     <!-- Third Bi-Weekly Paycheck Section for Profit Calculator - Initially hidden -->
-                    <div id="gpThirdPaycheckSection" class="mt-4 bg-glass-yellow p-4 rounded-lg hidden">
+                    <div id="gpThirdPaycheckSection" class="mt-4 bg-glass-blue p-4 rounded-lg hidden">
                         <h4 class="text-md font-medium text-white mb-2">Extra Bi-Weekly Paycheck</h4>
                         <div class="flex justify-between mb-2">
                             <span>Net Pay:</span>
@@ -1135,40 +1135,52 @@
     <!-- Zero Amount Bill Confirmation Modal -->
     <div id="zeroBillModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
         <div class="modal-cyber rounded-lg p-6 w-full max-w-md">
-            <h3 class="text-xl font-semibold mb-4 text-white">Confirm Bill Amount</h3>
+            <h3 id="zeroBillModalTitle" class="text-xl font-semibold mb-4 text-white">Pay Bill</h3>
             
             <div class="p-4 mb-4 bg-glass-blue rounded-lg">
                 <div class="text-white">
-                    <p class="mb-2"><i class="fas fa-info-circle text-neon-blue mr-2"></i><span id="zeroBillName">This bill</span> has a $0.00 amount.</p>
-                    <p>Is this correct or would you like to enter the amount you paid?</p>
+                    <p class="mb-2"><i class="fas fa-info-circle text-neon-blue mr-2"></i>This bill has a $0.00 amount.</p>
+                    <p>Would you like to enter an amount or confirm zero payment?</p>
                 </div>
             </div>
             
-            <div id="zeroBillAmountContainer" class="space-y-4 hidden">
+            <div id="zeroBillAmountField" class="hidden space-y-4">
                 <div class="input-container">
                     <input type="number" id="zeroBillAmount" class="cyber-input w-full p-3 rounded-md" placeholder=" " min="0" step="any">
-                    <label class="floating-label">Amount Paid ($)</label>
+                    <label class="floating-label">Payment Amount ($)</label>
                 </div>
             </div>
             
-            <div class="flex justify-end space-x-3 mt-6">
+            <!-- Initial buttons container -->
+            <div id="initialButtonsContainer" class="flex justify-end space-x-3 mt-6">
                 <button onclick="closeZeroBillModal()" class="px-4 py-2 border border-gray-600 text-white rounded-md hover:bg-gray-800">
                     Cancel
                 </button>
-                <button id="zeroBillEditBtn" onclick="showZeroBillAmountField()" class="px-4 py-2 cyber-secondary-btn rounded-md">
+                <button onclick="showZeroBillAmountField()" class="px-4 py-2 cyber-secondary-btn rounded-md">
                     Enter Amount
                 </button>
-                <button onclick="confirmZeroBill(true)" class="px-4 py-2 cyber-primary-btn rounded-md">
+                <button onclick="confirmZeroBill()" class="px-4 py-2 cyber-primary-btn rounded-md">
                     Confirm Zero
                 </button>
             </div>
+            
+            <!-- Amount entry buttons container (initially hidden) -->
+            <div id="amountEntryButtonsContainer" class="flex justify-end space-x-3 mt-6 hidden">
+                <button onclick="closeZeroBillModal()" class="px-4 py-2 border border-gray-600 text-white rounded-md hover:bg-gray-800">
+                    Cancel
+                </button>
+                <button onclick="enterZeroBillAmount()" class="px-4 py-2 cyber-primary-btn rounded-md">
+                    Save Payment
+                </button>
+            </div>
+            
             <input type="hidden" id="zeroBillIndex" value="-1">
         </div>
     </div>
 
-    <!-- External JavaScript -->
-    <script src="js/script.js?v=2.5.1"></script>
-    <script>
+<!-- External JavaScript -->
+<script src="js/script.js?v=2.5.1"></script>
+<script>
     // Direct initialization for collapsible sections
     document.addEventListener('DOMContentLoaded', function() {
         // Credit Rating Legend section

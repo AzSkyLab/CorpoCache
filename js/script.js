@@ -1500,10 +1500,12 @@ function renderBills() {
     // Add click event listener to each bill item for marking as paid
     document.querySelectorAll('.bill-item').forEach(item => {
         item.addEventListener('click', function(e) {
-            // Don't toggle if click was on a button
-            if (e.target.closest('button')) return;
+            // Prevent triggering if clicking on a button
+            if (e.target.closest('button')) {
+                return;
+            }
             
-            const index = parseInt(this.getAttribute('data-bill-index'));
+            const index = parseInt(this.dataset.billIndex);
             toggleBillPaidStatus(index);
         });
     });
@@ -1512,8 +1514,6 @@ function renderBills() {
 function getBillTypeIcon(type) {
     const icons = {
         'housing': 'fa-home',
-        'utilities': 'fa-bolt',
-        'internet': 'fa-wifi',
         'phone': 'fa-mobile-alt',
         'insurance': 'fa-shield-alt',
         'loan': 'fa-money-bill-wave',
@@ -2358,11 +2358,23 @@ function toggleLastPayDateField() {
     const lastPayDateContainer = document.getElementById('lastPayDateContainer');
     
     if (payFrequency === '26') {
-        // Show last pay date field for bi-weekly pay
+        // For bi-weekly pay, show the last pay date field
         lastPayDateContainer.classList.remove('hidden');
+        
+        // If we have a saved last pay date, use it
+        const savedLastPayDate = localStorage.getItem('lastPayDate');
+        if (savedLastPayDate) {
+            document.getElementById('lastPayDate').value = savedLastPayDate;
+        } else {
+            // Otherwise, set a default date (today)
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('lastPayDate').value = today;
+        }
     } else {
-        // Hide last pay date field for other pay frequencies
+        // For semi-monthly, hide the field
         lastPayDateContainer.classList.add('hidden');
+        // Remove lastPayDate from localStorage
+        localStorage.removeItem('lastPayDate');
     }
     
     // Reset the gross profit results when pay frequency changes
@@ -2374,7 +2386,14 @@ function toggleLastPayDateField() {
     // Reset the container with a message to recalculate
     const grossProfitContainer = document.getElementById('grossProfitContainer');
     if (grossProfitContainer) {
-        grossProfitContainer.innerHTML = '<p class="text-center text-gray-400 py-4">Pay frequency changed. Please recalculate your salary.</p>';
+        grossProfitContainer.innerHTML = '<p class="text-center text-gray-400 py-4">Complete the Salary Calculator to see your profit analysis</p>';
+        grossProfitContainer.classList.remove('hidden');
+    }
+    
+    // Update paycheck labels if we're showing a saved calculation
+    const salaryResults = document.getElementById('salaryResults');
+    if (salaryResults && !salaryResults.classList.contains('hidden')) {
+        updatePaycheckLabels();
     }
 }
 
@@ -2536,6 +2555,9 @@ window.calculateSalaryFromModal = function() {
     // Save to localStorage
     saveToLocalStorage();
     
+    // Update paycheck labels based on pay frequency and last pay date
+    updatePaycheckLabels();
+    
     // Then calculate gross profit
     calculateGrossProfit();
 }
@@ -2549,9 +2571,7 @@ function calculateGrossProfit() {
     const netPayText = netPayElement.textContent.replace('$', '').trim();
     const netPayPerPaycheck = parseFloat(netPayText) || 0;
     
-    if (netPayPerPaycheck <= 0) {
-        return;
-    }
+    if (netPayPerPaycheck <= 0) return;
     
     // Clear the initial message
     const grossProfitContainer = document.getElementById('grossProfitContainer');
@@ -2565,9 +2585,11 @@ function calculateGrossProfit() {
     // Calculate monthly income based on pay frequency
     let payPerMonth;
     if (payFrequency === 26) {
-        payPerMonth = netPayPerPaycheck * 26 / 12;
+        // Bi-weekly: (26 paychecks / 12 months = 2.166... paychecks per month on average)
+        payPerMonth = netPayPerPaycheck * (26 / 12);
     } else {
-        payPerMonth = netPayPerPaycheck * payFrequency / 12;
+        // Semi-monthly: 2 paychecks per month
+        payPerMonth = netPayPerPaycheck * 2;
     }
     
     // Get annual salary and bonus
@@ -2589,9 +2611,39 @@ function calculateGrossProfit() {
     }
     
     // Get bills information
-    // Split bills between two paychecks (15th and end of month)
-    const paycheck1Bills = bills.filter(bill => bill.dueDate <= 15);
-    const paycheck2Bills = bills.filter(bill => bill.dueDate > 15);
+    // Split bills between two paychecks based on pay frequency
+    let paycheck1Bills, paycheck2Bills;
+    const lastPayDate = localStorage.getItem('lastPayDate');
+    
+    if (payFrequency === 26 && lastPayDate) {
+        // For bi-weekly: Calculate the actual paycheck dates for the current month
+        const payDates = calculateBiWeeklyPaycheckDates(lastPayDate);
+        
+        if (payDates.length >= 2) {
+            // For bi-weekly: split bills based on which paycheck date they're closer to
+            const firstPaycheckDate = payDates[0].getDate();
+            const secondPaycheckDate = payDates[1].getDate();
+            
+            // For first paycheck, include bills due from 1st of month up to midpoint between paychecks
+            const midpoint1 = Math.floor((firstPaycheckDate + secondPaycheckDate) / 2);
+            
+            paycheck1Bills = bills.filter(bill => {
+                // Bills due from 1st of month through midpoint between first and second paycheck
+                return bill.dueDate <= midpoint1;
+            });
+            
+            // For second paycheck, include bills due after midpoint
+            paycheck2Bills = bills.filter(bill => bill.dueDate > midpoint1);
+        } else {
+            // Default to standard 15th split if we couldn't calculate bi-weekly dates
+            paycheck1Bills = bills.filter(bill => bill.dueDate <= 15);
+            paycheck2Bills = bills.filter(bill => bill.dueDate > 15);
+        }
+    } else {
+        // For semi-monthly: split bills at the 15th of the month as usual
+        paycheck1Bills = bills.filter(bill => bill.dueDate <= 15);
+        paycheck2Bills = bills.filter(bill => bill.dueDate > 15);
+    }
     
     // Calculate bills amounts
     const paycheck1BillsAmount = paycheck1Bills.reduce((sum, bill) => sum + parseFloat(bill.amount || 0), 0);
@@ -2603,9 +2655,20 @@ function calculateGrossProfit() {
     let payPerPaycheck;
     
     if (payFrequency === 26) {
+        // For bi-weekly, some months will have 3 paychecks
+        // Check if current month has 3 paychecks
+        let hasThirdPaycheckInSameMonth = false;
+        
+        if (lastPayDate) {
+            const payDates = calculateBiWeeklyPaycheckDates(lastPayDate);
+            hasThirdPaycheckInSameMonth = payDates.length >= 3;
+        }
+        
+        // Use the actual paycheck amount
         payPerPaycheck = netPayPerPaycheck;
     } else {
-        payPerPaycheck = payPerMonth * 12 / payFrequency;
+        // For semi-monthly, each paycheck is half the monthly pay
+        payPerPaycheck = payPerMonth / 2;
     }
     
     // Calculate surplus/deficit for regular paychecks
@@ -2654,25 +2717,52 @@ function calculateGrossProfit() {
     // Set color based on surplus or deficit
     const monthlySurplusColor = monthlySurplus >= 0 ? "text-neon-green" : "text-neon-pink";
     if (gpMonthlySurplus) {
+        gpMonthlySurplus.textContent = `${monthlySurplus >= 0 ? '' : '-'}$${Math.abs(monthlySurplus).toFixed(2)}`;
         gpMonthlySurplus.className = `font-bold ${monthlySurplusColor}`;
-        // Display the surplus as positive or deficit as negative
-        const monthlySurplusSign = monthlySurplus >= 0 ? "" : "-";
-        gpMonthlySurplus.textContent = `${monthlySurplusSign}$${Math.abs(monthlySurplus).toFixed(2)}`;
     }
     
     // Variable to track if we have a third paycheck in the same month
     let hasThirdPaycheckInSameMonth = false;
     
-    if (payFrequency === 26) {
-        // Check if we have a third paycheck in the same month
-        const lastPayDate = localStorage.getItem('lastPayDate');
-        if (lastPayDate) {
-            const payDate = new Date(lastPayDate);
-            const today = new Date();
+    if (payFrequency === 26 && lastPayDate) {
+        const payDates = calculateBiWeeklyPaycheckDates(lastPayDate);
+        hasThirdPaycheckInSameMonth = payDates.length >= 3;
+        
+        // Get the third paycheck section
+        const gpThirdPaycheckSection = document.getElementById('gpThirdPaycheckSection');
+        
+        // If we have 3 paychecks, make sure the third paycheck section is visible
+        if (hasThirdPaycheckInSameMonth && gpThirdPaycheckSection) {
+            // Make sure to remove the hidden class
+            gpThirdPaycheckSection.classList.remove('hidden');
             
-            // For simplicity, we'll just check if the current month has 3 paycheck weeks
-            // This is a placeholder for actual third paycheck detection logic
-            hasThirdPaycheckInSameMonth = (today.getMonth() % 2 === 0);
+            // Update third paycheck values
+            if (gpPaycheck3Net) gpPaycheck3Net.textContent = `$${payPerPaycheck.toFixed(2)}`;
+            if (gpPaycheck3Bills) gpPaycheck3Bills.textContent = `$0.00`;
+            if (gpPaycheck3Surplus) {
+                gpPaycheck3Surplus.textContent = `$${paycheck3Surplus.toFixed(2)}`;
+                gpPaycheck3Surplus.className = 'font-bold text-neon-green';
+            }
+            
+            // Update the heading for the third paycheck section
+            const heading = gpThirdPaycheckSection.querySelector('h4');
+            if (heading) {
+                if (payDates.length >= 3) {
+                    const date3 = payDates[2].getDate();
+                    heading.textContent = `Paycheck 3 (${date3}${getOrdinalSuffix(date3)})`;
+                } else {
+                    heading.textContent = 'Extra Bi-Weekly Paycheck';
+                }
+            }
+        } else if (gpThirdPaycheckSection) {
+            // Hide the section if there's no third paycheck
+            gpThirdPaycheckSection.classList.add('hidden');
+        }
+    } else {
+        // Hide the third paycheck section for semi-monthly pay
+        const gpThirdPaycheckSection = document.getElementById('gpThirdPaycheckSection');
+        if (gpThirdPaycheckSection) {
+            gpThirdPaycheckSection.classList.add('hidden');
         }
     }
     
@@ -2682,9 +2772,8 @@ function calculateGrossProfit() {
     
     const paycheck1SurplusColor = paycheck1Surplus >= 0 ? "text-neon-green" : "text-neon-pink";
     if (gpPaycheck1Surplus) {
+        gpPaycheck1Surplus.textContent = `${paycheck1Surplus >= 0 ? '' : '-'}$${Math.abs(paycheck1Surplus).toFixed(2)}`;
         gpPaycheck1Surplus.className = `font-bold ${paycheck1SurplusColor}`;
-        const paycheck1SurplusSign = paycheck1Surplus >= 0 ? "" : "-";
-        gpPaycheck1Surplus.textContent = `${paycheck1SurplusSign}$${Math.abs(paycheck1Surplus).toFixed(2)}`;
     }
     
     if (gpPaycheck2Net) gpPaycheck2Net.textContent = `$${payPerPaycheck.toFixed(2)}`;
@@ -2692,24 +2781,8 @@ function calculateGrossProfit() {
     
     const paycheck2SurplusColor = paycheck2Surplus >= 0 ? "text-neon-green" : "text-neon-pink";
     if (gpPaycheck2Surplus) {
+        gpPaycheck2Surplus.textContent = `${paycheck2Surplus >= 0 ? '' : '-'}$${Math.abs(paycheck2Surplus).toFixed(2)}`;
         gpPaycheck2Surplus.className = `font-bold ${paycheck2SurplusColor}`;
-        const paycheck2SurplusSign = paycheck2Surplus >= 0 ? "" : "-";
-        gpPaycheck2Surplus.textContent = `${paycheck2SurplusSign}$${Math.abs(paycheck2Surplus).toFixed(2)}`;
-    }
-    
-    // Update third paycheck section if applicable
-    const gpThirdPaycheckSection = document.getElementById('gpThirdPaycheckSection');
-    if (payFrequency === 26 && hasThirdPaycheckInSameMonth && gpThirdPaycheckSection) {
-        gpThirdPaycheckSection.classList.remove('hidden');
-        if (gpPaycheck3Net) gpPaycheck3Net.textContent = `$${payPerPaycheck.toFixed(2)}`;
-        if (gpPaycheck3Bills) gpPaycheck3Bills.textContent = `$0.00`;
-        
-        if (gpPaycheck3Surplus) {
-            gpPaycheck3Surplus.className = "font-bold text-neon-green";
-            gpPaycheck3Surplus.textContent = `$${paycheck3Surplus.toFixed(2)}`;
-        }
-    } else if (gpThirdPaycheckSection) {
-        gpThirdPaycheckSection.classList.add('hidden');
     }
     
     // Update annual projections
@@ -2719,34 +2792,29 @@ function calculateGrossProfit() {
     
     const annualSurplusColor = annualSurplus >= 0 ? "text-neon-green" : "text-neon-pink";
     if (gpAnnualSurplus) {
+        gpAnnualSurplus.textContent = `${annualSurplus >= 0 ? '' : '-'}$${Math.abs(annualSurplus).toFixed(2)}`;
         gpAnnualSurplus.className = `font-bold ${annualSurplusColor}`;
-        const annualSurplusSign = annualSurplus >= 0 ? "" : "-";
-        gpAnnualSurplus.textContent = `${annualSurplusSign}$${Math.abs(annualSurplus).toFixed(2)}`;
     }
     
     const annualSurplusWithBonusColor = annualSurplusWithBonus >= 0 ? "text-neon-green" : "text-neon-pink";
     if (gpAnnualSurplusWithBonus) {
+        gpAnnualSurplusWithBonus.textContent = `${annualSurplusWithBonus >= 0 ? '' : '-'}$${Math.abs(annualSurplusWithBonus).toFixed(2)}`;
         gpAnnualSurplusWithBonus.className = `font-bold ${annualSurplusWithBonusColor}`;
-        const annualSurplusWithBonusSign = annualSurplusWithBonus >= 0 ? "" : "-";
-        gpAnnualSurplusWithBonus.textContent = `${annualSurplusWithBonusSign}$${Math.abs(annualSurplusWithBonus).toFixed(2)}`;
     }
     
     // Update progress bar
     const progressFillColor = monthlySurplus >= 0 ? "cyber-green" : "cyber-pink";
     if (profitProgress) {
+        profitProgress.style.width = `${profitRatio}%`;
         profitProgress.className = `cyber-progress-fill ${progressFillColor}`;
-        profitProgress.style.width = `${Math.min(100, Math.abs(profitRatio))}%`;
     }
     
     // Update status text
     let profitStatusText = '';
     if (monthlySurplus >= 0) {
-        const savingRate = (monthlySurplus / payPerMonth * 100).toFixed(1);
-        profitStatusText = `You're saving ${savingRate}% of your monthly income (surplus: $${monthlySurplus.toFixed(2)})`;
+        profitStatusText = `You have a monthly surplus of $${monthlySurplus.toFixed(2)} (${profitRatio.toFixed(1)}% profit)`;
     } else {
-        const deficit = Math.abs(monthlySurplus);
-        const deficitRate = (deficit / totalMonthlyBills * 100).toFixed(1);
-        profitStatusText = `You're spending ${deficitRate}% more than your income (deficit: $${deficit.toFixed(2)})`;
+        profitStatusText = `You have a monthly deficit of $${Math.abs(monthlySurplus).toFixed(2)} (${Math.abs(profitRatio).toFixed(1)}% loss)`;
     }
     if (profitStatus) profitStatus.textContent = profitStatusText;
     
@@ -2784,11 +2852,11 @@ function calculateGrossProfit() {
     };
     
     // If we have a third paycheck, save its data
-    if (payFrequency === 26 && hasThirdPaycheckInSameMonth) {
+    if (hasThirdPaycheckInSameMonth) {
         profitData.gpPaycheck3Net = `$${payPerPaycheck.toFixed(2)}`;
         profitData.gpPaycheck3Bills = `$0.00`;
-        profitData.gpPaycheck3Surplus = `$${paycheck3Surplus.toFixed(2)}`;
-        profitData.gpPaycheck3SurplusClass = "font-bold text-neon-green";
+        profitData.gpPaycheck3Surplus = `$${payPerPaycheck.toFixed(2)}`;
+        profitData.gpPaycheck3SurplusClass = 'font-bold text-neon-green';
     }
     
     // Save to localStorage
@@ -2809,34 +2877,6 @@ window.calculateSalaryFromModal = function() {
 };
 
 // Initialize on document load
-document.addEventListener('DOMContentLoaded', function() {
-    // Add gross profit calculator initialization to the existing initialization
-    const originalInitElements = window.initElements;
-    window.initElements = function() {
-        // Call original function first
-        originalInitElements.apply(this, arguments);
-        
-        // Initialize gross profit calculator
-        initGrossProfitCalculator();
-        
-        // Initialize collapsible sections
-        initCollapsibleSections();
-    };
-    
-    // Also call bill update to trigger gross profit calculation
-    const originalUpdatePaymentSchedule = window.updatePaymentSchedule;
-    window.updatePaymentSchedule = function() {
-        // Call original function first
-        originalUpdatePaymentSchedule.apply(this, arguments);
-        
-        // Update gross profit if salary results are showing
-        const salaryResults = document.getElementById('salaryResults');
-        if (salaryResults && !salaryResults.classList.contains('hidden')) {
-            calculateGrossProfit();
-        }
-    };
-});
-
 // Function to update the Gross Profit Calculator when the Update Profit button is clicked
 window.updateGrossProfit = function() {
     // Check if salary has been calculated
@@ -3439,19 +3479,123 @@ window.toggleBillPaidStatus = function(index) {
     
     // Check if bill amount is zero
     if (bill.amount === 0) {
-        // Show our custom zero bill modal instead of browser confirm
+        // For zero amount bills, show the zero bill confirmation modal
         showZeroBillModal(index);
     } else {
-        // If bill amount is not zero, simply toggle the paid status
+        // Toggle the paid status for non-zero bills
         bill.isPaid = !bill.isPaid;
         
-        // Re-render the bills to update the UI
-        renderBills();
+        // If this is a credit card bill and we're setting it to unpaid, reset the amount to zero
+        if (bill.type === 'credit' && !bill.isPaid) {
+            bill.amount = 0;
+        }
         
-        // Update the payment schedule since paid status affects calculations
+        // Update the display
+        renderBills();
         updatePaymentSchedule();
+        
+        // Save changes to localStorage
+        saveToLocalStorage();
     }
 }
+
+// Function to show modal for zero-amount bills
+function showZeroBillModal(billIndex) {
+    // Get the bill at the specified index
+    const bill = bills[billIndex];
+    
+    // Set bill index in modal
+    document.getElementById('zeroBillIndex').value = billIndex;
+    
+    // Update modal title with bill name
+    document.getElementById('zeroBillModalTitle').textContent = `Pay ${bill.name}`;
+    
+    // Clear any previous value
+    document.getElementById('zeroBillAmount').value = '';
+    
+    // Hide amount input field initially
+    document.getElementById('zeroBillAmountField').classList.add('hidden');
+    
+    // Make sure the initial buttons are visible and the amount entry buttons are hidden
+    document.getElementById('initialButtonsContainer').classList.remove('hidden');
+    document.getElementById('amountEntryButtonsContainer').classList.add('hidden');
+    
+    // Show the modal
+    document.getElementById('zeroBillModal').classList.remove('hidden');
+}
+
+// Function to show the amount field in the zero bill modal
+window.showZeroBillAmountField = function() {
+    // Show the amount field
+    document.getElementById('zeroBillAmountField').classList.remove('hidden');
+    
+    // Focus on the amount input
+    document.getElementById('zeroBillAmount').focus();
+    
+    // Hide the initial buttons
+    document.getElementById('initialButtonsContainer').classList.add('hidden');
+    
+    // Show the amount entry buttons
+    document.getElementById('amountEntryButtonsContainer').classList.remove('hidden');
+}
+
+// Function to close the zero bill modal
+window.closeZeroBillModal = function() {
+    document.getElementById('zeroBillModal').classList.add('hidden');
+}
+
+// Function to save zero bill payment
+window.saveZeroBillPayment = function(confirmZero = false) {
+    // Get bill index from hidden field
+    const billIndex = parseInt(document.getElementById('zeroBillIndex').value);
+    
+    // Get payment amount from input field
+    const paymentAmount = document.getElementById('zeroBillAmount').value;
+    
+    // Validate amount (zero or positive number) if not confirming zero
+    if (!confirmZero) {
+        const amount = parseFloat(paymentAmount);
+        if (paymentAmount === '' || isNaN(amount) || amount < 0) {
+            alert('Please enter a valid payment amount (zero or positive number)');
+            return;
+        }
+    }
+    
+    // Update the bill
+    if (billIndex >= 0 && billIndex < bills.length) {
+        // If confirming zero, simply mark as paid
+        if (confirmZero) {
+            bills[billIndex].isPaid = true;
+        } else {
+            // Otherwise update the amount and mark as paid
+            const amount = parseFloat(paymentAmount);
+            bills[billIndex].amount = amount;
+            bills[billIndex].isPaid = true;
+        }
+        
+        // Update the UI
+        renderBills();
+        updatePaymentSchedule();
+        
+        // Save changes to localStorage
+        saveToLocalStorage();
+    }
+    
+    // Close the modal
+    closeZeroBillModal();
+}
+
+// Function to handle "Enter Amount" button click
+window.enterZeroBillAmount = function() {
+    saveZeroBillPayment(false);
+}
+
+// Function to handle "Confirm Zero" button click
+window.confirmZeroBill = function() {
+    saveZeroBillPayment(true);
+}
+
+// Salary Modal Functions
 
 // Function to initialize the gross profit calculator
 function initGrossProfitCalculator() {
@@ -3471,4 +3615,200 @@ function initGrossProfitCalculator() {
             calculateGrossProfit();
         }, 300);
     }
+}
+
+// Function to calculate bi-weekly paycheck dates for a given month
+function calculateBiWeeklyPaycheckDates(lastPayDate) {
+    // Parse the last pay date with time zone normalization
+    // Create date at noon local time to avoid any DST issues
+    const lastPayString = lastPayDate.split('T')[0]; // Get just the date part
+    const lastPay = new Date(`${lastPayString}T12:00:00`);
+    
+    // Get current month and year
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth();
+    const currentYear = currentDate.getFullYear();
+    
+    // Create date objects for the first and last day of the current month (at noon)
+    const firstDayOfMonth = new Date(currentYear, currentMonth, 1, 12, 0, 0);
+    const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0, 12, 0, 0);
+    
+    // Array to store pay dates in the current month
+    const payDates = [];
+    
+    // Calculate days between pay periods (bi-weekly = 14 days)
+    const daysInPayPeriod = 14;
+    
+    // Find pay dates before and after the reference date
+    let prevDate = new Date(lastPay);
+    
+    // First, go backward until we are before the first day of the month
+    while (prevDate >= firstDayOfMonth) {
+        const newDate = new Date(prevDate);
+        newDate.setDate(prevDate.getDate() - daysInPayPeriod);
+        prevDate = newDate;
+    }
+    
+    // Now, move forward by one pay period to potentially get our first date in the month
+    let currentDate1 = new Date(prevDate);
+    currentDate1.setDate(currentDate1.getDate() + daysInPayPeriod);
+    
+    // Now collect all pay dates in the current month
+    while (currentDate1 <= lastDayOfMonth) {
+        if (currentDate1 >= firstDayOfMonth) {
+            // Add a copy of the date to avoid reference issues
+            // Make sure to normalize the date to midnight on the correct day
+            const normalizedDate = new Date(currentDate1);
+            payDates.push(normalizedDate);
+        }
+        
+        // Move to next pay period
+        const nextDate = new Date(currentDate1);
+        nextDate.setDate(currentDate1.getDate() + daysInPayPeriod);
+        currentDate1 = nextDate;
+    }
+    
+    // Sort the pay dates chronologically
+    payDates.sort((a, b) => a - b);
+    
+    // Log dates to confirm they're correct
+    console.log("Calculated normalized pay dates:", payDates.map(d => d.toDateString()));
+    
+    return payDates;
+}
+
+// Function to update paycheck labels based on pay frequency
+function updatePaycheckLabels() {
+    const payFrequency = parseInt(document.getElementById('payFrequency')?.value) || 26;
+    const lastPayDate = localStorage.getItem('lastPayDate');
+    
+    // Select the label elements
+    const paycheck1Label = document.querySelector('.bg-glass-blue p.text-sm.text-gray-300');
+    const paycheck2Label = document.querySelector('.bg-glass-purple p.text-sm.text-gray-300');
+    
+    // Select the Net Profit Calculator label elements
+    const gpPaycheck1Label = document.querySelector('#grossProfitResults .bg-glass-blue h4');
+    const gpPaycheck2Label = document.querySelector('#grossProfitResults .bg-glass-purple h4');
+    
+    // If any of the elements don't exist, exit early
+    if (!paycheck1Label || !paycheck2Label || !gpPaycheck1Label || !gpPaycheck2Label) {
+        return;
+    }
+    
+    // If pay frequency is bi-weekly and we have a last pay date
+    if (payFrequency === 26 && lastPayDate) {
+        try {
+            // Calculate the bi-weekly pay dates for the current month
+            const payDates = calculateBiWeeklyPaycheckDates(lastPayDate);
+            
+            // If we have at least two pay dates in the month
+            if (payDates.length >= 2) {
+                // Format dates properly
+                const date1 = payDates[0].getDate();
+                const date2 = payDates[1].getDate();
+                
+                // Update the labels with the actual dates
+                paycheck1Label.textContent = `Paycheck 1 (${date1}${getOrdinalSuffix(date1)})`;
+                paycheck2Label.textContent = `Paycheck 2 (${date2}${getOrdinalSuffix(date2)})`;
+                
+                // Update Net Profit Calculator labels
+                gpPaycheck1Label.textContent = `Paycheck 1 (${date1}${getOrdinalSuffix(date1)})`;
+                gpPaycheck2Label.textContent = `Paycheck 2 (${date2}${getOrdinalSuffix(date2)})`;
+                
+                // Log calculated pay dates for debugging
+                console.log('Calculated pay dates:', payDates.map(d => d.toDateString()));
+                
+                // If there's a third paycheck in the month, update that label too
+                const gpPaycheck3Label = document.querySelector('#gpThirdPaycheckSection h4');
+                if (payDates.length >= 3 && gpPaycheck3Label) {
+                    const date3 = payDates[2].getDate();
+                    gpPaycheck3Label.textContent = `Paycheck 3 (${date3}${getOrdinalSuffix(date3)})`;
+                }
+                
+                // Successfully updated with bi-weekly dates
+                return;
+            }
+        } catch (e) {
+            console.error('Error calculating bi-weekly pay dates:', e);
+            // Fall back to default labels if there was an error
+        }
+    }
+    
+    // Default semi-monthly labels
+    paycheck1Label.textContent = 'Paycheck 1 (15th)';
+    paycheck2Label.textContent = 'Paycheck 2 (End of Month)';
+    
+    // Update Net Profit Calculator labels to default
+    gpPaycheck1Label.textContent = 'Paycheck 1 (15th)';
+    gpPaycheck2Label.textContent = 'Paycheck 2 (End of Month)';
+}
+
+// Call this function whenever we need to update the paycheck labels
+// e.g., after loading salary data, updating pay frequency, etc.
+
+// Initialize on document load
+document.addEventListener('DOMContentLoaded', function() {
+    // Add gross profit calculator initialization to the existing initialization
+    const originalInitElements = window.initElements;
+    window.initElements = function() {
+        // Call original function first
+        originalInitElements.apply(this, arguments);
+        
+        // Initialize gross profit calculator
+        initGrossProfitCalculator();
+        
+        // Initialize collapsible sections
+        initCollapsibleSections();
+        
+        // Update paycheck labels
+        updatePaycheckLabels();
+    };
+    
+    // Also call bill update to trigger gross profit calculation
+    const originalUpdatePaymentSchedule = window.updatePaymentSchedule;
+    window.updatePaymentSchedule = function() {
+        // Call original function first
+        originalUpdatePaymentSchedule.apply(this, arguments);
+        
+        // Update gross profit if salary results are showing
+        const salaryResults = document.getElementById('salaryResults');
+        if (salaryResults && !salaryResults.classList.contains('hidden')) {
+            calculateGrossProfit();
+        }
+        
+        // Update paycheck labels
+        updatePaycheckLabels();
+    };
+});
+
+// Function to close the zero bill modal
+window.closeZeroBillModal = function() {
+    document.getElementById('zeroBillModal').classList.add('hidden');
+}
+
+// Function to show the amount field in the zero bill modal
+window.showZeroBillAmountField = function() {
+    // Show the amount field
+    document.getElementById('zeroBillAmountField').classList.remove('hidden');
+    
+    // Focus on the amount input
+    document.getElementById('zeroBillAmount').focus();
+    
+    // Hide the initial buttons
+    document.getElementById('initialButtonsContainer').classList.add('hidden');
+    
+    // Show the amount entry buttons
+    document.getElementById('amountEntryButtonsContainer').classList.remove('hidden');
+}
+
+// Function to confirm zero bill amount
+window.confirmZeroBill = function() {
+    const index = parseInt(document.getElementById('zeroBillIndex').value);
+    if (index >= 0 && index < bills.length) {
+        // Mark the bill as paid without changing amount
+        bills[index].isPaid = true;
+        renderBills();
+        updatePaymentSchedule();
+    }
+    closeZeroBillModal();
 }
