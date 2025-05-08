@@ -1009,8 +1009,29 @@ window.saveCreditCard = function() {
     const editIndex = parseInt(document.getElementById('editCardIndex').value);
     
     if (editIndex >= 0 && editIndex < creditCards.length) {
+        // Store the old card name before updating
+        const oldCardName = creditCards[editIndex].name;
+        
         // Edit existing card
         creditCards[editIndex] = card;
+        
+        // Look for the associated bill and update its due date
+        const billName = `${oldCardName} Payment`;
+        const billIndex = bills.findIndex(bill => bill.name === billName && bill.type === 'credit');
+        
+        if (billIndex !== -1) {
+            // Update the bill name if the card name changed
+            if (oldCardName !== card.name) {
+                bills[billIndex].name = `${card.name} Payment`;
+            }
+            
+            // Update the bill's due date to match the card's due date
+            bills[billIndex].dueDate = card.dueDate;
+            
+            // Re-render bills and update payment schedule
+            renderBills();
+            updatePaymentSchedule();
+        }
     } else {
         // Add new card
         creditCards.push(card);
@@ -1455,6 +1476,23 @@ window.saveBill = function() {
                 // Re-render loans to reflect updates
                 renderLoans();
                 updateLoanSummary();
+            }
+        }
+        
+        // If this is a credit card payment bill, update the corresponding credit card due date
+        if (bill.type === 'credit') {
+            // Extract credit card name from bill name (assumes format "Card Name Payment")
+            const cardName = bill.name.replace(' Payment', '');
+            
+            // Find matching credit card
+            const cardIndex = creditCards.findIndex(card => card.name === cardName);
+            if (cardIndex !== -1) {
+                // Update credit card due date to match bill due date
+                creditCards[cardIndex].dueDate = bill.dueDate;
+                
+                // Re-render credit cards to reflect updates
+                renderCreditCards();
+                updateCreditSummary();
             }
         }
     } else {
