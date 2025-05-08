@@ -152,6 +152,9 @@ function loadFromLocalStorage() {
         // Load salary data if available
         loadSalaryDataToUI();
         
+        // Update paycheck labels after loading data
+        updatePaycheckLabels();
+        
         // Show last saved time if available
         updateLastSavedInfo();
         
@@ -1006,8 +1009,29 @@ window.saveCreditCard = function() {
     const editIndex = parseInt(document.getElementById('editCardIndex').value);
     
     if (editIndex >= 0 && editIndex < creditCards.length) {
+        // Store the old card name before updating
+        const oldCardName = creditCards[editIndex].name;
+        
         // Edit existing card
         creditCards[editIndex] = card;
+        
+        // Look for the associated bill and update its due date
+        const billName = `${oldCardName} Payment`;
+        const billIndex = bills.findIndex(bill => bill.name === billName && bill.type === 'credit');
+        
+        if (billIndex !== -1) {
+            // Update the bill name if the card name changed
+            if (oldCardName !== card.name) {
+                bills[billIndex].name = `${card.name} Payment`;
+            }
+            
+            // Update the bill's due date to match the card's due date
+            bills[billIndex].dueDate = card.dueDate;
+            
+            // Re-render bills and update payment schedule
+            renderBills();
+            updatePaymentSchedule();
+        }
     } else {
         // Add new card
         creditCards.push(card);
@@ -1082,7 +1106,7 @@ function renderCreditCards() {
                     accountAge = `<span class="${accountAgeClass}">${ageYears}</span> ${ageYears === 1 ? 'year' : 'years'} old`;
                 }
             } else {
-                accountAge = `<span class="text-neon-pink">${ageMonths}</span> ${ageMonths === 1 ? 'month' : 'months'} old`;
+                accountAge = '<span class="text-neon-pink">' + ageMonths + '</span> ' + (ageMonths === 1 ? 'month' : 'months') + ' old';
             }
         } else if (card.age) { 
             // Support for legacy data
@@ -1108,7 +1132,7 @@ function renderCreditCards() {
                 oldestCreditLine.innerHTML = `<span class="text-neon-pink">${months}</span> <span class="text-gray-400 text-sm">months</span>`;
             }
         } else {
-            accountAge = '<span class="text-neon-pink">Age unknown</span>';
+            accountAge = '<span class="text-neon-pink">' + ageMonths + '</span> ' + (ageMonths === 1 ? 'month' : 'months') + ' old';
         }
         
         // Apply updated color coding to utilization based on new thresholds
@@ -1437,6 +1461,40 @@ window.saveBill = function() {
             bill.priority = bills[editIndex].priority;
         }
         bills[editIndex] = bill;
+        
+        // If this is a loan payment bill, update the corresponding loan due date
+        if (bill.type === 'loan') {
+            // Extract loan name from bill name (assumes format "Loan Name Payment")
+            const loanName = bill.name.replace(' Payment', '');
+            
+            // Find matching loan
+            const loanIndex = loans.findIndex(loan => loan.name === loanName);
+            if (loanIndex !== -1) {
+                // Update loan due date to match bill due date
+                loans[loanIndex].dueDate = bill.dueDate;
+                
+                // Re-render loans to reflect updates
+                renderLoans();
+                updateLoanSummary();
+            }
+        }
+        
+        // If this is a credit card payment bill, update the corresponding credit card due date
+        if (bill.type === 'credit') {
+            // Extract credit card name from bill name (assumes format "Card Name Payment")
+            const cardName = bill.name.replace(' Payment', '');
+            
+            // Find matching credit card
+            const cardIndex = creditCards.findIndex(card => card.name === cardName);
+            if (cardIndex !== -1) {
+                // Update credit card due date to match bill due date
+                creditCards[cardIndex].dueDate = bill.dueDate;
+                
+                // Re-render credit cards to reflect updates
+                renderCreditCards();
+                updateCreditSummary();
+            }
+        }
     } else {
         // Add new bill
         bills.push(bill);
@@ -2189,211 +2247,31 @@ function getUtilizationColorClass(utilization) {
 
 // Salary Modal Functions
 window.showSalaryModal = function() {
-    // Check if the salary results are already displayed
-    const salaryResults = document.getElementById('salaryResults');
-    const hasExistingData = salaryResults && !salaryResults.classList.contains('hidden');
-    const calculateButton = document.querySelector('#salaryModal button.cyber-primary-btn');
+    // Populate the modal with any saved salary data
+    populateSalaryModal();
     
-    // Get all the required elements safely first
-    const annualSalaryElement = document.getElementById('annualSalary');
-    const bonusAmountElement = document.getElementById('bonusAmount');
-    const bonusTaxRateElement = document.getElementById('bonusTaxRate');
-    const retirementAmountElement = document.getElementById('retirementAmount');
-    const esppAmountElement = document.getElementById('esppAmount');
-    const healthAmountElement = document.getElementById('healthAmount');
-    const dentalAmountElement = document.getElementById('dentalAmount');
-    const visionAmountElement = document.getElementById('visionAmount');
-    const payFrequencyElement = document.getElementById('payFrequency');
+    // Show the modal
+    document.getElementById('salaryModal').classList.remove('hidden');
     
-    if (hasExistingData && annualSalaryElement && annualSalaryElement.textContent) {
-        // If we have existing salary data, transfer current values to the modal
-        
-        // Get annual salary directly instead of calculating from gross pay per period
-        const annualSalary = parseFloat(annualSalaryElement.textContent.replace('$', ''));
-        
-        // Set gross salary from the stored annual value
-        document.getElementById('modalGrossSalary').value = annualSalary;
-        
-        // Set pay frequency from previous value (either 24 for Semi-Monthly or 26 for Bi-Weekly)
-        const payFrequencyValue = payFrequencyElement ? payFrequencyElement.value : '26';
-        document.getElementById('modalPayFrequency').value = payFrequencyValue === '24' ? '24' : '26';
-        
-        // Check if we need to show the last pay date field
-        toggleLastPayDateField();
-        
-        // Get bonus percentage from the display (divide by annual salary)
-        if (bonusAmountElement && bonusAmountElement.textContent) {
-            const bonusAmount = parseFloat(bonusAmountElement.textContent.replace('$', ''));
-            const bonusPct = (bonusAmount / annualSalary) * 100;
-            document.getElementById('modalBonusPercentage').value = bonusPct.toFixed(2);
-        }
-        
-        // Set the bonus tax rate from the display, preserving the current value
-        if (bonusTaxRateElement && bonusTaxRateElement.textContent) {
-            const bonusTaxRateText = bonusTaxRateElement.textContent.replace(/[()%]/g, '').trim();
-            const bonusTaxRate = parseFloat(bonusTaxRateText) || 25;
-            document.getElementById('modalBonusTax').value = bonusTaxRate;
-        }
-        
-        // For retirement and ESPP, calculate back from the amount shown
-        if (payFrequencyElement) {
-            const periods = parseInt(payFrequencyValue) || 26;
-            const grossPerPeriod = annualSalary / periods;
-            
-            if (retirementAmountElement && retirementAmountElement.textContent) {
-                const retirementAmount = parseFloat(retirementAmountElement.textContent.replace('$', ''));
-                const retirementPct = (retirementAmount / grossPerPeriod) * 100;
-                document.getElementById('modalRetirementContribution').value = retirementPct.toFixed(2);
-            }
-            
-            if (esppAmountElement && esppAmountElement.textContent) {
-                const esppAmount = parseFloat(esppAmountElement.textContent.replace('$', ''));
-                const esppPct = (esppAmount / grossPerPeriod) * 100;
-                document.getElementById('modalEsppContribution').value = esppPct.toFixed(2);
-            }
-        }
-        
-        // For insurance, just copy over the current values
-        if (healthAmountElement && healthAmountElement.textContent) {
-            document.getElementById('modalHealthInsurance').value = parseFloat(healthAmountElement.textContent.replace('$', ''));
-        }
-        
-        if (dentalAmountElement && dentalAmountElement.textContent) {
-            document.getElementById('modalDentalInsurance').value = parseFloat(dentalAmountElement.textContent.replace('$', ''));
-        }
-        
-        if (visionAmountElement && visionAmountElement.textContent) {
-            document.getElementById('modalVisionInsurance').value = parseFloat(visionAmountElement.textContent.replace('$', ''));
-        }
-        
-        // Load the last pay date if we have it stored
-        const lastPayDate = localStorage.getItem('lastPayDate');
-        const modalPayFrequency = document.getElementById('modalPayFrequency');
-        if (lastPayDate && modalPayFrequency && modalPayFrequency.value === '26') {
-            const lastPayDateInput = document.getElementById('lastPayDate');
-            if (lastPayDateInput) {
-                lastPayDateInput.value = lastPayDate;
-            }
-        }
-        
-        // Update button text
-        if (calculateButton) {
-            calculateButton.textContent = 'Update Salary';
-        }
-    } else {
-        // For new calculations, set default values
-        const grossSalaryElement = document.getElementById('grossSalary');
-        document.getElementById('modalGrossSalary').value = grossSalaryElement && grossSalaryElement.value ? grossSalaryElement.value : '';
-        document.getElementById('modalPayFrequency').value = '26'; // Default to Bi-Weekly
-        document.getElementById('modalBonusPercentage').value = 10;
-        document.getElementById('modalBonusTax').value = 25;
-        document.getElementById('modalTaxBracket').value = 'single';
-        document.getElementById('modalRetirementContribution').value = 10;
-        document.getElementById('modalEsppContribution').value = 10;
-        document.getElementById('modalHealthInsurance').value = 0;
-        document.getElementById('modalDentalInsurance').value = 0;
-        document.getElementById('modalVisionInsurance').value = 0;
-        
-        // Set a default last pay date to today
-        const lastPayDateInput = document.getElementById('lastPayDate');
-        if (lastPayDateInput) {
-            lastPayDateInput.value = new Date().toISOString().split('T')[0];
-        }
-        
-        // Show/hide last pay date field based on pay frequency
-        toggleLastPayDateField();
-        
-        // Set button text for initial calculation
-        if (calculateButton) {
-            calculateButton.textContent = 'Calculate';
-        }
-    }
+    // Initialize the correct date fields based on pay frequency
+    toggleLastPayDateField();
     
-    // Set up event handler for pay frequency selection
-    const modalPayFrequency = document.getElementById('modalPayFrequency');
-    if (modalPayFrequency) {
-        modalPayFrequency.addEventListener('change', function() {
-            // Toggle last pay date field
-            toggleLastPayDateField();
-            
-            // Hide the gross profit results if they're visible
-            const grossProfitResults = document.getElementById('grossProfitResults');
-            if (grossProfitResults && !grossProfitResults.classList.contains('hidden')) {
-                grossProfitResults.classList.add('hidden');
-            }
-            
-            // Reset the container with a message to recalculate
-            const grossProfitContainer = document.getElementById('grossProfitContainer');
-            if (grossProfitContainer) {
-                grossProfitContainer.innerHTML = '<p class="text-center text-gray-400 py-4">Pay frequency changed. Please recalculate your salary.</p>';
-            }
-            
-            // --- Fix: update hidden payFrequency field temporarily ---
-            const hiddenPayFrequency = document.getElementById('payFrequency');
-            const originalValue = hiddenPayFrequency ? hiddenPayFrequency.value : null;
-            if (hiddenPayFrequency) {
-                hiddenPayFrequency.value = this.value;
-            }
-            
-            // Only call calculate if it's defined
-            if (typeof calculateGrossProfit === 'function') {
-                calculateGrossProfit();
-            }
-            
-            if (hiddenPayFrequency && originalValue !== null) {
-                hiddenPayFrequency.value = originalValue;
-            }
-        });
-    }
-    
-    const salaryModal = document.getElementById('salaryModal');
-    if (salaryModal) {
-        salaryModal.classList.remove('hidden');
-    }
+    // Make sure paycheck labels are updated to reflect current pay frequency
+    updatePaycheckLabels();
 }
 
-// Function to toggle the visibility of the last pay date field based on pay frequency
+// Function to toggle the display of the appropriate date field based on pay frequency selection
 function toggleLastPayDateField() {
     const payFrequency = document.getElementById('modalPayFrequency').value;
+    const firstPayDateContainer = document.getElementById('firstPayDateContainer');
     const lastPayDateContainer = document.getElementById('lastPayDateContainer');
     
-    if (payFrequency === '26') {
-        // For bi-weekly pay, show the last pay date field
-        lastPayDateContainer.classList.remove('hidden');
-        
-        // If we have a saved last pay date, use it
-        const savedLastPayDate = localStorage.getItem('lastPayDate');
-        if (savedLastPayDate) {
-            document.getElementById('lastPayDate').value = savedLastPayDate;
-        } else {
-            // Otherwise, set a default date (today)
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('lastPayDate').value = today;
-        }
-    } else {
-        // For semi-monthly, hide the field
+    if (payFrequency === '24') { // Default: save every minute
+        firstPayDateContainer.classList.remove('hidden');
         lastPayDateContainer.classList.add('hidden');
-        // Remove lastPayDate from localStorage
-        localStorage.removeItem('lastPayDate');
-    }
-    
-    // Reset the gross profit results when pay frequency changes
-    const grossProfitResults = document.getElementById('grossProfitResults');
-    if (grossProfitResults && !grossProfitResults.classList.contains('hidden')) {
-        grossProfitResults.classList.add('hidden');
-    }
-    
-    // Reset the container with a message to recalculate
-    const grossProfitContainer = document.getElementById('grossProfitContainer');
-    if (grossProfitContainer) {
-        grossProfitContainer.innerHTML = '<p class="text-center text-gray-400 py-4">Complete the Salary Calculator to see your profit analysis</p>';
-        grossProfitContainer.classList.remove('hidden');
-    }
-    
-    // Update paycheck labels if we're showing a saved calculation
-    const salaryResults = document.getElementById('salaryResults');
-    if (salaryResults && !salaryResults.classList.contains('hidden')) {
-        updatePaycheckLabels();
+    } else { // Bi-weekly
+        firstPayDateContainer.classList.add('hidden');
+        lastPayDateContainer.classList.remove('hidden');
     }
 }
 
@@ -2467,8 +2345,28 @@ window.calculateSalaryFromModal = function() {
         if (lastPayDate) {
             localStorage.setItem('lastPayDate', lastPayDate);
         }
-    } else {
+        
+        // Remove first pay date from storage if it exists
+        localStorage.removeItem('firstPayDate');
+    } 
+    // Handle semi-monthly pay date
+    else if (periods === 24) {
+        const firstPayDateSelect = document.getElementById('firstPayDate');
+        if (firstPayDateSelect) {
+            const firstPayDate = firstPayDateSelect.value;
+            localStorage.setItem('firstPayDate', firstPayDate);
+            
+            // Also store in salaryData for immediate use
+            salaryData.firstPayDate = firstPayDate;
+        }
+        
+        // Remove last pay date from storage if it exists
         localStorage.removeItem('lastPayDate');
+    }
+    else {
+        // For other frequencies, remove both dates from storage
+        localStorage.removeItem('lastPayDate');
+        localStorage.removeItem('firstPayDate');
     }
     
     // Update hidden pay frequency field
@@ -2551,6 +2449,19 @@ window.calculateSalaryFromModal = function() {
         gross: gross,
         filingStatus: filingStatus
     };
+    
+    // Also save the date information in salary data
+    if (periods === 26) {
+        const lastPayDate = document.getElementById('lastPayDate').value;
+        if (lastPayDate) {
+            salaryData.lastPayDate = lastPayDate;
+        }
+    } else if (periods === 24) {
+        const firstPayDate = document.getElementById('firstPayDate').value;
+        if (firstPayDate) {
+            salaryData.firstPayDate = firstPayDate;
+        }
+    }
     
     // Save to localStorage
     saveToLocalStorage();
@@ -3104,12 +3015,41 @@ window.saveLoan = function() {
         }
         loans[editIndex] = loan;
         
-        // Update any existing bill for this loan
+        // Find and update any existing bill for this loan
         const billIndex = bills.findIndex(bill => 
             bill.name === `${loans[editIndex].name} Payment` && bill.type === 'loan');
             
         if (billIndex !== -1) {
+            // Calculate the monthly payment
+            const monthlyPayment = calculateLoanPayment(loan.originalAmount, loan.interestRate, loan.term);
+            
+            // Calculate total monthly payment including additional costs for mortgages
+            let totalMonthlyPayment = monthlyPayment;
+            if (loan.type === 'mortgage') {
+                // Add additional principal if provided
+                totalMonthlyPayment += loan.additionalPrincipal || 0;
+                
+                // Add PMI if provided
+                totalMonthlyPayment += loan.pmi || 0;
+                
+                // Add monthly property tax
+                if (loan.propertyTax) {
+                    totalMonthlyPayment += loan.propertyTax / 12;
+                }
+                
+                // Add monthly property insurance
+                if (loan.propertyInsurance) {
+                    totalMonthlyPayment += loan.propertyInsurance / 12;
+                }
+            }
+            
+            // Update the bill amount and due date
+            bills[billIndex].amount = totalMonthlyPayment;
             bills[billIndex].dueDate = loan.dueDate;
+            
+            // Re-render bills to reflect updates
+            renderBills();
+            updatePaymentSchedule();
         }
     } else {
         // Add new loan
@@ -3121,6 +3061,9 @@ window.saveLoan = function() {
         // For mortgages, include additional costs in the monthly payment
         let totalMonthlyPayment = monthlyPayment;
         if (loan.type === 'mortgage') {
+            // Add additional principal if provided
+            totalMonthlyPayment += loan.additionalPrincipal || 0;
+            
             // Add PMI if provided
             totalMonthlyPayment += loan.pmi || 0;
             
@@ -3143,7 +3086,7 @@ window.saveLoan = function() {
             priority: 'high'
         };
         
-        // Add the bill
+        // Add the new bill
         bills.push(newBill);
         
         // Update the bills display
@@ -3230,6 +3173,7 @@ function renderLoans() {
         if (loan.type === 'mortgage') {
             // Add additional principal if provided
             const additionalPrincipal = loan.additionalPrincipal || 0;
+            totalMonthlyPayment += additionalPrincipal;
             
             // Add PMI if provided
             const pmi = loan.pmi || 0;
@@ -3477,20 +3421,33 @@ window.toggleBillPaidStatus = function(index) {
     // Get the bill at the specified index
     const bill = bills[index];
     
-    // Check if bill amount is zero
+    // If the bill is already paid, just mark it as unpaid
+    if (bill.isPaid) {
+        bill.isPaid = false;
+        
+        // If this is a credit card bill, reset its amount to zero when unpaid
+        if (bill.type === 'credit') {
+            bill.amount = 0;
+        }
+        
+        // Update the UI
+        renderBills();
+        updatePaymentSchedule();
+        
+        // Save changes to localStorage
+        saveToLocalStorage();
+        return;
+    }
+    
+    // If the bill is unpaid with zero amount, show the zero bill confirmation modal
     if (bill.amount === 0) {
         // For zero amount bills, show the zero bill confirmation modal
         showZeroBillModal(index);
     } else {
-        // Toggle the paid status for non-zero bills
+        // For regular bills, just toggle paid status
         bill.isPaid = !bill.isPaid;
         
-        // If this is a credit card bill and we're setting it to unpaid, reset the amount to zero
-        if (bill.type === 'credit' && !bill.isPaid) {
-            bill.amount = 0;
-        }
-        
-        // Update the display
+        // Update the UI
         renderBills();
         updatePaymentSchedule();
         
@@ -3679,8 +3636,12 @@ function calculateBiWeeklyPaycheckDates(lastPayDate) {
 
 // Function to update paycheck labels based on pay frequency
 function updatePaycheckLabels() {
-    const payFrequency = parseInt(document.getElementById('payFrequency')?.value) || 26;
-    const lastPayDate = localStorage.getItem('lastPayDate');
+    const payFrequency = parseInt(document.getElementById('payFrequency')?.value) || 
+                        (salaryData.payFrequency ? parseInt(salaryData.payFrequency) : 26);
+                        
+    // Check localStorage first, then fallback to salaryData if not in localStorage
+    const lastPayDate = localStorage.getItem('lastPayDate') || salaryData.lastPayDate;
+    const firstPayDate = localStorage.getItem('firstPayDate') || salaryData.firstPayDate;
     
     // Select the label elements
     const paycheck1Label = document.querySelector('.bg-glass-blue p.text-sm.text-gray-300');
@@ -3732,6 +3693,32 @@ function updatePaycheckLabels() {
             console.error('Error calculating bi-weekly pay dates:', e);
             // Fall back to default labels if there was an error
         }
+    } else if (payFrequency === 24 && firstPayDate) {
+        // For semi-monthly, use the specified first pay date
+        const firstPayDay = parseInt(firstPayDate);
+        let secondPayDay;
+        
+        // If first pay is on the 1st, second is on the 15th
+        // If first pay is on the 15th, second is on the last day of the month
+        if (firstPayDay === 1) {
+            secondPayDay = 15;
+        } else {
+            // Get the last day of the current month
+            const today = new Date();
+            const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+            secondPayDay = lastDayOfMonth;
+        }
+        
+        // Update the labels with the actual dates
+        paycheck1Label.textContent = `Paycheck 1 (${firstPayDay}${getOrdinalSuffix(firstPayDay)})`;
+        paycheck2Label.textContent = `Paycheck 2 (${secondPayDay}${getOrdinalSuffix(secondPayDay)})`;
+        
+        // Update Net Profit Calculator labels
+        gpPaycheck1Label.textContent = `Paycheck 1 (${firstPayDay}${getOrdinalSuffix(firstPayDay)})`;
+        gpPaycheck2Label.textContent = `Paycheck 2 (${secondPayDay}${getOrdinalSuffix(secondPayDay)})`;
+        
+        // Successfully updated with semi-monthly dates
+        return;
     }
     
     // Default semi-monthly labels
@@ -3811,4 +3798,170 @@ window.confirmZeroBill = function() {
         updatePaymentSchedule();
     }
     closeZeroBillModal();
+}
+
+// Function to populate the salary calculator modal with saved data
+function populateSalaryModal() {
+    // Check if we have saved salary data
+    if (Object.keys(salaryData).length > 0) {
+        // Populate the salary modal with saved data
+        // Extract the numeric value from formatted string
+        if (salaryData.annualSalary) {
+            const grossValue = salaryData.annualSalary.replace(/[^0-9.]/g, '');
+            document.getElementById('modalGrossSalary').value = grossValue;
+        }
+        
+        if (salaryData.payFrequency) {
+            document.getElementById('modalPayFrequency').value = salaryData.payFrequency;
+        }
+        
+        // Set first pay date for semi-monthly
+        if (salaryData.firstPayDate) {
+            const firstPayDateSelect = document.getElementById('firstPayDate');
+            if (firstPayDateSelect) {
+                firstPayDateSelect.value = salaryData.firstPayDate;
+            }
+            document.getElementById('firstPayDateContainer').classList.remove('hidden');
+        }
+        
+        // Set last pay date for bi-weekly
+        if (salaryData.lastPayDate) {
+            const lastPayDateInput = document.getElementById('lastPayDate');
+            if (lastPayDateInput) {
+                lastPayDateInput.value = salaryData.lastPayDate;
+            }
+        }
+        
+        // Show the appropriate date field based on pay frequency
+        toggleLastPayDateField();
+        
+        // Extract bonus percentage from formatted string if needed
+        if (salaryData.bonusAmount && salaryData.annualSalary) {
+            const bonusValue = parseFloat(salaryData.bonusAmount.replace(/[^0-9.]/g, ''));
+            const annualValue = parseFloat(salaryData.annualSalary.replace(/[^0-9.]/g, ''));
+            if (bonusValue && annualValue) {
+                const bonusPct = (bonusValue / annualValue) * 100;
+                document.getElementById('modalBonusPercentage').value = bonusPct.toFixed(2);
+            }
+        }
+        
+        // Fix for bonus tax rate - properly extract numeric value
+        if (salaryData.bonusTaxRate) {
+            // Extract numeric value from the format like "(25% tax)"
+            const taxMatch = salaryData.bonusTaxRate.match(/\((\d+(?:\.\d+)?)%/);
+            if (taxMatch && taxMatch[1]) {
+                document.getElementById('modalBonusTax').value = taxMatch[1];
+            } else {
+                document.getElementById('modalBonusTax').value = 25; // Default value
+            }
+        }
+        
+        // Tax info
+        if (salaryData.filingStatus) {
+            document.getElementById('modalTaxBracket').value = salaryData.filingStatus;
+        }
+        
+        // Extract state from state rate if available
+        if (salaryData.stateRate) {
+            const stateRate = parseFloat(salaryData.stateRate.replace(/[^0-9.]/g, ''));
+            if (!isNaN(stateRate)) {
+                // Find the state with this rate
+                const stateSelect = document.getElementById('modalState');
+                if (stateSelect) {
+                    for (let i = 0; i < stateSelect.options.length; i++) {
+                        const option = stateSelect.options[i];
+                        const rateMatch = option.text.match(/\(([^)]+)%\)/);
+                        if (rateMatch && parseFloat(rateMatch[1]) === stateRate) {
+                            stateSelect.selectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Extract retirement contribution percentage
+        if (salaryData.retirementAmount && salaryData.grossPay) {
+            const retirementAmount = parseFloat(salaryData.retirementAmount.replace(/[^0-9.]/g, ''));
+            const grossPay = parseFloat(salaryData.grossPay.replace(/[^0-9.]/g, ''));
+            if (!isNaN(retirementAmount) && !isNaN(grossPay) && grossPay > 0) {
+                const retirementPct = (retirementAmount / grossPay) * 100;
+                document.getElementById('modalRetirementContribution').value = retirementPct.toFixed(2);
+            }
+        }
+        
+        // Extract ESPP contribution percentage
+        if (salaryData.esppAmount && salaryData.grossPay) {
+            const esppAmount = parseFloat(salaryData.esppAmount.replace(/[^0-9.]/g, ''));
+            const grossPay = parseFloat(salaryData.grossPay.replace(/[^0-9.]/g, ''));
+            if (!isNaN(esppAmount) && !isNaN(grossPay) && grossPay > 0) {
+                const esppPct = (esppAmount / grossPay) * 100;
+                document.getElementById('modalEsppContribution').value = esppPct.toFixed(2);
+            }
+        }
+        
+        // Extract insurance costs
+        if (salaryData.healthAmount) {
+            document.getElementById('modalHealthInsurance').value = parseFloat(salaryData.healthAmount.replace(/[^0-9.]/g, ''));
+        }
+        
+        if (salaryData.dentalAmount) {
+            document.getElementById('modalDentalInsurance').value = parseFloat(salaryData.dentalAmount.replace(/[^0-9.]/g, ''));
+        }
+        
+        if (salaryData.visionAmount) {
+            document.getElementById('modalVisionInsurance').value = parseFloat(salaryData.visionAmount.replace(/[^0-9.]/g, ''));
+        }
+    }
+}
+
+// Show the salary calculator modal
+window.showSalaryModal = function() {
+    // Populate the modal with any saved salary data
+    populateSalaryModal();
+    
+    // Show the modal
+    document.getElementById('salaryModal').classList.remove('hidden');
+    
+    // Make sure paycheck labels are updated to reflect current pay frequency
+    updatePaycheckLabels();
+}
+
+// Function to close the salary modal
+window.closeSalaryModal = function() {
+    document.getElementById('salaryModal').classList.add('hidden');
+}
+
+// Function to handle semi-monthly pay date selection
+window.updateFirstPayDate = function() {
+    const firstPayDateSelect = document.getElementById('firstPayDate');
+    if (firstPayDateSelect) {
+        localStorage.setItem('firstPayDate', firstPayDateSelect.value);
+        
+        // Update salary data with the selected first pay date
+        if (salaryData) {
+            salaryData.firstPayDate = firstPayDateSelect.value;
+            saveToLocalStorage();
+        }
+        
+        // Update paycheck labels
+        updatePaycheckLabels();
+        
+        // If we have salary data, recalculate gross profit
+        if (Object.keys(salaryData).length > 0 && salaryData.netPay) {
+            calculateGrossProfit();
+        }
+    }
+}
+
+// Function to handle bi-weekly pay date selection
+window.updateLastPayDate = function() {
+    const lastPayDateInput = document.getElementById('lastPayDate');
+    if (lastPayDateInput) {
+        const lastPayDate = lastPayDateInput.value;
+        localStorage.setItem('lastPayDate', lastPayDate);
+        
+        // Also store in salaryData for immediate use
+        salaryData.lastPayDate = lastPayDate;
+    }
 }

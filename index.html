@@ -860,16 +860,25 @@
             <div class="space-y-4">
                 <!-- Basic Salary Information -->
                 <div class="input-container">
-                    <input type="number" id="modalGrossSalary" class="cyber-input w-full p-3 rounded-md" placeholder=" ">
-                    <label class="floating-label">Gross Annual Salary</label>
+                    <input type="number" id="modalGrossSalary" class="cyber-input w-full p-3 rounded-md" placeholder=" " min="0" step="any">
+                    <label class="floating-label">Annual Gross Salary ($)</label>
                 </div>
                 
                 <div class="input-container">
-                    <select id="modalPayFrequency" class="cyber-input w-full p-3 rounded-md" placeholder=" ">
+                    <select id="modalPayFrequency" class="cyber-input w-full p-3 rounded-md" placeholder=" " onchange="toggleLastPayDateField()">
                         <option value="24" selected>Semi-Monthly (24 pay periods)</option>
                         <option value="26">Bi-Weekly (26 pay periods)</option>
                     </select>
                     <label class="floating-label">Pay Frequency</label>
+                </div>
+                
+                <!-- First pay date field - will be shown only for semi-monthly pay -->
+                <div id="firstPayDateContainer" class="input-container">
+                    <select id="firstPayDate" class="cyber-input w-full p-3 rounded-md" onchange="updateFirstPayDate()">
+                        <option value="1">1st of month</option>
+                        <option value="15" selected>15th of month</option>
+                    </select>
+                    <label class="floating-label">First Paycheck Date</label>
                 </div>
                 
                 <!-- Last pay date field - will be shown only for bi-weekly pay -->
