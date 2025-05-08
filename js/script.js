@@ -414,61 +414,132 @@ function loadProfitDataToUI() {
 
 // Clear all data from localStorage and reset the application
 function clearAllData() {
-    if (confirm('Are you sure you want to delete all your data? This cannot be undone.')) {
-        try {
-            // Clear all CorpoCache data but keep other localStorage items
-            localStorage.removeItem('creditCards');
-            localStorage.removeItem('bills');
-            localStorage.removeItem('expenses');
-            localStorage.removeItem('loans');
-            localStorage.removeItem('salaryData');
-            localStorage.removeItem('profitData');
-            localStorage.removeItem('lastSaved');
-            
-            // Reset arrays
-            creditCards = [];
-            bills = [];
-            expenses = [];
-            loans = [];
-            salaryData = {};
-            profitData = {};
-            
-            // Update UI
-            renderCreditCards();
-            updateCreditSummary();
-            renderBills();
-            updatePaymentSchedule();
-            renderExpenses();
-            updateExpenseSummary();
-            if (typeof renderLoans === 'function') {
-                renderLoans();
-                updateLoanSummary();
+    // Show the styled reset confirmation modal instead of the browser's confirm dialog
+    document.getElementById('resetConfirmModal').classList.remove('hidden');
+}
+
+// Function to close the reset confirmation modal
+window.closeResetConfirmModal = function(fromSuccess = false) {
+    // If we're closing from the success screen, and we have stored original content, restore it
+    if (fromSuccess) {
+        const modalContent = document.querySelector('#resetConfirmModal .p-4.mb-4');
+        const buttonContainer = document.querySelector('#resetConfirmModal .flex.justify-end');
+        
+        if (modalContent && modalContent.getAttribute('data-original')) {
+            modalContent.innerHTML = modalContent.getAttribute('data-original');
+            modalContent.removeAttribute('data-original');
+            modalContent.classList.remove('bg-glass-green');
+            modalContent.classList.add('bg-glass-pink');
+        }
+        
+        if (buttonContainer && buttonContainer.getAttribute('data-original')) {
+            buttonContainer.innerHTML = buttonContainer.getAttribute('data-original');
+            buttonContainer.removeAttribute('data-original');
+        }
+    }
+    
+    // Hide the modal
+    document.getElementById('resetConfirmModal').classList.add('hidden');
+}
+
+// Function to confirm reset and actually clear the data
+window.confirmReset = function() {
+    try {
+        // Clear all CorpoCache data but keep other localStorage items
+        localStorage.removeItem('creditCards');
+        localStorage.removeItem('bills');
+        localStorage.removeItem('expenses');
+        localStorage.removeItem('loans');
+        localStorage.removeItem('salaryData');
+        localStorage.removeItem('profitData');
+        localStorage.removeItem('lastSaved');
+        
+        // Reset arrays
+        creditCards = [];
+        bills = [];
+        expenses = [];
+        loans = [];
+        salaryData = {};
+        profitData = {};
+        
+        // Update UI
+        renderCreditCards();
+        updateCreditSummary();
+        renderBills();
+        updatePaymentSchedule();
+        renderExpenses();
+        updateExpenseSummary();
+        if (typeof renderLoans === 'function') {
+            renderLoans();
+            updateLoanSummary();
+        }
+        
+        // Hide salary and profit results
+        document.getElementById('salaryResults').classList.add('hidden');
+        document.getElementById('grossProfitResults').classList.add('hidden');
+        
+        // Reset profit container
+        document.getElementById('grossProfitContainer').innerHTML = '<p class="text-center text-gray-400 py-4">Complete the Salary Calculator to see your profit analysis</p>';
+        
+        // Reset the Calculate Salary button text
+        const calculateButton = document.querySelector('button[onclick="showSalaryModal()"]');
+        if (calculateButton) {
+            calculateButton.innerHTML = '<i class="fas fa-calculator mr-1"></i> Calculate Salary';
+            calculateButton.setAttribute('onclick', 'showSalaryModal()');
+        }
+        
+        // Hide last saved info
+        const lastSavedElement = document.getElementById('lastSavedTime');
+        if (lastSavedElement) {
+            lastSavedElement.classList.add('hidden');
+        }
+        
+        // Update modal content to show success message
+        const modalContent = document.querySelector('#resetConfirmModal .p-4.mb-4');
+        if (modalContent) {
+            // Store original content to restore later
+            if (!modalContent.getAttribute('data-original')) {
+                modalContent.setAttribute('data-original', modalContent.innerHTML);
             }
             
-            // Hide salary and profit results
-            document.getElementById('salaryResults').classList.add('hidden');
-            document.getElementById('grossProfitResults').classList.add('hidden');
+            // Show success message
+            modalContent.innerHTML = `
+                <div class="text-white">
+                    <p class="mb-2"><i class="fas fa-check-circle text-neon-green mr-2"></i>Success!</p>
+                    <p>All data has been cleared.</p>
+                </div>
+            `;
+            modalContent.classList.remove('bg-glass-pink');
+            modalContent.classList.add('bg-glass-green');
             
-            // Reset profit container
-            document.getElementById('grossProfitContainer').innerHTML = '<p class="text-center text-gray-400 py-4">Complete the Salary Calculator to see your profit analysis</p>';
-            
-            // Reset the Calculate Salary button text
-            const calculateButton = document.querySelector('button[onclick="showSalaryModal()"]');
-            if (calculateButton) {
-                calculateButton.innerHTML = '<i class="fas fa-calculator mr-1"></i> Calculate Salary';
-                calculateButton.setAttribute('onclick', 'showSalaryModal()');
+            // Update buttons
+            const buttonContainer = document.querySelector('#resetConfirmModal .flex.justify-end');
+            if (buttonContainer) {
+                // Store original buttons
+                if (!buttonContainer.getAttribute('data-original')) {
+                    buttonContainer.setAttribute('data-original', buttonContainer.innerHTML);
+                }
+                
+                // Replace with just a close button
+                buttonContainer.innerHTML = `
+                    <button onclick="closeResetConfirmModal(true)" class="px-4 py-2 cyber-primary-btn rounded-md">
+                        <i class="fas fa-check mr-1"></i> Done
+                    </button>
+                `;
             }
-            
-            // Hide last saved info
-            const lastSavedElement = document.getElementById('lastSavedTime');
-            if (lastSavedElement) {
-                lastSavedElement.classList.add('hidden');
-            }
-            
-            alert('All data has been cleared.');
-        } catch (error) {
-            console.error('Error clearing data:', error);
-            alert('An error occurred while clearing your data.');
+        }
+    } catch (error) {
+        console.error('Error clearing data:', error);
+        
+        // Show error message in the modal
+        const modalContent = document.querySelector('#resetConfirmModal .p-4.mb-4');
+        if (modalContent) {
+            modalContent.innerHTML = `
+                <div class="text-white">
+                    <p class="mb-2"><i class="fas fa-exclamation-circle text-neon-pink mr-2"></i>Error</p>
+                    <p>An error occurred while clearing your data.</p>
+                </div>
+            `;
         }
     }
 }
@@ -516,59 +587,193 @@ function importData() {
     
     fileInput.onchange = function(event) {
         const file = event.target.files[0];
-        if (!file) return;
+        if (!file) {
+            return;
+        }
         
         const reader = new FileReader();
         reader.onload = function(e) {
             try {
-                const data = JSON.parse(e.target.result);
+                const importDataString = e.target.result;
+                const importedData = JSON.parse(importDataString);
                 
-                // Validate the data structure
-                if (!data.creditCards || !data.bills || !data.expenses) {
-                    throw new Error('Invalid data format');
-                }
+                // Store the imported data in a hidden field for later use
+                document.getElementById('importData').value = importDataString;
                 
-                // Confirm import
-                if (confirm('This will replace all your current data. Continue?')) {
-                    // Import the data
-                    creditCards = data.creditCards || [];
-                    bills = data.bills || [];
-                    expenses = data.expenses || [];
-                    loans = data.loans || [];
-                    
-                    // Import salary and profit data if available
-                    salaryData = data.salaryData || {};
-                    profitData = data.profitData || {};
-                    
-                    // Update UI
-                    renderCreditCards();
-                    updateCreditSummary();
-                    renderBills();
-                    updatePaymentSchedule();
-                    renderExpenses();
-                    updateExpenseSummary();
-                    if (typeof renderLoans === 'function') {
-                        renderLoans();
-                        updateLoanSummary();
-                    }
-                    
-                    // Load salary and profit data if available
-                    loadSalaryDataToUI();
-                    
-                    // Save the imported data to localStorage
-                    saveToLocalStorage();
-                    
-                    alert('Data imported successfully!');
-                }
+                // Show the styled import confirmation modal instead of the browser's confirm dialog
+                document.getElementById('importConfirmModal').classList.remove('hidden');
             } catch (error) {
-                console.error('Error importing data:', error);
-                alert('Failed to import data: Invalid file format.');
+                console.error('Error parsing imported data:', error);
+                alert('The selected file is not a valid CorpoCache backup file.');
             }
         };
         reader.readAsText(file);
     };
     
     fileInput.click();
+}
+
+// Function to close the import confirmation modal
+window.closeImportConfirmModal = function(fromSuccess = false) {
+    // If we're closing from the success screen, and we have stored original content, restore it
+    if (fromSuccess) {
+        const modalContent = document.querySelector('#importConfirmModal .p-4.mb-4');
+        const buttonContainer = document.querySelector('#importConfirmModal .flex.justify-end');
+        
+        if (modalContent && modalContent.getAttribute('data-original')) {
+            modalContent.innerHTML = modalContent.getAttribute('data-original');
+            modalContent.removeAttribute('data-original');
+            modalContent.classList.remove('bg-glass-green');
+            modalContent.classList.add('bg-glass-purple');
+        }
+        
+        if (buttonContainer && buttonContainer.getAttribute('data-original')) {
+            buttonContainer.innerHTML = buttonContainer.getAttribute('data-original');
+            buttonContainer.removeAttribute('data-original');
+        }
+    }
+    
+    // Hide the modal
+    document.getElementById('importConfirmModal').classList.add('hidden');
+}
+
+// Function to confirm import and actually import the data
+window.confirmImport = function() {
+    try {
+        // Get the import data string from the hidden field
+        const importDataString = document.getElementById('importData').value;
+        if (!importDataString) {
+            // Show error in the modal instead of alert
+            const modalContent = document.querySelector('#importConfirmModal .p-4.mb-4');
+            if (modalContent) {
+                modalContent.innerHTML = `
+                    <div class="text-white">
+                        <p class="mb-2"><i class="fas fa-exclamation-circle text-neon-pink mr-2"></i>Error</p>
+                        <p>No import data found.</p>
+                    </div>
+                `;
+                modalContent.classList.remove('bg-glass-purple');
+                modalContent.classList.add('bg-glass-pink');
+            }
+            return;
+        }
+        
+        const importedData = JSON.parse(importDataString);
+        
+        // Check for required data structures
+        if (!importedData.creditCards || !importedData.bills) {
+            // Show error in the modal instead of alert
+            const modalContent = document.querySelector('#importConfirmModal .p-4.mb-4');
+            if (modalContent) {
+                modalContent.innerHTML = `
+                    <div class="text-white">
+                        <p class="mb-2"><i class="fas fa-exclamation-circle text-neon-pink mr-2"></i>Error</p>
+                        <p>The selected file is not a valid CorpoCache backup file.</p>
+                    </div>
+                `;
+                modalContent.classList.remove('bg-glass-purple');
+                modalContent.classList.add('bg-glass-pink');
+            }
+            return;
+        }
+        
+        // Import credit cards
+        creditCards = importedData.creditCards;
+        
+        // Import bills
+        bills = importedData.bills;
+        
+        // Import expenses
+        if (importedData.expenses) {
+            expenses = importedData.expenses;
+        }
+        
+        // Import loans
+        if (importedData.loans) {
+            loans = importedData.loans;
+        }
+        
+        // Import salary data
+        if (importedData.salaryData) {
+            salaryData = importedData.salaryData;
+        }
+        
+        // Import profit data
+        if (importedData.profitData) {
+            profitData = importedData.profitData;
+        }
+        
+        // Update UI
+        renderCreditCards();
+        updateCreditSummary();
+        renderBills();
+        updatePaymentSchedule();
+        renderExpenses();
+        updateExpenseSummary();
+        if (typeof renderLoans === 'function') {
+            renderLoans();
+            updateLoanSummary();
+        }
+        
+        // Load salary data if available
+        loadSalaryDataToUI();
+        
+        // Update paycheck labels
+        updatePaycheckLabels();
+        
+        // Save to localStorage
+        saveToLocalStorage();
+        
+        // Show success message in the modal
+        const modalContent = document.querySelector('#importConfirmModal .p-4.mb-4');
+        if (modalContent) {
+            // Store original content to restore later
+            if (!modalContent.getAttribute('data-original')) {
+                modalContent.setAttribute('data-original', modalContent.innerHTML);
+            }
+            
+            // Show success message
+            modalContent.innerHTML = `
+                <div class="text-white">
+                    <p class="mb-2"><i class="fas fa-check-circle text-neon-green mr-2"></i>Success!</p>
+                    <p>Data imported successfully.</p>
+                </div>
+            `;
+            modalContent.classList.remove('bg-glass-purple');
+            modalContent.classList.add('bg-glass-green');
+            
+            // Update buttons
+            const buttonContainer = document.querySelector('#importConfirmModal .flex.justify-end');
+            if (buttonContainer) {
+                // Store original buttons
+                if (!buttonContainer.getAttribute('data-original')) {
+                    buttonContainer.setAttribute('data-original', buttonContainer.innerHTML);
+                }
+                
+                // Replace with just a close button
+                buttonContainer.innerHTML = `
+                    <button onclick="closeImportConfirmModal(true)" class="px-4 py-2 cyber-primary-btn rounded-md">
+                        <i class="fas fa-check mr-1"></i> Done
+                    </button>
+                `;
+            }
+        }
+    } catch (error) {
+        console.error('Error importing data:', error);
+        
+        // Show error message in the modal
+        const modalContent = document.querySelector('#importConfirmModal .p-4.mb-4');
+        if (modalContent) {
+            modalContent.innerHTML = `
+                <div class="text-white">
+                    <p class="mb-2"><i class="fas fa-exclamation-circle text-neon-pink mr-2"></i>Error</p>
+                    <p>An error occurred while importing your data.</p>
+                </div>
+            `;
+            modalContent.classList.remove('bg-glass-purple');
+            modalContent.classList.add('bg-glass-pink');
+        }
+    }
 }
 
 function updateLastSavedInfo() {
