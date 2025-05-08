@@ -2361,6 +2361,11 @@ window.resetAllPayments = function() {
     // Set isPaid to false for all bills
     bills.forEach(bill => {
         bill.isPaid = false;
+        
+        // If this is a credit card bill, ensure amount is set to zero
+        if (bill.type === 'credit') {
+            bill.amount = 0;
+        }
     });
     
     // Re-render bills to update the UI
@@ -2368,6 +2373,9 @@ window.resetAllPayments = function() {
     
     // Update the payment schedule since paid status affects calculations
     updatePaymentSchedule();
+    
+    // Save changes to localStorage to persist after page reload
+    saveToLocalStorage();
 }
 
 // Function to check if all bills are marked as paid
@@ -2394,6 +2402,52 @@ window.closeCompleteMonthModal = function() {
 
 // Function to complete the month and reset all bills
 window.completeMonth = function() {
+    // Check if there are any unpaid credit card bills with zero amount
+    const unpaidCreditBills = bills.filter(bill => bill.type === 'credit' && !bill.isPaid);
+    
+    if (unpaidCreditBills.length > 0) {
+        // Process credit card bills sequentially
+        processUnpaidCreditCards(unpaidCreditBills, 0);
+    } else {
+        // No unpaid credit card bills, proceed with normal completion
+        finalizeMonthCompletion();
+    }
+};
+
+// Function to process unpaid credit card bills sequentially
+function processUnpaidCreditCards(unpaidCreditBills, currentIndex) {
+    // Check if we've processed all unpaid credit card bills
+    if (currentIndex >= unpaidCreditBills.length) {
+        // All credit cards processed, proceed with month completion
+        finalizeMonthCompletion();
+        return;
+    }
+    
+    // Get the current unpaid credit card bill
+    const billIndex = bills.indexOf(unpaidCreditBills[currentIndex]);
+    
+    // Show the zero bill modal for this credit card
+    showZeroBillModal(billIndex);
+    
+    // Set up a listener for when the modal is closed
+    const zeroBillModal = document.getElementById('zeroBillModal');
+    const originalOnClick = window.closeZeroBillModal;
+    
+    // Override the close modal function temporarily
+    window.closeZeroBillModal = function() {
+        // Restore original function
+        window.closeZeroBillModal = originalOnClick;
+        
+        // Hide the modal
+        zeroBillModal.classList.add('hidden');
+        
+        // Process the next credit card bill
+        processUnpaidCreditCards(unpaidCreditBills, currentIndex + 1);
+    };
+}
+
+// Function to finalize month completion after all credit cards are processed
+function finalizeMonthCompletion() {
     const allPaid = areAllBillsPaid();
     
     // If not all bills are paid, mark them as paid
