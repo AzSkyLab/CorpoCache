@@ -1440,6 +1440,23 @@ window.saveBill = function() {
             bill.priority = bills[editIndex].priority;
         }
         bills[editIndex] = bill;
+        
+        // If this is a loan payment bill, update the corresponding loan due date
+        if (bill.type === 'loan') {
+            // Extract loan name from bill name (assumes format "Loan Name Payment")
+            const loanName = bill.name.replace(' Payment', '');
+            
+            // Find matching loan
+            const loanIndex = loans.findIndex(loan => loan.name === loanName);
+            if (loanIndex !== -1) {
+                // Update loan due date to match bill due date
+                loans[loanIndex].dueDate = bill.dueDate;
+                
+                // Re-render loans to reflect updates
+                renderLoans();
+                updateLoanSummary();
+            }
+        }
     } else {
         // Add new bill
         bills.push(bill);
@@ -2960,12 +2977,41 @@ window.saveLoan = function() {
         }
         loans[editIndex] = loan;
         
-        // Update any existing bill for this loan
+        // Find and update any existing bill for this loan
         const billIndex = bills.findIndex(bill => 
             bill.name === `${loans[editIndex].name} Payment` && bill.type === 'loan');
             
         if (billIndex !== -1) {
+            // Calculate the monthly payment
+            const monthlyPayment = calculateLoanPayment(loan.originalAmount, loan.interestRate, loan.term);
+            
+            // Calculate total monthly payment including additional costs for mortgages
+            let totalMonthlyPayment = monthlyPayment;
+            if (loan.type === 'mortgage') {
+                // Add additional principal if provided
+                totalMonthlyPayment += loan.additionalPrincipal || 0;
+                
+                // Add PMI if provided
+                totalMonthlyPayment += loan.pmi || 0;
+                
+                // Add monthly property tax
+                if (loan.propertyTax) {
+                    totalMonthlyPayment += loan.propertyTax / 12;
+                }
+                
+                // Add monthly property insurance
+                if (loan.propertyInsurance) {
+                    totalMonthlyPayment += loan.propertyInsurance / 12;
+                }
+            }
+            
+            // Update the bill amount and due date
+            bills[billIndex].amount = totalMonthlyPayment;
             bills[billIndex].dueDate = loan.dueDate;
+            
+            // Re-render bills to reflect updates
+            renderBills();
+            updatePaymentSchedule();
         }
     } else {
         // Add new loan
@@ -2977,6 +3023,9 @@ window.saveLoan = function() {
         // For mortgages, include additional costs in the monthly payment
         let totalMonthlyPayment = monthlyPayment;
         if (loan.type === 'mortgage') {
+            // Add additional principal if provided
+            totalMonthlyPayment += loan.additionalPrincipal || 0;
+            
             // Add PMI if provided
             totalMonthlyPayment += loan.pmi || 0;
             
@@ -2999,7 +3048,7 @@ window.saveLoan = function() {
             priority: 'high'
         };
         
-        // Add the bill
+        // Add the new bill
         bills.push(newBill);
         
         // Update the bills display
@@ -3086,6 +3135,7 @@ function renderLoans() {
         if (loan.type === 'mortgage') {
             // Add additional principal if provided
             const additionalPrincipal = loan.additionalPrincipal || 0;
+            totalMonthlyPayment += additionalPrincipal;
             
             // Add PMI if provided
             const pmi = loan.pmi || 0;
