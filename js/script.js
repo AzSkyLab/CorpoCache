@@ -452,6 +452,13 @@ function clearAllData() {
             // Reset profit container
             document.getElementById('grossProfitContainer').innerHTML = '<p class="text-center text-gray-400 py-4">Complete the Salary Calculator to see your profit analysis</p>';
             
+            // Reset the Calculate Salary button text
+            const calculateButton = document.querySelector('button[onclick="showSalaryModal()"]');
+            if (calculateButton) {
+                calculateButton.innerHTML = '<i class="fas fa-calculator mr-1"></i> Calculate Salary';
+                calculateButton.setAttribute('onclick', 'showSalaryModal()');
+            }
+            
             // Hide last saved info
             const lastSavedElement = document.getElementById('lastSavedTime');
             if (lastSavedElement) {
@@ -2250,6 +2257,15 @@ window.showSalaryModal = function() {
     // Populate the modal with any saved salary data
     populateSalaryModal();
     
+    // If this is a new salary calculation (no existing data), set default values to 0
+    if (Object.keys(salaryData).length === 0) {
+        // Set default values of 0 for bonus percentage, bonus tax rate, 401k, and ESPP
+        document.getElementById('modalBonusPercentage').value = '0';
+        document.getElementById('modalBonusTax').value = '25';
+        document.getElementById('modalRetirementContribution').value = '0';
+        document.getElementById('modalEsppContribution').value = '0';
+    }
+    
     // Show the modal
     document.getElementById('salaryModal').classList.remove('hidden');
     
@@ -3919,6 +3935,15 @@ function populateSalaryModal() {
 window.showSalaryModal = function() {
     // Populate the modal with any saved salary data
     populateSalaryModal();
+    
+    // If this is a new salary calculation (no existing data), set default values to 0
+    if (Object.keys(salaryData).length === 0) {
+        // Set default values of 0 for bonus percentage, bonus tax rate, 401k, and ESPP
+        document.getElementById('modalBonusPercentage').value = '0';
+        document.getElementById('modalBonusTax').value = '25';
+        document.getElementById('modalRetirementContribution').value = '0';
+        document.getElementById('modalEsppContribution').value = '0';
+    }
     
     // Show the modal
     document.getElementById('salaryModal').classList.remove('hidden');
