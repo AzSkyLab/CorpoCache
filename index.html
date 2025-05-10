@@ -66,10 +66,9 @@
                         <span class="text-neon-green drop-shadow-glow">CACHE</span><span class="blinking-cursor drop-shadow-glow">_</span>
                     </span>
                 </span>
-            </h1>
-            <div class="cyber-subtitle text-center mt-2 text-sm text-gray-400 uppercase tracking-widest">
+            </h1>            <div class="cyber-subtitle text-center mt-2 text-sm text-gray-400 uppercase tracking-widest">
                 <span class="px-4 py-1 rounded-sm inline-block">
-                    System v2.5.0 <span class="text-neon-green">// ONLINE</span>
+                    SYSTEM v0.1.0 <span class="text-neon-green">// ONLINE</span>
                 </span>
             </div>
             
@@ -171,10 +170,9 @@
             </div>
 
             <!-- Credit Card Section - Now after bills section -->
-            <div class="cyber-card rounded-lg p-6 credit-info-section">
-                <div class="flex justify-between items-center mb-6">
+            <div class="cyber-card rounded-lg p-6 credit-info-section">                <div class="flex justify-between items-center mb-6">
                     <h2 class="text-xl font-semibold text-white">
-                        <i class="fas fa-credit-card mr-2 text-neon-blue"></i> Credit Information
+                        <i class="fas fa-credit-card mr-2 text-neon-blue"></i> Credit Cards
                     </h2>
                     <a href="#" onclick="addCreditCard()" class="text-white px-4 py-2 bg-glass-blue hover:bg-opacity-90 rounded-md transition">
                         <i class="fas fa-plus mr-1"></i> Add Card
@@ -186,10 +184,9 @@
                         <!-- Credit cards will be added here -->
                     </div>
                 </div>
-                
-                <div class="mt-6">
+                  <div class="mt-6">
                     <div class="flex justify-between items-center mb-3">
-                        <h3 class="text-lg font-medium text-white">Credit Summary</h3>
+                        <h3 class="text-lg font-medium text-white">Credit Cards Summary</h3>
                         <span class="text-sm text-neon-blue"><span id="totalAccounts">0</span> Active Accounts</span>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -291,10 +288,9 @@
             </div>
 
             <!-- Loan Information Section -->
-            <div class="cyber-card rounded-lg p-6 loan-info-section" style="display: flex; flex-direction: column;">
-                <div class="flex justify-between items-center mb-6">
+            <div class="cyber-card rounded-lg p-6 loan-info-section" style="display: flex; flex-direction: column;">                <div class="flex justify-between items-center mb-6">
                     <h2 class="text-xl font-semibold text-white">
-                        <i class="fas fa-money-bill-wave mr-2 text-neon-purple"></i> Loan Information
+                        <i class="fas fa-money-bill-wave mr-2 text-neon-purple"></i> Loans
                     </h2>
                     <a href="#" onclick="addLoan()" class="text-white px-4 py-2 bg-glass-purple hover:bg-opacity-90 rounded-md transition">
                         <i class="fas fa-plus mr-1"></i> Add Loan
@@ -307,10 +303,9 @@
                         <p class="text-gray-400 text-center py-4">No loans added yet</p>
                     </div>
                 </div>
-                
-                <div class="mt-6">
+                  <div class="mt-6">
                     <div class="flex justify-between items-center mb-3">
-                        <h3 class="text-lg font-medium text-white">Loan Summary</h3>
+                        <h3 class="text-lg font-medium text-white">Loans Summary</h3>
                         <span class="text-sm text-neon-blue"><span id="totalLoans">0</span> Active Loans</span>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -1235,9 +1230,37 @@
         </div>
     </div>
 
+<!-- Back to Top Button -->
+<div class="back-to-top" id="backToTop" title="Back to Top">
+    <i class="fas fa-arrow-up"></i>
+</div>
+
 <!-- External JavaScript -->
 <script src="js/script.js?v=2.5.1"></script>
 <script>
+    // Back to Top button functionality
+    document.getElementById('backToTop').addEventListener('click', function() {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    });
+
+    // Show/hide Back to Top button based on scroll position
+    window.addEventListener('scroll', function() {
+        const backToTopBtn = document.getElementById('backToTop');
+        if (window.scrollY > 300) {
+            backToTopBtn.style.display = 'flex';
+        } else {
+            backToTopBtn.style.display = 'none';
+        }
+    });
+    
+    // Initially hide the back to top button
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('backToTop').style.display = 'none';
+    });
+
     // Direct initialization for collapsible sections
     document.addEventListener('DOMContentLoaded', function() {
         // Credit Rating Legend section
