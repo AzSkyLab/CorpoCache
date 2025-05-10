@@ -3325,10 +3325,11 @@ window.saveLoan = function() {
         term: loanTerm.value ? parseInt(loanTerm.value) : null,
         startDate: new Date().toISOString().split('T')[0]
     };
+      // Add additional principal payment for all loan types
+    loan.additionalPrincipal = parseFloat(document.getElementById('additionalPrincipal').value) || 0;
     
     // Add mortgage-specific fields if loan type is mortgage
     if (loan.type === 'mortgage') {
-        loan.additionalPrincipal = parseFloat(document.getElementById('additionalPrincipal').value) || 0;
         loan.pmi = parseFloat(document.getElementById('pmi').value) || 0;
         loan.propertyTax = parseFloat(document.getElementById('propertyTax').value) || 0;
         loan.propertyInsurance = parseFloat(document.getElementById('propertyInsurance').value) || 0;
@@ -3350,13 +3351,14 @@ window.saveLoan = function() {
         if (billIndex !== -1) {
             // Calculate the monthly payment
             const monthlyPayment = calculateLoanPayment(loan.originalAmount, loan.interestRate, loan.term);
-            
-            // Calculate total monthly payment including additional costs for mortgages
+                  // Calculate total monthly payment
             let totalMonthlyPayment = monthlyPayment;
+            
+            // Add additional principal payment for all loan types
+            totalMonthlyPayment += loan.additionalPrincipal || 0;
+            
+            // Add mortgage-specific costs if applicable
             if (loan.type === 'mortgage') {
-                // Add additional principal if provided
-                totalMonthlyPayment += loan.additionalPrincipal || 0;
-                
                 // Add PMI if provided
                 totalMonthlyPayment += loan.pmi || 0;
                 
@@ -3385,13 +3387,14 @@ window.saveLoan = function() {
         
         // Create a corresponding bill entry
         const monthlyPayment = calculateLoanPayment(loan.originalAmount, loan.interestRate, loan.term);
-        
-        // For mortgages, include additional costs in the monthly payment
+          // Calculate total monthly payment
         let totalMonthlyPayment = monthlyPayment;
+        
+        // Add additional principal payment for all loan types
+        totalMonthlyPayment += loan.additionalPrincipal || 0;
+        
+        // For mortgages, include other additional costs in the monthly payment
         if (loan.type === 'mortgage') {
-            // Add additional principal if provided
-            totalMonthlyPayment += loan.additionalPrincipal || 0;
-            
             // Add PMI if provided
             totalMonthlyPayment += loan.pmi || 0;
             
@@ -3493,16 +3496,15 @@ function renderLoans() {
         
         // Get loan type icon
         const typeIcon = getLoanTypeIcon(loan.type || 'personal');
-        
-        // For mortgage loans, calculate total monthly cost including additional costs
+          // Calculate total monthly payment including additional costs
         let totalMonthlyPayment = monthlyPayment;
         let mortgageDetails = '';
         
+        // Add additional principal for all loan types if provided
+        const additionalPrincipal = loan.additionalPrincipal || 0;
+        totalMonthlyPayment += additionalPrincipal;
+        
         if (loan.type === 'mortgage') {
-            // Add additional principal if provided
-            const additionalPrincipal = loan.additionalPrincipal || 0;
-            totalMonthlyPayment += additionalPrincipal;
-            
             // Add PMI if provided
             const pmi = loan.pmi || 0;
             totalMonthlyPayment += pmi;
@@ -3596,14 +3598,13 @@ function renderLoans() {
                              style="width: ${percentPaid}%"></div>
                     </div>
                 </div>
-                
-                <div class="grid grid-cols-3 gap-4 mt-4">
+                  <div class="grid grid-cols-3 gap-4 mt-4">
                     <div>
                         <p class="text-sm text-gray-400">Interest Rate</p>
                         <p class="font-medium">${loan.interestRate.toFixed(2)}%</p>
                     </div>
                     <div>
-                        <p class="text-sm text-gray-400">${loan.type === 'mortgage' ? 'Principal & Interest' : 'Monthly Payment'}</p>
+                        <p class="text-sm text-gray-400">${loan.type === 'mortgage' ? 'Principal & Interest' : 'Base Payment'}</p>
                         <p class="font-medium text-neon-pink">$${monthlyPayment.toFixed(2)}</p>
                     </div>
                     <div>
@@ -3611,6 +3612,19 @@ function renderLoans() {
                         <p class="font-medium">${loan.term ? `${loan.term} months` : 'Not specified'}</p>
                     </div>
                 </div>
+                
+                ${additionalPrincipal > 0 && loan.type !== 'mortgage' ? `
+                <div class="grid grid-cols-2 gap-4 mt-4">
+                    <div>
+                        <p class="text-sm text-gray-400">Additional Principal</p>
+                        <p class="font-medium text-neon-green">$${additionalPrincipal.toFixed(2)}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-400">Total Monthly Payment</p>
+                        <p class="font-medium text-neon-blue">$${totalMonthlyPayment.toFixed(2)}</p>
+                    </div>
+                </div>
+                ` : ''}
                 
                 ${mortgageDetails}
                 
@@ -3631,12 +3645,34 @@ function updateLoanSummary() {
     const totalOriginalValue = loans.reduce((sum, loan) => sum + loan.originalAmount, 0);
     const totalBalanceValue = loans.reduce((sum, loan) => sum + loan.balance, 0);
     const totalPayoffPercent = totalOriginalValue > 0 ? (1 - (totalBalanceValue / totalOriginalValue)) * 100 : 0;
-    
-    // Calculate total monthly payments including additional principal payments
+      // Calculate total monthly payments including all additional costs
     const totalMonthlyPayments = loans.reduce((sum, loan) => {
+        // Calculate base loan payment
         const basePayment = calculateLoanPayment(loan.originalAmount, loan.interestRate, loan.term);
-        const additionalPayment = loan.additionalPrincipal || 0;
-        return sum + basePayment + additionalPayment;
+        
+        // Add additional principal payment for all loan types
+        const additionalPrincipal = loan.additionalPrincipal || 0;
+        
+        // Start with the base payment plus additional principal
+        let totalPaymentForLoan = basePayment + additionalPrincipal;
+        
+        // Add mortgage-specific costs
+        if (loan.type === 'mortgage') {
+            // Add PMI
+            totalPaymentForLoan += loan.pmi || 0;
+            
+            // Add monthly property tax
+            if (loan.propertyTax) {
+                totalPaymentForLoan += loan.propertyTax / 12;
+            }
+            
+            // Add monthly property insurance
+            if (loan.propertyInsurance) {
+                totalPaymentForLoan += loan.propertyInsurance / 12;
+            }
+        }
+        
+        return sum + totalPaymentForLoan;
     }, 0);
     
     // Update loan count
