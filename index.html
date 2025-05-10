@@ -107,9 +107,7 @@
                             <i class="fas fa-check-circle mr-1"></i> Complete Month
                         </a>
                     </div>
-                </div>
-
-                <div class="bills-wrapper" style="min-height: 400px; max-height: 650px; overflow-y: auto;">
+                </div>                <div class="bills-wrapper" style="min-height: 400px;">
                     <div id="billsContainer" class="bills-container grid grid-cols-1 md:grid-cols-2 gap-3">
                         <!-- Bills will be added here -->
                         <p class="text-gray-400 text-center py-4 md:col-span-2">No bills added yet</p>
@@ -700,8 +698,7 @@
                     <input type="text" id="billName" class="cyber-input w-full p-3 rounded-md" placeholder=" ">
                     <label class="floating-label">Bill Name</label>
                 </div>
-                
-                <div class="input-container">
+                  <div class="input-container">
                     <input type="number" id="billAmount" class="cyber-input w-full p-3 rounded-md" placeholder=" " min="0" step="any">
                     <label class="floating-label">Amount ($)</label>
                 </div>
@@ -722,6 +719,18 @@
                         <option value="other">Other</option>
                     </select>
                     <label class="floating-label">Bill Type</label>
+                </div>
+                
+                <div id="billOptionsContainer" class="space-y-4">
+                    <div class="flex items-center">
+                        <input type="checkbox" id="varyingAmountDue" class="cyber-checkbox mr-2">
+                        <label for="varyingAmountDue" class="text-white">Varying amount due each month</label>
+                    </div>
+                    
+                    <div class="flex items-center">
+                        <input type="checkbox" id="autoPay" class="cyber-checkbox mr-2">
+                        <label for="autoPay" class="text-white">Set up autopay</label>
+                    </div>
                 </div>
                 
                 <div class="input-container">
@@ -1061,15 +1070,15 @@
                     <input type="number" id="loanDueDate" class="cyber-input w-full p-3 rounded-md" placeholder=" " min="1" max="31">
                     <label class="floating-label">Payment Due Date (Day of Month)</label>
                 </div>
-                
+                  <!-- Additional Principal Payment field for all loan types -->
+                <div class="input-container">
+                    <input type="number" id="additionalPrincipal" class="cyber-input w-full p-3 rounded-md" placeholder=" " min="0" step="any" value="0">
+                    <label class="floating-label">Additional Principal Payment ($/month)</label>
+                </div>
+
                 <!-- Mortgage-specific fields, hidden by default -->
                 <div id="mortgageFields" class="hidden space-y-4 pt-4 mt-4 border-t border-gray-700">
                     <h4 class="text-white text-md mb-3">Mortgage Details</h4>
-                    
-                    <div class="input-container">
-                        <input type="number" id="additionalPrincipal" class="cyber-input w-full p-3 rounded-md" placeholder=" " min="0" step="any" value="0">
-                        <label class="floating-label">Additional Principal Payment ($/month)</label>
-                    </div>
                     
                     <div class="input-container">
                         <input type="number" id="pmi" class="cyber-input w-full p-3 rounded-md" placeholder=" " min="0" step="any" value="0">
@@ -1170,6 +1179,33 @@
             </div>
             
             <input type="hidden" id="zeroBillIndex" value="-1">
+        </div>
+    </div>
+      <!-- Varying Amount Confirmation Modal -->
+    <div id="varyingAmountModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="modal-cyber rounded-lg p-6 w-full max-w-md">
+            <h3 class="text-xl font-semibold mb-4 text-white">Varying Amount Confirmation</h3>
+            
+            <div class="p-4 mb-4 bg-glass-purple rounded-lg border border-neon-purple">
+                <p class="text-white mb-2">
+                    <i class="fas fa-info-circle text-neon-blue mr-2"></i>
+                    You've selected "Varying amount due each month". This means:
+                </p>
+                <ul class="list-disc ml-6 text-sm text-white">
+                    <li class="mb-1">The amount you entered will be used as an <span class="text-neon-blue">estimate</span></li>
+                    <li class="mb-1">You'll be prompted to enter the actual amount when marking the bill as paid</li>
+                    <li>The monthly bill total will use your estimate for planning purposes</li>
+                </ul>
+            </div>
+            
+            <div class="flex justify-end space-x-3">
+                <button onclick="cancelVaryingAmount()" class="px-4 py-2 border border-gray-600 text-white rounded-md hover:bg-gray-800">
+                    Cancel
+                </button>
+                <button onclick="confirmVaryingAmount()" class="px-4 py-2 cyber-primary-btn rounded-md">
+                    Confirm
+                </button>
+            </div>
         </div>
     </div>
     

@@ -909,6 +909,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Initialize collapsible sections
     initCollapsibleSections();
+    
+    // Initialize preventDefault on anchors to prevent page refresh
+    initPreventDefaultOnAnchors();
 });
 
 // Function to update the month and year display in the Monthly Bills section
@@ -1596,6 +1599,10 @@ window.editBill = function(index) {
     // Set bill type if it exists, otherwise default to 'other'
     document.getElementById('billType').value = bill.type || 'other';
     
+    // Set the varying amount and autopay checkboxes based on bill properties
+    document.getElementById('varyingAmountDue').checked = bill.varyingAmount || false;
+    document.getElementById('autoPay').checked = bill.autoPay || false;
+    
     document.getElementById('editBillIndex').value = index;
     
     // Hide any previous validation errors
@@ -1654,13 +1661,44 @@ window.saveBill = function() {
         return;
     }
     
+    // Check if varying amount is selected for a non-credit/loan bill
+    const varyingAmountChecked = document.getElementById('varyingAmountDue').checked;
+    const billTypeValue = document.getElementById('billType').value;
+    
+    // If varying amount is checked and it's not a credit card or loan payment
+    if (varyingAmountChecked && billTypeValue !== 'credit' && billTypeValue !== 'loan') {
+        // Show the varying amount confirmation modal
+        document.getElementById('varyingAmountModal').classList.remove('hidden');
+        return;
+    }
+    
+    // If we got here, proceed with saving the bill (either no confirmation needed or called from confirmVaryingAmount)
+    saveCurrentBill();
+};
+
+// Function to confirm varying amount selection
+window.confirmVaryingAmount = function() {
+    document.getElementById('varyingAmountModal').classList.add('hidden');
+    saveCurrentBill(); // Continue with saving the bill
+};
+
+// Function to cancel varying amount selection
+window.cancelVaryingAmount = function() {
+    document.getElementById('varyingAmountModal').classList.add('hidden');
+    document.getElementById('varyingAmountDue').checked = false;
+};
+
+// Function that actually saves the bill
+function saveCurrentBill() {
     const bill = {
         name: billName.value.trim(),
         amount: parseFloat(billAmount.value),
         dueDate: parseInt(billDueDate.value),
         type: billType.value,
         priority: 'normal', // Set default priority since we removed the field
-        isPaid: false // Add isPaid property, default to false
+        isPaid: false, // Add isPaid property, default to false
+        varyingAmount: document.getElementById('varyingAmountDue').checked, // Add varying amount property
+        autoPay: document.getElementById('autoPay').checked // Add autopay property
     };
     
     const editIndex = parseInt(document.getElementById('editBillIndex').value);
@@ -1740,6 +1778,18 @@ function renderBills() {
         
         // Add paid class if bill is marked as paid
         const paidClass = bill.isPaid ? 'bill-paid' : '';
+          // Create bill status icons HTML
+        let statusIcons = '';
+        
+        // Add varying amount icon if applicable
+        if (bill.varyingAmount) {
+            statusIcons += `<span title="Varying amount due" class="text-neon-blue mr-2"><i class="fas fa-chart-line"></i></span>`;
+        }
+        
+        // Add autopay icon if applicable
+        if (bill.autoPay) {
+            statusIcons += `<span title="Autopay enabled" class="text-neon-green mr-2"><i class="fas fa-sync-alt"></i></span>`;
+        }
         
         html += `
             <div class="border cyber-border rounded-lg p-4 mb-3 cyber-card bill-item ${paidClass}" data-bill-index="${index}">
@@ -1749,7 +1799,10 @@ function renderBills() {
                             <i class="fas ${typeIcon} mr-2 text-neon-green"></i>
                             <h3 class="font-medium text-lg cyber-neon">${bill.name}</h3>
                         </div>
-                        <p class="text-sm text-gray-400">Due on ${bill.dueDate}th</p>
+                        <div class="flex items-center mt-1">
+                            <p class="text-sm text-gray-400">Due on ${bill.dueDate}th</p>
+                            <div class="ml-3 flex items-center">${statusIcons}</div>
+                        </div>
                     </div>
                     <div class="flex items-center">
                         <span class="font-medium mr-4">$${bill.amount.toFixed(2)}</span>
@@ -3272,10 +3325,11 @@ window.saveLoan = function() {
         term: loanTerm.value ? parseInt(loanTerm.value) : null,
         startDate: new Date().toISOString().split('T')[0]
     };
+      // Add additional principal payment for all loan types
+    loan.additionalPrincipal = parseFloat(document.getElementById('additionalPrincipal').value) || 0;
     
     // Add mortgage-specific fields if loan type is mortgage
     if (loan.type === 'mortgage') {
-        loan.additionalPrincipal = parseFloat(document.getElementById('additionalPrincipal').value) || 0;
         loan.pmi = parseFloat(document.getElementById('pmi').value) || 0;
         loan.propertyTax = parseFloat(document.getElementById('propertyTax').value) || 0;
         loan.propertyInsurance = parseFloat(document.getElementById('propertyInsurance').value) || 0;
@@ -3297,13 +3351,14 @@ window.saveLoan = function() {
         if (billIndex !== -1) {
             // Calculate the monthly payment
             const monthlyPayment = calculateLoanPayment(loan.originalAmount, loan.interestRate, loan.term);
-            
-            // Calculate total monthly payment including additional costs for mortgages
+                  // Calculate total monthly payment
             let totalMonthlyPayment = monthlyPayment;
+            
+            // Add additional principal payment for all loan types
+            totalMonthlyPayment += loan.additionalPrincipal || 0;
+            
+            // Add mortgage-specific costs if applicable
             if (loan.type === 'mortgage') {
-                // Add additional principal if provided
-                totalMonthlyPayment += loan.additionalPrincipal || 0;
-                
                 // Add PMI if provided
                 totalMonthlyPayment += loan.pmi || 0;
                 
@@ -3332,13 +3387,14 @@ window.saveLoan = function() {
         
         // Create a corresponding bill entry
         const monthlyPayment = calculateLoanPayment(loan.originalAmount, loan.interestRate, loan.term);
-        
-        // For mortgages, include additional costs in the monthly payment
+          // Calculate total monthly payment
         let totalMonthlyPayment = monthlyPayment;
+        
+        // Add additional principal payment for all loan types
+        totalMonthlyPayment += loan.additionalPrincipal || 0;
+        
+        // For mortgages, include other additional costs in the monthly payment
         if (loan.type === 'mortgage') {
-            // Add additional principal if provided
-            totalMonthlyPayment += loan.additionalPrincipal || 0;
-            
             // Add PMI if provided
             totalMonthlyPayment += loan.pmi || 0;
             
@@ -3440,16 +3496,15 @@ function renderLoans() {
         
         // Get loan type icon
         const typeIcon = getLoanTypeIcon(loan.type || 'personal');
-        
-        // For mortgage loans, calculate total monthly cost including additional costs
+          // Calculate total monthly payment including additional costs
         let totalMonthlyPayment = monthlyPayment;
         let mortgageDetails = '';
         
+        // Add additional principal for all loan types if provided
+        const additionalPrincipal = loan.additionalPrincipal || 0;
+        totalMonthlyPayment += additionalPrincipal;
+        
         if (loan.type === 'mortgage') {
-            // Add additional principal if provided
-            const additionalPrincipal = loan.additionalPrincipal || 0;
-            totalMonthlyPayment += additionalPrincipal;
-            
             // Add PMI if provided
             const pmi = loan.pmi || 0;
             totalMonthlyPayment += pmi;
@@ -3543,14 +3598,13 @@ function renderLoans() {
                              style="width: ${percentPaid}%"></div>
                     </div>
                 </div>
-                
-                <div class="grid grid-cols-3 gap-4 mt-4">
+                  <div class="grid grid-cols-3 gap-4 mt-4">
                     <div>
                         <p class="text-sm text-gray-400">Interest Rate</p>
                         <p class="font-medium">${loan.interestRate.toFixed(2)}%</p>
                     </div>
                     <div>
-                        <p class="text-sm text-gray-400">${loan.type === 'mortgage' ? 'Principal & Interest' : 'Monthly Payment'}</p>
+                        <p class="text-sm text-gray-400">${loan.type === 'mortgage' ? 'Principal & Interest' : 'Base Payment'}</p>
                         <p class="font-medium text-neon-pink">$${monthlyPayment.toFixed(2)}</p>
                     </div>
                     <div>
@@ -3558,6 +3612,19 @@ function renderLoans() {
                         <p class="font-medium">${loan.term ? `${loan.term} months` : 'Not specified'}</p>
                     </div>
                 </div>
+                
+                ${additionalPrincipal > 0 && loan.type !== 'mortgage' ? `
+                <div class="grid grid-cols-2 gap-4 mt-4">
+                    <div>
+                        <p class="text-sm text-gray-400">Additional Principal</p>
+                        <p class="font-medium text-neon-green">$${additionalPrincipal.toFixed(2)}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-400">Total Monthly Payment</p>
+                        <p class="font-medium text-neon-blue">$${totalMonthlyPayment.toFixed(2)}</p>
+                    </div>
+                </div>
+                ` : ''}
                 
                 ${mortgageDetails}
                 
@@ -3578,7 +3645,35 @@ function updateLoanSummary() {
     const totalOriginalValue = loans.reduce((sum, loan) => sum + loan.originalAmount, 0);
     const totalBalanceValue = loans.reduce((sum, loan) => sum + loan.balance, 0);
     const totalPayoffPercent = totalOriginalValue > 0 ? (1 - (totalBalanceValue / totalOriginalValue)) * 100 : 0;
-    const totalMonthlyPayments = loans.reduce((sum, loan) => sum + calculateLoanPayment(loan.originalAmount, loan.interestRate, loan.term), 0);
+      // Calculate total monthly payments including all additional costs
+    const totalMonthlyPayments = loans.reduce((sum, loan) => {
+        // Calculate base loan payment
+        const basePayment = calculateLoanPayment(loan.originalAmount, loan.interestRate, loan.term);
+        
+        // Add additional principal payment for all loan types
+        const additionalPrincipal = loan.additionalPrincipal || 0;
+        
+        // Start with the base payment plus additional principal
+        let totalPaymentForLoan = basePayment + additionalPrincipal;
+        
+        // Add mortgage-specific costs
+        if (loan.type === 'mortgage') {
+            // Add PMI
+            totalPaymentForLoan += loan.pmi || 0;
+            
+            // Add monthly property tax
+            if (loan.propertyTax) {
+                totalPaymentForLoan += loan.propertyTax / 12;
+            }
+            
+            // Add monthly property insurance
+            if (loan.propertyInsurance) {
+                totalPaymentForLoan += loan.propertyInsurance / 12;
+            }
+        }
+        
+        return sum + totalPaymentForLoan;
+    }, 0);
     
     // Update loan count
     document.getElementById('totalLoans').textContent = loans.length;
@@ -3714,8 +3809,13 @@ window.toggleBillPaidStatus = function(index) {
         return;
     }
     
+    // If the bill has varying amount property and is not a credit/loan type
+    if (bill.varyingAmount && bill.type !== 'credit' && bill.type !== 'loan') {
+        // Show the zero bill modal which we'll reuse for amount entry
+        showZeroBillModal(index, true); // Pass true to indicate this is a varying amount bill
+    }
     // If the bill is unpaid with zero amount, show the zero bill confirmation modal
-    if (bill.amount === 0) {
+    else if (bill.amount === 0) {
         // For zero amount bills, show the zero bill confirmation modal
         showZeroBillModal(index);
     } else {
@@ -3731,8 +3831,8 @@ window.toggleBillPaidStatus = function(index) {
     }
 }
 
-// Function to show modal for zero-amount bills
-function showZeroBillModal(billIndex) {
+// Function to show modal for zero-amount bills or varying amount bills
+function showZeroBillModal(billIndex, isVaryingAmount = false) {
     // Get the bill at the specified index
     const bill = bills[billIndex];
     
@@ -3745,12 +3845,31 @@ function showZeroBillModal(billIndex) {
     // Clear any previous value
     document.getElementById('zeroBillAmount').value = '';
     
-    // Hide amount input field initially
-    document.getElementById('zeroBillAmountField').classList.add('hidden');
+    const modalMessage = document.querySelector('#zeroBillModal .p-4.mb-4.bg-glass-blue');
     
-    // Make sure the initial buttons are visible and the amount entry buttons are hidden
-    document.getElementById('initialButtonsContainer').classList.remove('hidden');
-    document.getElementById('amountEntryButtonsContainer').classList.add('hidden');
+    if (isVaryingAmount) {
+        // This is a varying amount bill - update the message
+        modalMessage.querySelector('.text-white').innerHTML = `
+            <p class="mb-2"><i class="fas fa-info-circle text-neon-blue mr-2"></i>This bill has a varying monthly amount.</p>
+            <p>Please enter the actual amount for this month:</p>
+        `;
+        
+        // Show the amount field immediately for varying amount bills
+        document.getElementById('zeroBillAmountField').classList.remove('hidden');
+        document.getElementById('initialButtonsContainer').classList.add('hidden');
+        document.getElementById('amountEntryButtonsContainer').classList.remove('hidden');
+    } else {
+        // This is a zero amount bill - use the original message
+        modalMessage.querySelector('.text-white').innerHTML = `
+            <p class="mb-2"><i class="fas fa-info-circle text-neon-blue mr-2"></i>This bill has a $0.00 amount.</p>
+            <p>Would you like to enter an amount or confirm zero payment?</p>
+        `;
+        
+        // Hide amount input field initially for zero amount bills
+        document.getElementById('zeroBillAmountField').classList.add('hidden');
+        document.getElementById('initialButtonsContainer').classList.remove('hidden');
+        document.getElementById('amountEntryButtonsContainer').classList.add('hidden');
+    }
     
     // Show the modal
     document.getElementById('zeroBillModal').classList.remove('hidden');
@@ -4249,3 +4368,62 @@ window.updateLastPayDate = function() {
         salaryData.lastPayDate = lastPayDate;
     }
 }
+
+// Function to initialize event handlers for preventing default behavior on button clicks
+function initPreventDefaultOnAnchors() {
+    // Get all anchor tags with onclick attributes
+    const anchors = document.querySelectorAll('a[href="#"][onclick]');
+    
+    // Add event listeners to prevent default behavior
+    anchors.forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+            e.preventDefault();
+        });
+    });
+}
+
+// Add to document ready function
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize elements
+    initElements();
+    
+    // Set current month and year
+    updateCurrentMonthAndYear();
+    
+    // Try to load data from localStorage
+    const dataLoaded = loadFromLocalStorage();
+    
+    // If no data was loaded, use sample data
+    if (!dataLoaded) {
+        loadSampleData();
+    }
+    
+    // Initial renders
+    renderCreditCards();
+    updateCreditSummary();
+    renderBills();
+    updatePaymentSchedule();
+    renderExpenses();
+    updateExpenseSummary();
+    renderLoans(); 
+    updateLoanSummary(); 
+    
+    // Add cyber effects
+    initCyberEffects();
+    
+    // Setup scroll detection for containers
+    setupScrollDetection();
+    
+    // Setup auto-save (save every minute)
+    setupAutoSave();
+    
+    // Any additional initialization that was in other DOMContentLoaded event listeners
+    // Initialize gross profit calculator
+    initGrossProfitCalculator();
+    
+    // Initialize collapsible sections
+    initCollapsibleSections();
+    
+    // Initialize preventDefault on anchors to prevent page refresh
+    initPreventDefaultOnAnchors();
+});
