@@ -416,10 +416,13 @@
                                 <div class="flex justify-between text-sm">
                                     <span>Dental Insurance:</span>
                                     <span id="dentalAmount" class="font-medium">$0</span>
-                                </div>
-                                <div class="flex justify-between text-sm">
+                                </div>                                <div class="flex justify-between text-sm">
                                     <span>Vision Insurance:</span>
                                     <span id="visionAmount" class="font-medium">$0</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span>FSA Contribution:</span>
+                                    <span id="fsaAmount" class="font-medium">$0</span>
                                 </div>
                             </div>
                         </div>
@@ -590,6 +593,13 @@
                             <span class="font-semibold">Surplus/Deficit:</span>
                             <span id="gpPaycheck3Surplus" class="font-bold">$0</span>
                         </div>
+                    </div>                    
+                    <div class="mt-6">
+                        <h4 class="text-md font-medium text-white mb-2">Monthly Profit Status</h4>
+                        <div class="cyber-progress-bar">
+                            <div id="profitProgress" class="cyber-progress-fill" style="width: 0%"></div>
+                        </div>
+                        <p id="profitStatus" class="text-sm text-gray-400 mt-1">Calculating your profit ratio...</p>
                     </div>
                     
                     <h3 class="text-lg font-medium text-white mt-6 mb-3">Annual Projection</h3>
@@ -614,14 +624,6 @@
                             <span class="font-semibold">Annual Surplus/Deficit (with bonus):</span>
                             <span id="gpAnnualSurplusWithBonus" class="font-bold text-neon-green">$0</span>
                         </div>
-                    </div>
-                    
-                    <div class="mt-6">
-                        <h4 class="text-md font-medium text-white mb-2">Monthly Profit Status</h4>
-                        <div class="cyber-progress-bar">
-                            <div id="profitProgress" class="cyber-progress-fill" style="width: 0%"></div>
-                        </div>
-                        <p id="profitStatus" class="text-sm text-gray-400 mt-1">Calculating your profit ratio...</p>
                     </div>
                 </div>
             </div>
@@ -979,8 +981,7 @@
                     </div>
                 </div>
                 
-                <!-- Insurance Section -->
-                <div class="mt-4 border-t border-gray-700 pt-4">
+                <!-- Insurance Section -->                <div class="mt-4 border-t border-gray-700 pt-4">
                     <h4 class="text-white text-sm mb-3">Insurance (per pay period)</h4>
                     
                     <div class="grid grid-cols-3 gap-2">
@@ -997,6 +998,13 @@
                         <div class="input-container">
                             <input type="number" id="modalVisionInsurance" class="cyber-input w-full p-3 rounded-md" placeholder=" " value="0" min="0" step="0.01">
                             <label class="floating-label">Vision ($)</label>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-2">
+                        <div class="input-container">
+                            <input type="number" id="modalFsaContribution" class="cyber-input w-full p-3 rounded-md" placeholder=" " value="0" min="0" step="0.01">
+                            <label class="floating-label">FSA ($)</label>
                         </div>
                     </div>
                 </div>
