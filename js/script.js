@@ -234,9 +234,12 @@ function loadSalaryDataToUI() {
         if (salaryData.dentalAmount) {
             document.getElementById('dentalAmount').textContent = salaryData.dentalAmount;
         }
-        
-        if (salaryData.visionAmount) {
+          if (salaryData.visionAmount) {
             document.getElementById('visionAmount').textContent = salaryData.visionAmount;
+        }
+        
+        if (salaryData.fsaAmount) {
+            document.getElementById('fsaAmount').textContent = salaryData.fsaAmount;
         }
         
         if (salaryData.insuranceTotal) {
@@ -2144,10 +2147,10 @@ window.calculateSalary = function() {
     document.getElementById('retirementAmount').textContent = `$${retirementAmount.toFixed(2)}`;
     document.getElementById('esppAmount').textContent = `$${esppAmount.toFixed(2)}`;
     
-    // Update the insurance amounts
-    document.getElementById('healthAmount').textContent = `$${healthCost.toFixed(2)}`;
+    // Update the insurance amounts    document.getElementById('healthAmount').textContent = `$${healthCost.toFixed(2)}`;
     document.getElementById('dentalAmount').textContent = `$${dentalCost.toFixed(2)}`;
     document.getElementById('visionAmount').textContent = `$${visionCost.toFixed(2)}`;
+    document.getElementById('fsaAmount').textContent = `$${fsaCost.toFixed(2)}`;
     document.getElementById('insuranceTotal').textContent = `$${totalInsuranceCost.toFixed(2)}`;
     
     document.getElementById('netPay').textContent = `$${netPay.toFixed(2)}`;
@@ -2621,12 +2624,12 @@ window.calculateSalaryFromModal = function() {
     // Fixed rates for OASDI and Medicare
     const oasdiTaxPct = 6.2;
     const medicareTaxPct = 1.45;
-    
-    // Insurance costs (dollar amounts per pay period)
+      // Insurance costs (dollar amounts per pay period)
     const healthCost = parseFloat(document.getElementById('modalHealthInsurance').value) || 0;
     const dentalCost = parseFloat(document.getElementById('modalDentalInsurance').value) || 0;
     const visionCost = parseFloat(document.getElementById('modalVisionInsurance').value) || 0;
-    const totalInsuranceCost = healthCost + dentalCost + visionCost;
+    const fsaCost = parseFloat(document.getElementById('modalFsaContribution').value) || 0;
+    const totalInsuranceCost = healthCost + dentalCost + visionCost + fsaCost;
     
     // Validation
     if (isNaN(gross) || gross <= 0) {
@@ -2722,10 +2725,10 @@ window.calculateSalaryFromModal = function() {
     document.getElementById('taxAmount').textContent = `$${totalTaxAmount.toFixed(2)}`;
     document.getElementById('retirementAmount').textContent = `$${retirementAmount.toFixed(2)}`;
     document.getElementById('esppAmount').textContent = `$${esppAmount.toFixed(2)}`;
-    document.getElementById('savingsTotal').textContent = `$${savingsTotal.toFixed(2)}`;
-    document.getElementById('healthAmount').textContent = `$${healthCost.toFixed(2)}`;
+    document.getElementById('savingsTotal').textContent = `$${savingsTotal.toFixed(2)}`;    document.getElementById('healthAmount').textContent = `$${healthCost.toFixed(2)}`;
     document.getElementById('dentalAmount').textContent = `$${dentalCost.toFixed(2)}`;
     document.getElementById('visionAmount').textContent = `$${visionCost.toFixed(2)}`;
+    document.getElementById('fsaAmount').textContent = `$${fsaCost.toFixed(2)}`;
     document.getElementById('insuranceTotal').textContent = `$${totalInsuranceCost.toFixed(2)}`;
     document.getElementById('netPay').textContent = `$${netPay.toFixed(2)}`;
     document.getElementById('bonusAmount').textContent = `$${bonusAmount.toFixed(2)}`;
@@ -2763,10 +2766,10 @@ window.calculateSalaryFromModal = function() {
         taxAmount: `$${totalTaxAmount.toFixed(2)}`,
         retirementAmount: `$${retirementAmount.toFixed(2)}`,
         esppAmount: `$${esppAmount.toFixed(2)}`,
-        savingsTotal: `$${savingsTotal.toFixed(2)}`,
-        healthAmount: `$${healthCost.toFixed(2)}`,
+        savingsTotal: `$${savingsTotal.toFixed(2)}`,        healthAmount: `$${healthCost.toFixed(2)}`,
         dentalAmount: `$${dentalCost.toFixed(2)}`,
         visionAmount: `$${visionCost.toFixed(2)}`,
+        fsaAmount: `$${fsaCost.toFixed(2)}`,
         insuranceTotal: `$${totalInsuranceCost.toFixed(2)}`,
         federalTaxRate: `(${effectiveFederalRate.toFixed(2)}%)`,
         oasdiRate: `(${oasdiTaxPct}%)`,
@@ -2918,9 +2921,9 @@ function calculateGrossProfit() {
     const paycheck3Surplus = payPerPaycheck;
     
     const monthlySurplus = payPerMonth - totalMonthlyBills;
-    
-    // For annual surplus, we use the total annual income (based on frequency)
+      // For annual surplus, we use the total annual income (based on frequency)
     const annualNetIncome = netPayPerPaycheck * payFrequency;
+    // Calculate annual values without including bonus in monthly net income
     const annualSurplus = annualNetIncome - annualBills;
     const annualSurplusWithBonus = annualSurplus + afterTaxBonus;
     
@@ -2948,8 +2951,7 @@ function calculateGrossProfit() {
     const profitProgress = document.getElementById('profitProgress');
     const profitStatus = document.getElementById('profitStatus');
     const grossProfitResults = document.getElementById('grossProfitResults');
-    
-    // Update UI with calculated values
+      // Update UI with calculated values - Monthly net income should not include bonus amounts
     if (gpMonthlyIncome) gpMonthlyIncome.textContent = `$${payPerMonth.toFixed(2)}`;
     if (gpMonthlyBills) gpMonthlyBills.textContent = `$${totalMonthlyBills.toFixed(2)}`;
     
@@ -3056,8 +3058,7 @@ function calculateGrossProfit() {
         profitStatusText = `You have a monthly deficit of $${Math.abs(monthlySurplus).toFixed(2)} (${Math.abs(profitRatio).toFixed(1)}% loss)`;
     }
     if (profitStatus) profitStatus.textContent = profitStatusText;
-    
-    // Store profit calculation data
+      // Store profit calculation data (excluding bonus from monthly income)
     profitData = {
         gpMonthlyIncome: `$${payPerMonth.toFixed(2)}`,
         gpMonthlyBills: `$${totalMonthlyBills.toFixed(2)}`,
@@ -4293,10 +4294,13 @@ function populateSalaryModal() {
                 document.getElementById('modalEsppContribution').value = esppPct.toFixed(2);
             }
         }
-        
-        // Extract insurance costs
+          // Extract insurance costs
         if (salaryData.healthAmount) {
             document.getElementById('modalHealthInsurance').value = parseFloat(salaryData.healthAmount.replace(/[^0-9.]/g, ''));
+        }
+        
+        if (salaryData.fsaAmount) {
+            document.getElementById('modalFsaContribution').value = parseFloat(salaryData.fsaAmount.replace(/[^0-9.]/g, ''));
         }
         
         if (salaryData.dentalAmount) {
