@@ -40,18 +40,12 @@
     </script>
     
     <!-- External CSS -->
-    <link rel="stylesheet" href="css/style.css">
-    <style>
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
-        }
+    <link rel="stylesheet" href="css/style.css">    <style>
         .blinking-cursor {
             display: inline-block;
             font-weight: 100;
             font-size: 1.2em;
             color: #00ffff; /* Changed to neon blue hex color */
-            animation: blink 1s step-end infinite;
         }
     </style>
 </head>
@@ -66,26 +60,24 @@
                         <span class="text-neon-green drop-shadow-glow">CACHE</span><span class="blinking-cursor drop-shadow-glow">_</span>
                     </span>
                 </span>
-            </h1>
-            <div class="cyber-subtitle text-center mt-2 text-sm text-gray-400 uppercase tracking-widest">
+            </h1>            <div class="cyber-subtitle text-center mt-2 text-sm text-gray-400 uppercase tracking-widest">
                 <span class="px-4 py-1 rounded-sm inline-block">
-                    System v2.5.0 <span class="text-neon-green">// ONLINE</span>
+                    SYSTEM v0.1.0 <span class="text-neon-green">// ONLINE</span>
                 </span>
             </div>
             
             <!-- Data Management Panel -->
-            <div class="flex justify-center mt-4">
-                <div class="bg-glass-blue p-2 rounded-lg flex space-x-2 items-center">
-                    <button onclick="saveToLocalStorage()" class="px-3 py-1 bg-glass-purple hover:bg-opacity-90 rounded-md transition text-sm">
+            <div class="flex justify-center mt-4">                <div class="bg-glass-blue p-2 rounded-lg flex space-x-2 items-center">
+                    <button onclick="saveToLocalStorage()" class="px-3 py-1 bg-glass-blue hover:bg-opacity-90 rounded-md transition text-sm">
                         <i class="fas fa-save mr-1"></i> Save
                     </button>
-                    <button onclick="exportData()" class="px-3 py-1 bg-glass-purple hover:bg-opacity-90 rounded-md transition text-sm">
+                    <button onclick="exportData()" class="px-3 py-1 bg-glass-blue hover:bg-opacity-90 rounded-md transition text-sm">
                         <i class="fas fa-file-export mr-1"></i> Export
                     </button>
-                    <button onclick="importData()" class="px-3 py-1 bg-glass-purple hover:bg-opacity-90 rounded-md transition text-sm">
+                    <button onclick="importData()" class="px-3 py-1 bg-glass-blue hover:bg-opacity-90 rounded-md transition text-sm">
                         <i class="fas fa-file-import mr-1"></i> Import
                     </button>
-                    <button onclick="clearAllData()" class="px-3 py-1 bg-glass-pink hover:bg-opacity-90 rounded-md transition text-sm">
+                    <button onclick="clearAllData()" class="px-3 py-1 bg-glass-blue hover:bg-opacity-90 rounded-md transition text-sm">
                         <i class="fas fa-trash mr-1"></i> Reset
                     </button>
                     <span id="lastSavedTime" class="text-xs text-gray-400 hidden ml-2"></span>
@@ -107,9 +99,8 @@
                         <span id="currentMonth" class="text-neon-blue">MAY</span>
                         <span id="currentYear" class="text-neon-pink">2025</span>
                     </div>
-                    
-                    <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2 mt-4 md:mt-0">
-                        <a href="#" onclick="showAddBillModal()" class="text-white px-4 py-2 bg-glass-purple hover:bg-opacity-90 rounded-md transition">
+                      <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2 mt-4 md:mt-0">
+                        <a href="#" onclick="showAddBillModal()" class="text-white px-4 py-2 bg-glass-blue hover:bg-opacity-90 rounded-md transition">
                             <i class="fas fa-plus mr-1"></i> Add Bill
                         </a>
                         <a href="#" onclick="completeMonthConfirm()" class="text-white px-4 py-2 bg-glass-blue hover:bg-opacity-90 rounded-md transition">
@@ -171,10 +162,9 @@
             </div>
 
             <!-- Credit Card Section - Now after bills section -->
-            <div class="cyber-card rounded-lg p-6 credit-info-section">
-                <div class="flex justify-between items-center mb-6">
+            <div class="cyber-card rounded-lg p-6 credit-info-section">                <div class="flex justify-between items-center mb-6">
                     <h2 class="text-xl font-semibold text-white">
-                        <i class="fas fa-credit-card mr-2 text-neon-blue"></i> Credit Information
+                        <i class="fas fa-credit-card mr-2 text-neon-blue"></i> Credit Cards
                     </h2>
                     <a href="#" onclick="addCreditCard()" class="text-white px-4 py-2 bg-glass-blue hover:bg-opacity-90 rounded-md transition">
                         <i class="fas fa-plus mr-1"></i> Add Card
@@ -186,10 +176,9 @@
                         <!-- Credit cards will be added here -->
                     </div>
                 </div>
-                
-                <div class="mt-6">
+                  <div class="mt-6">
                     <div class="flex justify-between items-center mb-3">
-                        <h3 class="text-lg font-medium text-white">Credit Summary</h3>
+                        <h3 class="text-lg font-medium text-white">Credit Cards Summary</h3>
                         <span class="text-sm text-neon-blue"><span id="totalAccounts">0</span> Active Accounts</span>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -291,12 +280,10 @@
             </div>
 
             <!-- Loan Information Section -->
-            <div class="cyber-card rounded-lg p-6 loan-info-section" style="display: flex; flex-direction: column;">
-                <div class="flex justify-between items-center mb-6">
+            <div class="cyber-card rounded-lg p-6 loan-info-section" style="display: flex; flex-direction: column;">                <div class="flex justify-between items-center mb-6">
                     <h2 class="text-xl font-semibold text-white">
-                        <i class="fas fa-money-bill-wave mr-2 text-neon-purple"></i> Loan Information
-                    </h2>
-                    <a href="#" onclick="addLoan()" class="text-white px-4 py-2 bg-glass-purple hover:bg-opacity-90 rounded-md transition">
+                        <i class="fas fa-money-bill-wave mr-2 text-neon-purple"></i> Loans
+                    </h2>                    <a href="#" onclick="addLoan()" class="text-white px-4 py-2 bg-glass-blue hover:bg-opacity-90 rounded-md transition">
                         <i class="fas fa-plus mr-1"></i> Add Loan
                     </a>
                 </div>
@@ -307,10 +294,9 @@
                         <p class="text-gray-400 text-center py-4">No loans added yet</p>
                     </div>
                 </div>
-                
-                <div class="mt-6">
+                  <div class="mt-6">
                     <div class="flex justify-between items-center mb-3">
-                        <h3 class="text-lg font-medium text-white">Loan Summary</h3>
+                        <h3 class="text-lg font-medium text-white">Loans Summary</h3>
                         <span class="text-sm text-neon-blue"><span id="totalLoans">0</span> Active Loans</span>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -1235,9 +1221,37 @@
         </div>
     </div>
 
+<!-- Back to Top Button -->
+<div class="back-to-top" id="backToTop" title="Back to Top">
+    <i class="fas fa-arrow-up"></i>
+</div>
+
 <!-- External JavaScript -->
 <script src="js/script.js?v=2.5.1"></script>
 <script>
+    // Back to Top button functionality
+    document.getElementById('backToTop').addEventListener('click', function() {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    });
+
+    // Show/hide Back to Top button based on scroll position
+    window.addEventListener('scroll', function() {
+        const backToTopBtn = document.getElementById('backToTop');
+        if (window.scrollY > 300) {
+            backToTopBtn.style.display = 'flex';
+        } else {
+            backToTopBtn.style.display = 'none';
+        }
+    });
+    
+    // Initially hide the back to top button
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('backToTop').style.display = 'none';
+    });
+
     // Direct initialization for collapsible sections
     document.addEventListener('DOMContentLoaded', function() {
         // Credit Rating Legend section
