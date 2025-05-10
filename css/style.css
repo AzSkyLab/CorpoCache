@@ -258,15 +258,12 @@ input[type="number"] {
     -ms-overflow-style: none; /* Internet Explorer and Edge */
 }
 
-/* Bills container with scrollbar - matching credit cards style */
+/* Bills container with auto-expanding height */
 .bills-wrapper {
-    max-height: 550px; /* Match the max-height of credit-cards-wrapper */
-    overflow-y: auto;
-    scrollbar-width: none; /* Hide scrollbar in Firefox by default */
-    padding-right: 5px; /* Prevent content from touching scrollbar */
+    height: auto; /* Allow auto height to fit content */
+    padding-right: 5px; /* Maintain padding */
     margin-right: -5px; /* Offset the padding */
-    padding-top: 8px; /* Increased padding to match credit-cards-wrapper */
-    -ms-overflow-style: none; /* Internet Explorer and Edge */
+    padding-top: 8px; /* Increased padding to maintain styling */
 }
 
 /* Ensure the first card has proper spacing */
