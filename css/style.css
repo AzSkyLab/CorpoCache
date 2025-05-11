@@ -903,3 +903,29 @@ input[type="number"] {
 .cyber-card h2 i {
     opacity: 1;
 }
+
+/* Import Options Modal styling */
+#importOptionsModal .bg-glass-blue {
+    background-color: var(--glass-blue);
+    border: 1px solid var(--neon-blue);
+    color: white;
+    transition: all 0.3s ease;
+}
+
+#importOptionsModal .bg-glass-blue:hover {
+    box-shadow: 0 0 15px var(--neon-blue);
+    background-color: rgba(0, 217, 255, 0.25);
+}
+
+#loadingModal .modal-cyber {
+    animation: pulse 1.5s infinite alternate;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 15px var(--neon-blue);
+    }
+    100% {
+        box-shadow: 0 0 30px var(--neon-purple);
+    }
+}
