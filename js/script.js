@@ -581,8 +581,46 @@ function exportData() {
     }
 }
 
-// Import data from a previously exported JSON file
+// Import data from a previously exported JSON file or sample data
 function importData() {
+    // Show the import options modal
+    document.getElementById('importOptionsModal').classList.remove('hidden');
+}
+
+// Function to close the import options modal
+window.closeImportOptionsModal = function() {
+    document.getElementById('importOptionsModal').classList.add('hidden');
+}
+
+// Close import options modal on escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        if (!document.getElementById('importOptionsModal').classList.contains('hidden')) {
+            closeImportOptionsModal();
+        }
+    }
+});
+
+// Close import options modal when clicking outside
+document.addEventListener('click', function(event) {
+    // Close import options modal when clicking outside
+    const optionsModal = document.getElementById('importOptionsModal');
+    if (!optionsModal.classList.contains('hidden') && event.target === optionsModal) {
+        closeImportOptionsModal();
+    }
+    
+    // Close import confirmation modal when clicking outside
+    const confirmModal = document.getElementById('importConfirmModal');
+    if (!confirmModal.classList.contains('hidden') && event.target === confirmModal) {
+        closeImportConfirmModal();
+    }
+});
+
+// Function to handle file selection
+window.selectFile = function() {
+    // Close the options modal
+    closeImportOptionsModal();
+    
     // Create a file input element
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
@@ -594,14 +632,39 @@ function importData() {
             return;
         }
         
+        // Show loading state
+        const loadingModal = document.createElement('div');
+        loadingModal.id = 'loadingModal';
+        loadingModal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+        loadingModal.innerHTML = `
+            <div class="modal-cyber rounded-lg p-6 w-full max-w-md text-center">
+                <p class="text-neon-blue mb-4"><i class="fas fa-spinner fa-spin mr-2"></i> Reading file...</p>
+            </div>
+        `;
+        document.body.appendChild(loadingModal);
+        
         const reader = new FileReader();
         reader.onload = function(e) {
+            // Remove loading modal
+            if (document.getElementById('loadingModal')) {
+                document.body.removeChild(document.getElementById('loadingModal'));
+            }
+            
             try {
                 const importDataString = e.target.result;
                 const importedData = JSON.parse(importDataString);
                 
                 // Store the imported data in a hidden field for later use
                 document.getElementById('importData').value = importDataString;
+                
+                // Update confirmation modal content to indicate file data
+                const modalContent = document.querySelector('#importConfirmModal .p-4.mb-4 .text-white');
+                if (modalContent) {
+                    modalContent.innerHTML = `
+                        <p class="mb-2"><i class="fas fa-info-circle text-neon-blue mr-2"></i>You're about to import data from: <span class="text-neon-green">${file.name}</span></p>
+                        <p>This will replace all your current data. Do you want to continue?</p>
+                    `;
+                }
                 
                 // Show the styled import confirmation modal instead of the browser's confirm dialog
                 document.getElementById('importConfirmModal').classList.remove('hidden');
@@ -610,10 +673,76 @@ function importData() {
                 alert('The selected file is not a valid CorpoCache backup file.');
             }
         };
+        
+        reader.onerror = function() {
+            // Remove loading modal
+            if (document.getElementById('loadingModal')) {
+                document.body.removeChild(document.getElementById('loadingModal'));
+            }
+            
+            alert('An error occurred while reading the file.');
+        };
+        
         reader.readAsText(file);
     };
     
     fileInput.click();
+}
+
+// Function to import sample data
+window.importSampleData = function() {
+    // Close the options modal
+    closeImportOptionsModal();
+    
+    // Show loading state
+    const loadingModal = document.createElement('div');
+    loadingModal.id = 'loadingModal';
+    loadingModal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+    loadingModal.innerHTML = `
+        <div class="modal-cyber rounded-lg p-6 w-full max-w-md text-center">
+            <p class="text-neon-blue mb-4"><i class="fas fa-spinner fa-spin mr-2"></i> Loading sample data...</p>
+        </div>
+    `;
+    document.body.appendChild(loadingModal);
+    
+    // Fetch the sample data
+    fetch('sampledata.json')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load sample data');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Remove loading modal
+            if (document.getElementById('loadingModal')) {
+                document.body.removeChild(document.getElementById('loadingModal'));
+            }
+            
+            // Store the sample data in the hidden field
+            document.getElementById('importData').value = JSON.stringify(data);
+            
+            // Update confirmation modal content to indicate sample data
+            const modalContent = document.querySelector('#importConfirmModal .p-4.mb-4 .text-white');
+            if (modalContent) {
+                modalContent.innerHTML = `
+                    <p class="mb-2"><i class="fas fa-info-circle text-neon-blue mr-2"></i>You're about to import sample data.</p>
+                    <p>This will replace all your current data. Do you want to continue?</p>
+                `;
+            }
+            
+            // Show the confirmation modal
+            document.getElementById('importConfirmModal').classList.remove('hidden');
+        })
+        .catch(error => {
+            // Remove loading modal
+            if (document.getElementById('loadingModal')) {
+                document.body.removeChild(document.getElementById('loadingModal'));
+            }
+            
+            console.error('Error loading sample data:', error);
+            alert('Failed to load sample data. Please try again later.');
+        });
 }
 
 // Function to close the import confirmation modal
@@ -622,6 +751,15 @@ window.closeImportConfirmModal = function(fromSuccess = false) {
     if (fromSuccess) {
         const modalContent = document.querySelector('#importConfirmModal .p-4.mb-4');
         const buttonContainer = document.querySelector('#importConfirmModal .flex.justify-end');
+        
+        // Always restore the default content when closing the modal
+        const contentDiv = document.querySelector('#importConfirmModal .p-4.mb-4 .text-white');
+        if (contentDiv) {
+            contentDiv.innerHTML = `
+                <p class="mb-2"><i class="fas fa-info-circle text-neon-blue mr-2"></i>This will replace all your current data.</p>
+                <p>Do you want to continue?</p>
+            `;
+        }
         
         if (modalContent && modalContent.getAttribute('data-original')) {
             modalContent.innerHTML = modalContent.getAttribute('data-original');
