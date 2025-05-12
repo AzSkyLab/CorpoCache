@@ -65,8 +65,7 @@
                     SYSTEM v0.1.0 <span class="text-neon-green">// ONLINE</span>
                 </span>
             </div>
-            
-            <!-- Data Management Panel -->
+              <!-- Data Management Panel -->
             <div class="flex justify-center mt-4">                <div class="bg-glass-blue p-2 rounded-lg flex space-x-2 items-center">
                     <button onclick="saveToLocalStorage()" class="px-3 py-1 bg-glass-blue hover:bg-opacity-90 rounded-md transition text-sm">
                         <i class="fas fa-save mr-1"></i> Save
@@ -79,6 +78,9 @@
                     </button>
                     <button onclick="clearAllData()" class="px-3 py-1 bg-glass-blue hover:bg-opacity-90 rounded-md transition text-sm">
                         <i class="fas fa-trash mr-1"></i> Reset
+                    </button>
+                    <button onclick="openHelpModal()" class="px-3 py-1 bg-glass-blue hover:bg-opacity-90 rounded-md transition text-sm">
+                        <i class="fas fa-question-circle mr-1"></i> Help
                     </button>
                     <span id="lastSavedTime" class="text-xs text-gray-400 hidden ml-2"></span>
                 </div>
@@ -1288,6 +1290,262 @@
         </div>
     </div>
 
+<!-- Help Modal -->
+    <div id="helpModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="modal-cyber rounded-lg p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-2xl font-semibold text-white"><i class="fas fa-book text-neon-blue mr-2"></i>CorpoCache User Guide</h3>
+                <button onclick="closeHelpModal()" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="cyber-help-content space-y-6 text-white">
+                <p class="text-lg">Welcome to CorpoCache! This cyberpunk-styled financial tracking application helps you manage your monthly budget, credit cards, loans, and calculate salary information.</p>
+                
+                <!-- Table of Contents -->
+                <div class="p-4 bg-glass-blue rounded-lg">
+                    <h4 class="text-xl text-neon-blue mb-2">Table of Contents</h4>
+                    <ol class="list-decimal ml-6 space-y-1">
+                        <li><a href="#getting-started" class="text-neon-green hover:text-white">Getting Started</a></li>
+                        <li><a href="#credit-cards" class="text-neon-green hover:text-white">Credit Cards</a></li>
+                        <li><a href="#loans" class="text-neon-green hover:text-white">Loans</a></li>
+                        <li><a href="#monthly-bills" class="text-neon-green hover:text-white">Monthly Bills</a></li>
+                        <li><a href="#salary-calculator" class="text-neon-green hover:text-white">Salary Calculator</a></li>
+                        <li><a href="#net-profit-calculator" class="text-neon-green hover:text-white">Net Profit Calculator</a></li>
+                        <li><a href="#data-management" class="text-neon-green hover:text-white">Data Management</a></li>
+                    </ol>
+                </div>
+                
+                <!-- Getting Started Section -->
+                <div id="getting-started" class="p-4 bg-glass-purple rounded-lg">
+                    <h4 class="text-xl text-neon-blue mb-2">Getting Started</h4>
+                    <p class="mb-2">CorpoCache is a browser-based financial tracking tool that stores your data locally. When you first open the application, you'll see several sections to help you manage different aspects of your finances.</p>
+                    
+                    <div class="bg-glass-blue bg-opacity-30 border border-neon-blue p-3 rounded mt-3">
+                        <p class="font-bold text-neon-blue"><i class="fas fa-lightbulb mr-1"></i> Pro Tip</p>
+                        <p>For the best experience, add your credit cards and loans first, as this will automatically populate your monthly bills section with the required payments!</p>
+                    </div>
+                    
+                    <h5 class="text-lg text-neon-green mt-4 mb-1">Data Management</h5>
+                    <p class="mb-1">At the top of the page, you'll find several buttons:</p>
+                    <ul class="list-disc ml-6">
+                        <li><strong>Save:</strong> Manually saves your data to local storage</li>
+                        <li><strong>Export:</strong> Exports your data as a JSON file for backup</li>
+                        <li><strong>Import:</strong> Imports previously exported data or sample data</li>
+                        <li><strong>Reset:</strong> Clears all stored data</li>
+                        <li><strong>Help:</strong> Opens this documentation</li>
+                    </ul>
+                </div>
+                
+                <!-- Credit Cards Section -->
+                <div id="credit-cards" class="p-4 bg-glass-purple rounded-lg">
+                    <h4 class="text-xl text-neon-blue mb-2">Credit Cards</h4>
+                    <p class="mb-2">The Credit Cards section helps you track your credit accounts and utilization. <span class="text-neon-green font-bold">Start here</span> to automatically populate your monthly bills with credit card payments.</p>
+                    
+                    <h5 class="text-lg text-neon-green mt-4 mb-1">Adding a Credit Card</h5>
+                    <ol class="list-decimal ml-6">
+                        <li>Click the <strong>Add Card</strong> button</li>
+                        <li>Fill in the details:
+                            <ul class="list-disc ml-6 mt-1">
+                                <li><strong>Card Name:</strong> Name of the credit card</li>
+                                <li><strong>Credit Limit:</strong> Maximum credit available</li>
+                                <li><strong>Current Balance:</strong> Amount currently owed</li>
+                                <li><strong>Date Opened:</strong> When you opened the account</li>
+                                <li><strong>Payment Due Date:</strong> Day of the month when payment is due</li>
+                            </ul>
+                        </li>
+                        <li>Click <strong>Save Card</strong></li>
+                    </ol>
+                    
+                    <h5 class="text-lg text-neon-green mt-4 mb-1">Credit Card Features</h5>
+                    <ul class="list-disc ml-6">
+                        <li>The app calculates your total credit limit, balance, and utilization</li>
+                        <li>Shows how much to pay to reach 30% and 10% utilization targets</li>
+                        <li>Tracks your oldest credit line for credit age calculations</li>
+                        <li>Provides a color-coded guide for credit factors</li>
+                    </ul>
+                </div>
+                
+                <!-- Loans Section -->
+                <div id="loans" class="p-4 bg-glass-purple rounded-lg">
+                    <h4 class="text-xl text-neon-blue mb-2">Loans</h4>
+                    <p class="mb-2">The Loans section helps you track various types of loans. <span class="text-neon-green font-bold">Add your loans early</span> to automatically populate your monthly bills with loan payments.</p>
+                    
+                    <h5 class="text-lg text-neon-green mt-4 mb-1">Adding a Loan</h5>
+                    <ol class="list-decimal ml-6">
+                        <li>Click the <strong>Add Loan</strong> button</li>
+                        <li>Fill in the details:
+                            <ul class="list-disc ml-6 mt-1">
+                                <li><strong>Loan Name:</strong> Name of the loan</li>
+                                <li><strong>Loan Type:</strong> Category (personal, auto, mortgage, etc.)</li>
+                                <li><strong>Original Loan Amount:</strong> Initial borrowed amount</li>
+                                <li><strong>Current Balance:</strong> Amount currently owed</li>
+                                <li><strong>Interest Rate:</strong> Annual percentage rate</li>
+                                <li><strong>Loan Term:</strong> Length of the loan in months</li>
+                                <li><strong>Payment Due Date:</strong> Day of the month when payment is due</li>
+                                <li><strong>Additional Principal Payment:</strong> Extra payment toward principal</li>
+                                <li>For mortgages: PMI, property tax, and insurance information</li>
+                            </ul>
+                        </li>
+                        <li>Click <strong>Save Loan</strong></li>
+                    </ol>
+                    
+                    <h5 class="text-lg text-neon-green mt-4 mb-1">Loan Features</h5>
+                    <ul class="list-disc ml-6">
+                        <li>Progress bar shows overall payoff progress across all loans</li>
+                        <li>Calculates total monthly payment required</li>
+                    </ul>
+                </div>
+                
+                <!-- Monthly Bills Section -->
+                <div id="monthly-bills" class="p-4 bg-glass-purple rounded-lg">
+                    <h4 class="text-xl text-neon-blue mb-2">Monthly Bills</h4>
+                    <p class="mb-2">The Monthly Bills section helps you track recurring expenses. <span class="text-neon-green font-bold">Credit card and loan payments will automatically appear here</span> after you add them in their respective sections.</p>
+                    
+                    <h5 class="text-lg text-neon-green mt-4 mb-1">Adding a Bill</h5>
+                    <ol class="list-decimal ml-6">
+                        <li>Click the <strong>Add Bill</strong> button at the top right of this section</li>
+                        <li>Fill in the details:
+                            <ul class="list-disc ml-6 mt-1">
+                                <li><strong>Bill Name:</strong> Name of the bill</li>
+                                <li><strong>Amount:</strong> Payment amount</li>
+                                <li><strong>Bill Type:</strong> Category of the bill</li>
+                                <li><strong>Varying amount due:</strong> Check this if the bill amount changes monthly</li>
+                                <li><strong>Set up autopay:</strong> Indicate if the bill is on automatic payment</li>
+                                <li><strong>Due Date:</strong> Day of the month when payment is due</li>
+                            </ul>
+                        </li>
+                        <li>Click <strong>Save Bill</strong></li>
+                    </ol>
+                    
+                    <h5 class="text-lg text-neon-green mt-4 mb-1">Managing Bills</h5>
+                    <ul class="list-disc ml-6">
+                        <li><strong>Mark as Paid:</strong> Click the "Pay" button on a bill card</li>
+                        <li><strong>Edit:</strong> Click the edit icon (pencil) on a bill card</li>
+                        <li><strong>Delete:</strong> Click the delete icon (trash) on a bill card</li>
+                    </ul>
+                    
+                    <h5 class="text-lg text-neon-green mt-4 mb-1">Complete Month</h5>
+                    <p>When you've paid all your bills for the month:</p>
+                    <ol class="list-decimal ml-6">
+                        <li>Click the <strong>Complete Month</strong> button</li>
+                        <li>Confirm to reset all bills to "unpaid" for the next month</li>
+                    </ol>
+                </div>
+                
+                <!-- Salary Calculator Section -->
+                <div id="salary-calculator" class="p-4 bg-glass-purple rounded-lg">
+                    <h4 class="text-xl text-neon-blue mb-2">Salary Calculator</h4>
+                    <p class="mb-2">The Salary Calculator helps you determine take-home pay after taxes and deductions.</p>
+                    
+                    <h5 class="text-lg text-neon-green mt-4 mb-1">Using the Salary Calculator</h5>
+                    <ol class="list-decimal ml-6">
+                        <li>Click the <strong>Calculate Salary</strong> button</li>
+                        <li>Fill in the details:
+                            <ul class="list-disc ml-6 mt-1">
+                                <li><strong>Annual Gross Salary:</strong> Your pre-tax yearly income</li>
+                                <li><strong>Pay Frequency:</strong> Semi-monthly (24 pay periods) or bi-weekly (26 pay periods)</li>
+                                <li><strong>First Paycheck Date</strong> or <strong>Last Paycheck Date:</strong> When you get paid</li>
+                                <li><strong>Bonus Percentage:</strong> Expected annual bonus percentage</li>
+                                <li><strong>Bonus Tax Rate:</strong> Withholding rate for bonuses</li>
+                                <li><strong>Tax Filing Status:</strong> Single, married, or head of household</li>
+                                <li><strong>State:</strong> Your state of residence for tax calculations</li>
+                                <li><strong>401k Contribution:</strong> Percentage of salary for retirement</li>
+                                <li><strong>ESPP Contribution:</strong> Percentage for employee stock purchase plan</li>
+                                <li><strong>Insurance Costs:</strong> Health, dental, vision, and FSA contributions</li>
+                            </ul>
+                        </li>
+                        <li>Click <strong>Calculate</strong></li>
+                    </ol>
+                    
+                    <h5 class="text-lg text-neon-green mt-4 mb-1">Salary Results</h5>
+                    <ul class="list-disc ml-6">
+                        <li>Shows annual salary and potential bonus</li>
+                        <li>Breaks down gross pay, taxes, and deductions</li>
+                        <li>Calculates net pay per paycheck</li>
+                        <li>Displays federal tax brackets for reference</li>
+                    </ul>
+                </div>
+                
+                <!-- Net Profit Calculator Section -->
+                <div id="net-profit-calculator" class="p-4 bg-glass-purple rounded-lg">
+                    <h4 class="text-xl text-neon-blue mb-2">Net Profit Calculator</h4>
+                    <p class="mb-2">The Net Profit Calculator shows your monthly and annual cash flow based on your salary and bills.</p>
+                    
+                    <h5 class="text-lg text-neon-green mt-4 mb-1">Using the Net Profit Calculator</h5>
+                    <ol class="list-decimal ml-6">
+                        <li>First, complete the Salary Calculator</li>
+                        <li>Click the <strong>Update Profit</strong> button</li>
+                        <li>Review your monthly cash flow:
+                            <ul class="list-disc ml-6 mt-1">
+                                <li>Monthly net income versus bills</li>
+                                <li>Surplus/deficit for each paycheck</li>
+                                <li>Annual projection including potential bonus</li>
+                            </ul>
+                        </li>
+                    </ol>
+                </div>
+                
+                <!-- Data Management Section -->
+                <div id="data-management" class="p-4 bg-glass-purple rounded-lg">
+                    <h4 class="text-xl text-neon-blue mb-2">Data Management</h4>
+                    
+                    <h5 class="text-lg text-neon-green mt-4 mb-1">Saving Your Data</h5>
+                    <ul class="list-disc ml-6">
+                        <li>Data is automatically saved to your browser's local storage</li>
+                        <li>Click the <strong>Save</strong> button to manually save at any time</li>
+                    </ul>
+                    
+                    <h5 class="text-lg text-neon-green mt-4 mb-1">Exporting Data</h5>
+                    <ol class="list-decimal ml-6">
+                        <li>Click the <strong>Export</strong> button</li>
+                        <li>Save the JSON file to your computer</li>
+                    </ol>
+                    
+                    <h5 class="text-lg text-neon-green mt-4 mb-1">Importing Data</h5>
+                    <ol class="list-decimal ml-6">
+                        <li>Click the <strong>Import</strong> button</li>
+                        <li>Choose between:
+                            <ul class="list-disc ml-6 mt-1">
+                                <li><strong>Select File:</strong> Upload a previously exported file</li>
+                                <li><strong>Import Sample Data:</strong> Load pre-configured example data</li>
+                            </ul>
+                        </li>
+                        <li>Confirm the import action</li>
+                    </ol>
+                    
+                    <h5 class="text-lg text-neon-green mt-4 mb-1">Resetting Data</h5>
+                    <ol class="list-decimal ml-6">
+                        <li>Click the <strong>Reset</strong> button</li>
+                        <li>Confirm that you want to delete all data</li>
+                    </ol>
+                </div>
+                
+                <!-- Tips Section -->
+                <div class="p-4 bg-glass-blue rounded-lg">
+                    <h4 class="text-xl text-neon-blue mb-2">Tips for Optimal Use</h4>
+                    <ol class="list-decimal ml-6">
+                        <li><strong>Start with Credit Cards and Loans:</strong> Add these first to auto-populate your monthly bills</li>
+                        <li><strong>Regular Updates:</strong> Keep your balances and payments up to date</li>
+                        <li><strong>Export Regularly:</strong> Back up your data periodically</li>
+                        <li><strong>Complete Month:</strong> Use this feature at the end of each month</li>
+                        <li><strong>View Tax Brackets:</strong> Click the dropdown in the Salary Calculator to see current tax brackets</li>
+                        <li><strong>Credit Utilization:</strong> Use the credit card summary to maintain healthy utilization levels</li>
+                    </ol>
+                    
+                    <p class="mt-4">CorpoCache is designed to provide a comprehensive overview of your financial situation with a cyberpunk aesthetic. By regularly updating your information, you'll gain valuable insights into your spending, debt, and savings patterns.</p>
+                </div>
+                
+                <div class="flex justify-end mt-2">
+                    <button onclick="closeHelpModal()" class="px-4 py-2 cyber-primary-btn rounded-md">
+                        <i class="fas fa-check mr-1"></i> Close Guide
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 <!-- Back to Top Button -->
 <div class="back-to-top" id="backToTop" title="Back to Top">
     <i class="fas fa-arrow-up"></i>
@@ -1364,5 +1622,32 @@
         }
     });
 </script>
+<script>
+        // Help Modal Functions
+        window.openHelpModal = function() {
+            document.getElementById('helpModal').classList.remove('hidden');
+        }
+        
+        window.closeHelpModal = function() {
+            document.getElementById('helpModal').classList.add('hidden');
+        }
+        
+        // Close help modal on escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                if (!document.getElementById('helpModal').classList.contains('hidden')) {
+                    closeHelpModal();
+                }
+            }
+        });
+        
+        // Close help modal when clicking outside
+        document.addEventListener('click', function(event) {
+            const helpModal = document.getElementById('helpModal');
+            if (!helpModal.classList.contains('hidden') && event.target === helpModal) {
+                closeHelpModal();
+            }
+        });
+    </script>
 </body>
 </html>

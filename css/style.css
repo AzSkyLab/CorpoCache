@@ -181,6 +181,12 @@ input[type="number"] {
     font-size: 1.2em;
     color: var(--neon-blue);
     text-shadow: 0 0 10px var(--neon-blue);
+    animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
 }
 
 /* Existing styles continue below */
