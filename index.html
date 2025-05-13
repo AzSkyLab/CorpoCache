@@ -1290,10 +1290,9 @@
         </div>
     </div>
 
-<!-- Help Modal -->
-    <div id="helpModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+<!-- Help Modal -->    <div id="helpModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
         <div class="modal-cyber rounded-lg p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-4">
+            <div class="flex justify-between items-center mb-4 sticky top-0 bg-cyber-black py-2">
                 <h3 class="text-2xl font-semibold text-white"><i class="fas fa-book text-neon-blue mr-2"></i>CorpoCache User Guide</h3>
                 <button onclick="closeHelpModal()" class="text-gray-400 hover:text-white">
                     <i class="fas fa-times text-xl"></i>
@@ -1418,13 +1417,24 @@
                         </li>
                         <li>Click <strong>Save Bill</strong></li>
                     </ol>
-                    
-                    <h5 class="text-lg text-neon-green mt-4 mb-1">Managing Bills</h5>
+                      <h5 class="text-lg text-neon-green mt-4 mb-1">Managing Bills</h5>
                     <ul class="list-disc ml-6">
-                        <li><strong>Mark as Paid:</strong> Click the "Pay" button on a bill card</li>
+                        <li><strong>Mark as Paid:</strong> Click anywhere on a bill card to mark it as paid</li>
                         <li><strong>Edit:</strong> Click the edit icon (pencil) on a bill card</li>
                         <li><strong>Delete:</strong> Click the delete icon (trash) on a bill card</li>
-                    </ul>
+                    </ul>                    <h5 class="text-lg text-neon-green mt-4 mb-1">Handling Varying Amount Bills</h5>
+                    <p class="mb-2">When a bill is marked as "Varying Amount Due":</p>
+                    <ol class="list-decimal ml-6">
+                        <li>Click anywhere on the bill card to mark it as paid</li>
+                        <li>A dialog will appear asking for the actual amount</li>
+                        <li>Enter the actual amount for this month's payment</li>
+                        <li>Click "Save Payment" to record the payment</li>
+                        <li>The bill will be marked as paid with the updated amount</li>
+                    </ol>
+                    <div class="bg-glass-blue bg-opacity-30 border border-neon-blue p-3 rounded mt-3">
+                        <p class="font-bold text-neon-blue"><i class="fas fa-info-circle mr-1"></i> Note</p>
+                        <p>This feature is especially useful for utility bills, credit card minimum payments, or any expense that changes from month to month.</p>
+                    </div>
                     
                     <h5 class="text-lg text-neon-green mt-4 mb-1">Complete Month</h5>
                     <p>When you've paid all your bills for the month:</p>
