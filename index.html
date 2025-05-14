@@ -724,8 +724,7 @@
                     </select>
                     <label class="floating-label">Bill Type</label>
                 </div>
-                
-                <div id="billOptionsContainer" class="space-y-4">
+                  <div id="billOptionsContainer" class="space-y-4">
                     <div class="flex items-center">
                         <input type="checkbox" id="varyingAmountDue" class="cyber-checkbox mr-2">
                         <label for="varyingAmountDue" class="text-white">Varying amount due each month</label>
@@ -735,6 +734,21 @@
                         <input type="checkbox" id="autoPay" class="cyber-checkbox mr-2">
                         <label for="autoPay" class="text-white">Set up autopay</label>
                     </div>
+                </div>
+                
+                <div class="input-container">
+                    <select id="paymentAccount" class="cyber-input w-full p-3 rounded-md">
+                        <option value="checking">Checking Account</option>
+                        <option value="credit">Credit Card</option>
+                    </select>
+                    <label class="floating-label">Payment Account</label>
+                </div>
+                
+                <div id="creditCardSelectContainer" class="input-container hidden">
+                    <select id="creditCardSelect" class="cyber-input w-full p-3 rounded-md">
+                        <!-- Credit cards will be populated dynamically -->
+                    </select>
+                    <label class="floating-label">Select Credit Card</label>
                 </div>
                 
                 <div class="input-container">
@@ -1397,8 +1411,7 @@
                     </ul>
                 </div>
                 
-                <!-- Monthly Bills Section -->
-                <div id="monthly-bills" class="p-4 bg-glass-purple rounded-lg">
+                <!-- Monthly Bills Section -->                <div id="monthly-bills" class="p-4 bg-glass-purple rounded-lg">
                     <h4 class="text-xl text-neon-blue mb-2">Monthly Bills</h4>
                     <p class="mb-2">The Monthly Bills section helps you track recurring expenses. <span class="text-neon-green font-bold">Credit card and loan payments will automatically appear here</span> after you add them in their respective sections.</p>
                     
@@ -1410,19 +1423,33 @@
                                 <li><strong>Bill Name:</strong> Name of the bill</li>
                                 <li><strong>Amount:</strong> Payment amount</li>
                                 <li><strong>Bill Type:</strong> Category of the bill</li>
+                                <li><strong>Payment Account:</strong> Select whether the bill is paid from your Checking Account or Credit Card</li>
+                                <li><strong>Credit Card:</strong> If "Credit Card" is selected as payment account, choose which specific card the bill is charged to</li>
                                 <li><strong>Varying amount due:</strong> Check this if the bill amount changes monthly</li>
                                 <li><strong>Set up autopay:</strong> Indicate if the bill is on automatic payment</li>
                                 <li><strong>Due Date:</strong> Day of the month when payment is due</li>
                             </ul>
                         </li>
                         <li>Click <strong>Save Bill</strong></li>
-                    </ol>
-                      <h5 class="text-lg text-neon-green mt-4 mb-1">Managing Bills</h5>
+                    </ol>                    <h5 class="text-lg text-neon-green mt-4 mb-1">Managing Bills</h5>
                     <ul class="list-disc ml-6">
                         <li><strong>Mark as Paid:</strong> Click anywhere on a bill card to mark it as paid</li>
                         <li><strong>Edit:</strong> Click the edit icon (pencil) on a bill card</li>
                         <li><strong>Delete:</strong> Click the delete icon (trash) on a bill card</li>
-                    </ul>                    <h5 class="text-lg text-neon-green mt-4 mb-1">Handling Varying Amount Bills</h5>
+                        <li><strong>Payment Account:</strong> Each bill card displays whether it's paid from Checking Account or a specific Credit Card</li>
+                    </ul>
+                      <h5 class="text-lg text-neon-green mt-4 mb-1">Payment Account System</h5>
+                    <ul class="list-disc ml-6">
+                        <li>Bills can be assigned to either your <strong>Checking Account</strong> or a <strong>Credit Card</strong></li>
+                        <li>All bills are included in the bill count, but bills charged to credit cards have their <strong>amounts excluded</strong> from Monthly Bills totals and net profit calculations</li>
+                        <li>By default, credit cards and loans are set to use <strong>Checking Account</strong> as their payment source</li>
+                        <li>To accurately track spending, assign each bill to the correct payment account</li>
+                    </ul>
+                    
+                    <div class="bg-glass-blue bg-opacity-30 border border-neon-blue p-3 rounded mt-3">
+                        <p class="font-bold text-neon-blue"><i class="fas fa-info-circle mr-1"></i> Note</p>
+                        <p>Bills charged to credit cards are <span class="text-neon-green font-bold">included</span> in your total bill count but their amounts are <span class="text-white font-bold">not added</span> to the monthly expenses total to avoid double-counting.</p>
+                    </div><h5 class="text-lg text-neon-green mt-4 mb-1">Handling Varying Amount Bills</h5>
                     <p class="mb-2">When a bill is marked as "Varying Amount Due":</p>
                     <ol class="list-decimal ml-6">
                         <li>Click anywhere on the bill card to mark it as paid</li>
@@ -1478,23 +1505,26 @@
                     </ul>
                 </div>
                 
-                <!-- Net Profit Calculator Section -->
-                <div id="net-profit-calculator" class="p-4 bg-glass-purple rounded-lg">
+                <!-- Net Profit Calculator Section -->                <div id="net-profit-calculator" class="p-4 bg-glass-purple rounded-lg">
                     <h4 class="text-xl text-neon-blue mb-2">Net Profit Calculator</h4>
                     <p class="mb-2">The Net Profit Calculator shows your monthly and annual cash flow based on your salary and bills.</p>
                     
                     <h5 class="text-lg text-neon-green mt-4 mb-1">Using the Net Profit Calculator</h5>
                     <ol class="list-decimal ml-6">
                         <li>First, complete the Salary Calculator</li>
-                        <li>Click the <strong>Update Profit</strong> button</li>
-                        <li>Review your monthly cash flow:
+                        <li>Click the <strong>Update Profit</strong> button</li>                        <li>Review your monthly cash flow:
                             <ul class="list-disc ml-6 mt-1">
-                                <li>Monthly net income versus bills</li>
+                                <li>Monthly net income versus bills (amounts of bills charged to credit cards are excluded)</li>
                                 <li>Surplus/deficit for each paycheck</li>
                                 <li>Annual projection including potential bonus</li>
                             </ul>
                         </li>
                     </ol>
+                    
+                    <div class="bg-glass-blue bg-opacity-30 border border-neon-blue p-3 rounded mt-3">
+                        <p class="font-bold text-neon-blue"><i class="fas fa-info-circle mr-1"></i> Note</p>
+                        <p>While all bills appear in the bills list, only the amounts of bills assigned to your Checking Account are counted in expense calculations. Credit card bill amounts are excluded to prevent double-counting.</p>
+                    </div>
                 </div>
                 
                 <!-- Data Management Section -->
@@ -1533,11 +1563,11 @@
                 </div>
                 
                 <!-- Tips Section -->
-                <div class="p-4 bg-glass-blue rounded-lg">
-                    <h4 class="text-xl text-neon-blue mb-2">Tips for Optimal Use</h4>
+                <div class="p-4 bg-glass-blue rounded-lg">                    <h4 class="text-xl text-neon-blue mb-2">Tips for Optimal Use</h4>
                     <ol class="list-decimal ml-6">
                         <li><strong>Start with Credit Cards and Loans:</strong> Add these first to auto-populate your monthly bills</li>
                         <li><strong>Regular Updates:</strong> Keep your balances and payments up to date</li>
+                        <li><strong>Select Correct Payment Accounts:</strong> Accurately assign bills to either Checking Account or Credit Cards</li>
                         <li><strong>Export Regularly:</strong> Back up your data periodically</li>
                         <li><strong>Complete Month:</strong> Use this feature at the end of each month</li>
                         <li><strong>View Tax Brackets:</strong> Click the dropdown in the Salary Calculator to see current tax brackets</li>
@@ -1562,7 +1592,7 @@
 </div>
 
 <!-- External JavaScript -->
-<script src="js/script.js?v=2.5.1"></script>
+<script src="js/script.js?v=2.5.3"></script>
 <script>
     // Back to Top button functionality
     document.getElementById('backToTop').addEventListener('click', function() {
