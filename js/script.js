@@ -1421,9 +1421,8 @@ window.saveCreditCard = function() {
     document.dispatchEvent(new Event('cardsChanged'));
 }
 
-function renderCreditCards() {
-    if (creditCards.length === 0) {
-        creditCardsContainer.innerHTML = '<p class="text-gray-400 text-center py-4 md:col-span-2">No credit cards added yet</p>';
+function renderCreditCards() {    if (creditCards.length === 0) {
+        creditCardsContainer.innerHTML = '<p class="text-gray-400 text-center py-4 md:col-span-3 lg:col-span-4">No credit cards added yet</p>';
         return;
     }
     
@@ -3801,9 +3800,8 @@ function renderLoans() {
         console.error('Loans container not found');
         return;
     }
-    
-    if (loans.length === 0) {
-        loansContainer.innerHTML = '<p class="text-gray-400 text-center py-4">No loans added yet</p>';
+      if (loans.length === 0) {
+        loansContainer.innerHTML = '<p class="text-gray-400 text-center py-4 md:col-span-3 lg:col-span-4">No loans added yet</p>';
         return;
     }
     
@@ -3928,8 +3926,7 @@ function renderLoans() {
                         <div class="cyber-progress-fill ${progressColorClass}" 
                              style="width: ${percentPaid}%"></div>
                     </div>
-                </div>
-                  <div class="grid grid-cols-3 gap-4 mt-4">
+                </div>                <div class="grid grid-cols-4 gap-4 mt-4">
                     <div>
                         <p class="text-sm text-gray-400">Interest Rate</p>
                         <p class="font-medium">${loan.interestRate.toFixed(2)}%</p>
@@ -3941,6 +3938,10 @@ function renderLoans() {
                     <div>
                         <p class="text-sm text-gray-400">Loan Term</p>
                         <p class="font-medium">${loan.term ? `${loan.term} months` : 'Not specified'}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-400">Payments Remaining</p>
+                        <p class="font-medium text-neon-green">${loan.term ? Math.ceil(loan.term * (loan.balance / loan.originalAmount)) : 'N/A'}</p>
                     </div>
                 </div>
                 
