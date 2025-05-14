@@ -159,10 +159,8 @@
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <!-- Credit Card Section - Now after bills section -->
-            <div class="cyber-card rounded-lg p-6 credit-info-section">                <div class="flex justify-between items-center mb-6">
+            </div>            <!-- Credit Card Section - Now after bills section -->
+            <div class="cyber-card rounded-lg p-6 credit-info-section lg:col-span-2">                <div class="flex justify-between items-center mb-6">
                     <h2 class="text-xl font-semibold text-white">
                         <i class="fas fa-credit-card mr-2 text-neon-blue"></i> Credit Cards
                     </h2>
@@ -171,8 +169,8 @@
                     </a>
                 </div>
                 
-                <div class="credit-cards-wrapper" style="min-height: 335px; max-height: 550px; overflow-y: auto;">
-                    <div id="creditCardsContainer" class="bills-container">
+                <div class="credit-cards-wrapper" style="min-height: 335px;">
+                    <div id="creditCardsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <!-- Credit cards will be added here -->
                     </div>
                 </div>
@@ -277,10 +275,8 @@
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <!-- Loan Information Section -->
-            <div class="cyber-card rounded-lg p-6 loan-info-section" style="display: flex; flex-direction: column;">                <div class="flex justify-between items-center mb-6">
+            </div>            <!-- Loan Information Section -->
+            <div class="cyber-card rounded-lg p-6 loan-info-section lg:col-span-2">                <div class="flex justify-between items-center mb-6">
                     <h2 class="text-xl font-semibold text-white">
                         <i class="fas fa-money-bill-wave mr-2 text-neon-purple"></i> Loans
                     </h2>                    <a href="#" onclick="addLoan()" class="text-white px-4 py-2 bg-glass-blue hover:bg-opacity-90 rounded-md transition">
@@ -288,10 +284,10 @@
                     </a>
                 </div>
                 
-                <div class="loans-wrapper" style="min-height: 335px; max-height: 550px; overflow-y: auto; flex-grow: 1;">
-                    <div id="loansContainer" class="loans-container">
+                <div class="loans-wrapper" style="min-height: 335px;">
+                    <div id="loansContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <!-- Loans will be added here -->
-                        <p class="text-gray-400 text-center py-4">No loans added yet</p>
+                        <p class="text-gray-400 text-center py-4 md:col-span-2">No loans added yet</p>
                     </div>
                 </div>
                   <div class="mt-6">

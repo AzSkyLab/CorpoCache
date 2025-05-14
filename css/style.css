@@ -253,23 +253,21 @@ input[type="number"] {
     100% { background-position: 100px 0, 200px 0; }
 }
 
-/* Credit cards container with scrollbar */
+/* Credit cards container - no scrollbar, grid layout */
 .credit-cards-wrapper {
-    max-height: 550px; /* Increased height to fit two complete cards */
-    overflow-y: auto;
-    scrollbar-width: none; /* Hide scrollbar in Firefox by default */
-    padding-right: 5px; /* Prevent content from touching scrollbar */
+    height: auto; /* Allow auto height to fit content */
+    padding-right: 5px; /* Prevent content from touching edge */
     margin-right: -5px; /* Offset the padding */
-    padding-top: 8px; /* Increased padding to the top to prevent border clipping when hovering */
-    -ms-overflow-style: none; /* Internet Explorer and Edge */
+    padding-top: 8px; /* Padding to the top to prevent border clipping when hovering */
 }
 
-/* Bills container with auto-expanding height */
-.bills-wrapper {
+/* Bills and loans container with auto-expanding height */
+.bills-wrapper,
+.loans-wrapper {
     height: auto; /* Allow auto height to fit content */
     padding-right: 5px; /* Maintain padding */
     margin-right: -5px; /* Offset the padding */
-    padding-top: 8px; /* Increased padding to maintain styling */
+    padding-top: 8px; /* Padding to maintain styling */
 }
 
 /* Ensure the first card has proper spacing */
@@ -545,10 +543,11 @@ input[type="number"] {
     min-height: 550px; /* Match the height of credit cards wrapper */
 }
 
-/* Only show scrollbars when needed (auto) */
+/* Remove scroll behavior, all sections now use grid layout to fit content */
 .credit-cards-wrapper,
-.bills-wrapper {
-    overflow-y: auto;
+.bills-wrapper,
+.loans-wrapper {
+    overflow-y: visible;
 }
 
 /* Bill item specific styling to fix border visibility */

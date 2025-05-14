@@ -1423,7 +1423,7 @@ window.saveCreditCard = function() {
 
 function renderCreditCards() {
     if (creditCards.length === 0) {
-        creditCardsContainer.innerHTML = '<p class="text-gray-400 text-center py-4">No credit cards added yet</p>';
+        creditCardsContainer.innerHTML = '<p class="text-gray-400 text-center py-4 md:col-span-2">No credit cards added yet</p>';
         return;
     }
     
