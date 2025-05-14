@@ -98,8 +98,7 @@ input[type="number"] {
 }
 
 .cyber-scanline {
-    background: linear-gradient(transparent 0%, rgba(0, 255, 255, 0.05) 10%, rgba(0, 255, 255, 0.05) 100%);
-    animation: scanline 3s linear infinite;
+    /* Scanline effect removed */
     position: absolute;
     top: 0;
     left: 0;
@@ -110,10 +109,10 @@ input[type="number"] {
 
 @keyframes scanline {
     0% {
-        background-position: 0 -100%;
+        background-position: 0 0;
     }
     100% {
-        background-position: 0 200%;
+        background-position: 0 0;
     }
 }
 
@@ -226,14 +225,10 @@ input[type="number"] {
     background: transparent;
     z-index: -1;
     transition: all 0.4s ease;
-    background-image: 
-        linear-gradient(90deg, transparent 50%, rgba(0, 255, 255, 0.1) 50%),
-        linear-gradient(90deg, rgba(255, 0, 255, 0.05) 25%, transparent 25%, transparent 50%, rgba(255, 0, 255, 0.05) 50%, rgba(255, 0, 255, 0.05) 75%, transparent 75%);
-    background-size: 8px 2px, 12px 4px;
+    /* Line patterns removed */
     opacity: 0.1;
     pointer-events: none;
     z-index: 1;
-    animation: circuit-animation 20s linear infinite;
 }
 
 .cyber-card:hover {
@@ -852,15 +847,12 @@ input[type="number"] {
     transform: translateY(-5px);
 }
 
-/* Cyberpunk grid effect */
+/* Cyberpunk grid effect removed */
 .bg-glass-blue, .bg-glass-purple, .bg-glass-pink, .bg-glass-green, .bg-glass-orange, .bg-glass-cyan {
-    background-image: 
-        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-        linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-    background-size: 20px 20px;
+    /* Grid background removed */
 }
 
-/* Add scanline effect */
+/* Scanline effect removed */
 .bg-glass-blue::after, 
 .bg-glass-purple::after, 
 .bg-glass-pink::after, 
@@ -873,15 +865,7 @@ input[type="number"] {
     left: 0;
     right: 0;
     bottom: 0;
-    background: repeating-linear-gradient(
-        0deg,
-        rgba(0, 0, 0, 0) 0px,
-        rgba(0, 0, 0, 0) 1px,
-        rgba(0, 0, 0, 0.1) 2px,
-        rgba(0, 0, 0, 0) 3px
-    );
     pointer-events: none;
-    opacity: 0.2;
     z-index: 2;
 }
 
