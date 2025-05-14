@@ -1391,14 +1391,15 @@ window.saveCreditCard = function() {
     } else {
         // Add new card
         creditCards.push(card);
-        
-        // Also add a bill entry with amount $0 for this credit card
+          // Also add a bill entry with amount $0 for this credit card
         const newBill = {
             name: `${card.name} Payment`,
             amount: 0,
             dueDate: card.dueDate,
             type: 'credit',
-            priority: 'normal'
+            priority: 'normal',
+            paymentAccount: 'checking', // Default to checking account
+            creditCardId: null
         };
         
         // Add the new bill
@@ -1722,12 +1723,28 @@ window.showAddBillModal = function() {
     document.getElementById('billDueDate').value = '';
     document.getElementById('billType').value = 'housing';
     document.getElementById('editBillIndex').value = '-1';
+    document.getElementById('paymentAccount').value = 'checking'; // Default to checking account
     
     // Hide any previous validation errors
     document.getElementById('billValidationErrors').classList.add('hidden');
     document.getElementById('billErrorList').innerHTML = '';
     
+    // Populate credit card dropdown
+    populateCreditCardSelect();
+    
+    // Reset credit card selection to first option
+    const creditCardSelect = document.getElementById('creditCardSelect');
+    if (creditCardSelect && creditCardSelect.options.length > 0) {
+        creditCardSelect.selectedIndex = 0;
+    }
+    
+    // Hide the credit card selection initially
+    document.getElementById('creditCardSelectContainer').classList.add('hidden');
+    
     document.getElementById('billModal').classList.remove('hidden');
+    
+    // Set up event listener for payment account selection changes
+    setupPaymentAccountChangeListener();
 }
 
 window.editBill = function(index) {
@@ -1744,6 +1761,33 @@ window.editBill = function(index) {
     document.getElementById('varyingAmountDue').checked = bill.varyingAmount || false;
     document.getElementById('autoPay').checked = bill.autoPay || false;
     
+    // Populate credit card dropdown
+    populateCreditCardSelect();
+      // Set payment account and show/hide credit card selection accordingly
+    const paymentAccount = bill.paymentAccount || 'checking';
+    document.getElementById('paymentAccount').value = paymentAccount;
+    
+    // Reset credit card selection to first option as default
+    const creditCardSelect = document.getElementById('creditCardSelect');
+    if (creditCardSelect) {
+        creditCardSelect.selectedIndex = 0;
+    }
+    
+    if (paymentAccount === 'credit') {
+        document.getElementById('creditCardSelectContainer').classList.remove('hidden');
+        if (bill.creditCardId !== null && bill.creditCardId !== undefined) {
+            // Set credit card selection if available
+            if (creditCardSelect) {
+                creditCardSelect.value = bill.creditCardId;
+            }
+        }
+    } else {
+        document.getElementById('creditCardSelectContainer').classList.add('hidden');
+    }
+    
+    // Set up event listener for payment account changes
+    setupPaymentAccountChangeListener();
+    
     document.getElementById('editBillIndex').value = index;
     
     // Hide any previous validation errors
@@ -1755,6 +1799,91 @@ window.editBill = function(index) {
 
 window.closeBillModal = function() {
     document.getElementById('billModal').classList.add('hidden');
+    
+    // Reset the credit card dropdown visibility state
+    const creditCardSelectContainer = document.getElementById('creditCardSelectContainer');
+    if (creditCardSelectContainer) {
+        creditCardSelectContainer.classList.add('hidden');
+    }
+}
+
+// Function to populate the credit card selection dropdown
+function populateCreditCardSelect() {
+    const creditCardSelect = document.getElementById('creditCardSelect');
+    if (!creditCardSelect) return;
+    
+    // Clear existing options
+    creditCardSelect.innerHTML = '';
+    
+    // Add options for each credit card
+    creditCards.forEach((card, index) => {
+        const option = document.createElement('option');
+        option.value = index;
+        option.textContent = card.name;
+        creditCardSelect.appendChild(option);
+    });
+    
+    // If no credit cards, add a default option
+    if (creditCards.length === 0) {
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = 'No credit cards available';
+        creditCardSelect.appendChild(option);
+    }
+}
+
+// Function to set up event listener for payment account selection changes
+function setupPaymentAccountChangeListener() {
+    const paymentAccountSelect = document.getElementById('paymentAccount');
+    const creditCardSelectContainer = document.getElementById('creditCardSelectContainer');
+    const creditCardSelect = document.getElementById('creditCardSelect');
+    
+    if (!paymentAccountSelect || !creditCardSelectContainer) return;
+    
+    // Create a completely new element to ensure no stale event listeners
+    const newPaymentAccountSelect = document.createElement('select');
+    newPaymentAccountSelect.id = 'paymentAccount';
+    newPaymentAccountSelect.className = paymentAccountSelect.className;
+    
+    // Copy options from the old select
+    for (let i = 0; i < paymentAccountSelect.options.length; i++) {
+        const option = document.createElement('option');
+        option.value = paymentAccountSelect.options[i].value;
+        option.text = paymentAccountSelect.options[i].text;
+        option.selected = paymentAccountSelect.options[i].selected;
+        newPaymentAccountSelect.appendChild(option);
+    }
+    
+    // Replace the old select with the new one
+    paymentAccountSelect.parentNode.replaceChild(newPaymentAccountSelect, paymentAccountSelect);
+    
+    // Add the event listener
+    newPaymentAccountSelect.addEventListener('change', function() {
+        const selectedValue = this.value;
+        
+        if (selectedValue === 'credit') {
+            // Show credit card dropdown when Credit Card is selected
+            if (creditCardSelectContainer) {
+                creditCardSelectContainer.classList.remove('hidden');
+            }
+            
+            // Make sure a credit card is selected if available
+            if (creditCardSelect && creditCardSelect.options.length > 0 && 
+                creditCardSelect.selectedIndex === -1) {
+                creditCardSelect.selectedIndex = 0;
+            }
+        } else {
+            // Hide credit card dropdown when Checking Account is selected
+            if (creditCardSelectContainer) {
+                creditCardSelectContainer.classList.add('hidden');
+            }
+            
+            // Reset the credit card selection
+            if (creditCardSelect && creditCardSelect.options.length > 0) {
+                creditCardSelect.selectedIndex = 0;
+            }
+        }
+    });
 }
 
 // Validate bill form data
@@ -1773,6 +1902,15 @@ function validateBillForm() {
     const dueDateValue = parseInt(billDueDate.value);
     if (isNaN(dueDateValue) || dueDateValue < 1 || dueDateValue > 31) {
         errors.push('Due Date must be a day between 1 and 31');
+    }
+    
+    // Validate credit card selection when payment account is set to credit
+    const paymentAccountValue = document.getElementById('paymentAccount').value;
+    if (paymentAccountValue === 'credit') {
+        const creditCardId = document.getElementById('creditCardSelect').value;
+        if (creditCardId === '' || creditCards.length === 0) {
+            errors.push('Please select a credit card or add one first');
+        }
     }
     
     return errors;
@@ -1830,7 +1968,14 @@ window.cancelVaryingAmount = function() {
 };
 
 // Function that actually saves the bill
-function saveCurrentBill() {
+function saveCurrentBill() {    const paymentAccountValue = document.getElementById('paymentAccount').value;
+    
+    // Determine creditCardId value
+    let creditCardId = null;
+    if (paymentAccountValue === 'credit') {
+        creditCardId = document.getElementById('creditCardSelect').value;
+    }
+    
     const bill = {
         name: billName.value.trim(),
         amount: parseFloat(billAmount.value),
@@ -1839,7 +1984,9 @@ function saveCurrentBill() {
         priority: 'normal', // Set default priority since we removed the field
         isPaid: false, // Add isPaid property, default to false
         varyingAmount: document.getElementById('varyingAmountDue').checked, // Add varying amount property
-        autoPay: document.getElementById('autoPay').checked // Add autopay property
+        autoPay: document.getElementById('autoPay').checked, // Add autopay property
+        paymentAccount: paymentAccountValue, // Add payment account property
+        creditCardId: creditCardId // Always null when not using credit card
     };
     
     const editIndex = parseInt(document.getElementById('editBillIndex').value);
@@ -1939,10 +2086,16 @@ function renderBills() {
                         <div class="flex items-center">
                             <i class="fas ${typeIcon} mr-2 text-neon-green"></i>
                             <h3 class="font-medium text-lg cyber-neon">${bill.name}</h3>
-                        </div>
-                        <div class="flex items-center mt-1">
+                        </div>                        <div class="flex items-center mt-1">
                             <p class="text-sm text-gray-400">Due on ${bill.dueDate}th</p>
                             <div class="ml-3 flex items-center">${statusIcons}</div>
+                        </div>
+                        <div class="flex items-center mt-1">
+                            <p class="text-sm text-gray-400">
+                                Payment: ${bill.paymentAccount === 'credit' ? 
+                                    `<span class="text-neon-purple">${getCreditCardNameById(bill.creditCardId)}</span>` : 
+                                    '<span class="text-neon-blue">Checking Account</span>'}
+                            </p>
                         </div>
                     </div>
                     <div class="flex items-center">
@@ -1991,6 +2144,18 @@ function getBillTypeIcon(type) {
     return icons[type] || 'fa-file-invoice-dollar';
 }
 
+// Function to get credit card name by ID (index)
+function getCreditCardNameById(id) {
+    if (id === null || id === undefined) return 'Unknown Card';
+    
+    const cardIndex = parseInt(id);
+    if (isNaN(cardIndex) || cardIndex < 0 || cardIndex >= creditCards.length) {
+        return 'Unknown Card';
+    }
+    
+    return creditCards[cardIndex].name;
+}
+
 window.deleteBill = function(index) {
     bills.splice(index, 1);
     renderBills();
@@ -2008,29 +2173,44 @@ function updatePaymentSchedule() {
     // Split bills between two paychecks (15th and end of month)
     const paycheck1 = bills.filter(bill => bill.dueDate <= 15);
     const paycheck2 = bills.filter(bill => bill.dueDate > 15);
+      // Calculate total amounts (excluding credit card payments)
+    const paycheck1TotalAmount = paycheck1.reduce((sum, bill) => {
+        // If bill is paid from credit card, don't include it in the total
+        if (bill.paymentAccount === 'credit') return sum;
+        return sum + bill.amount;
+    }, 0);
+    const paycheck2TotalAmount = paycheck2.reduce((sum, bill) => {
+        // If bill is paid from credit card, don't include it in the total
+        if (bill.paymentAccount === 'credit') return sum;
+        return sum + bill.amount;
+    }, 0);
     
-    // Calculate total amounts
-    const paycheck1TotalAmount = paycheck1.reduce((sum, bill) => sum + bill.amount, 0);
-    const paycheck2TotalAmount = paycheck2.reduce((sum, bill) => sum + bill.amount, 0);
-    
-    // Calculate remaining unpaid amounts
-    const paycheck1RemainingAmount = paycheck1.reduce((sum, bill) => sum + (bill.isPaid ? 0 : bill.amount), 0);
-    const paycheck2RemainingAmount = paycheck2.reduce((sum, bill) => sum + (bill.isPaid ? 0 : bill.amount), 0);
+    // Calculate remaining unpaid amounts (excluding credit card payments)
+    const paycheck1RemainingAmount = paycheck1.reduce((sum, bill) => {
+        // If bill is paid from credit card, don't include it in the total
+        if (bill.paymentAccount === 'credit') return sum;
+        return sum + (bill.isPaid ? 0 : bill.amount);
+    }, 0);
+    const paycheck2RemainingAmount = paycheck2.reduce((sum, bill) => {
+        // If bill is paid from credit card, don't include it in the total
+        if (bill.paymentAccount === 'credit') return sum;
+        return sum + (bill.isPaid ? 0 : bill.amount);
+    }, 0);
     const totalRemainingAmount = paycheck1RemainingAmount + paycheck2RemainingAmount;
     
     // Get required DOM elements, with null checks
     const paycheck1Bills = document.getElementById('paycheck1Bills');
     const paycheck2Bills = document.getElementById('paycheck2Bills');
     const paycheck1Total = document.getElementById('paycheck1Total');
-    const paycheck2Total = document.getElementById('paycheck2Total');
-    
-    // Update bill names in payment schedule
+    const paycheck2Total = document.getElementById('paycheck2Total');      // Update bill names in payment schedule (including all bills regardless of payment account)
     if (paycheck1Bills) {
+        // No filtering by payment account - include all bills
         paycheck1Bills.textContent = paycheck1.length > 0 ? 
             paycheck1.map(bill => bill.name).join(', ') : 'No bills scheduled';
     }
     
     if (paycheck2Bills) {
+        // No filtering by payment account - include all bills
         paycheck2Bills.textContent = paycheck2.length > 0 ? 
             paycheck2.map(bill => bill.name).join(', ') : 'No bills scheduled';
     }
@@ -2084,11 +2264,10 @@ function updatePaymentSchedule() {
     
     if (totalRemaining) {
         totalRemaining.innerHTML = `<span class="${totalRemainingClass}">$${totalRemainingAmount.toFixed(2)}</span>`;
-    }
-    
-    // Update total bills count
+    }      // Update total bills count (including all bills regardless of payment account)
     if (totalBills) {
-        totalBills.textContent = bills.length;
+        const totalBillsCount = bills.length;
+        totalBills.textContent = totalBillsCount;
     }
     
     // Call updateExpenseSummary with a null check
@@ -2193,7 +2372,12 @@ window.deleteExpense = function(index) {
 }
 
 function updateExpenseSummary() {
-    const totalBills = bills.reduce((sum, bill) => sum + bill.amount, 0);
+    // Only include bills that are paid from checking account, not credit card bills
+    const totalBills = bills.reduce((sum, bill) => {
+        // If bill is paid from credit card, don't include it in the total
+        if (bill.paymentAccount === 'credit') return sum;
+        return sum + bill.amount;
+    }, 0);
     const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
     const total = totalBills + totalExpenses;
     
@@ -3024,10 +3208,17 @@ function calculateGrossProfit() {
         paycheck1Bills = bills.filter(bill => bill.dueDate <= 15);
         paycheck2Bills = bills.filter(bill => bill.dueDate > 15);
     }
-    
-    // Calculate bills amounts
-    const paycheck1BillsAmount = paycheck1Bills.reduce((sum, bill) => sum + parseFloat(bill.amount || 0), 0);
-    const paycheck2BillsAmount = paycheck2Bills.reduce((sum, bill) => sum + parseFloat(bill.amount || 0), 0);
+      // Calculate bills amounts, excluding credit card bills
+    const paycheck1BillsAmount = paycheck1Bills.reduce((sum, bill) => {
+        // If bill is paid from credit card, don't include it in the total
+        if (bill.paymentAccount === 'credit') return sum;
+        return sum + parseFloat(bill.amount || 0);
+    }, 0);
+    const paycheck2BillsAmount = paycheck2Bills.reduce((sum, bill) => {
+        // If bill is paid from credit card, don't include it in the total
+        if (bill.paymentAccount === 'credit') return sum;
+        return sum + parseFloat(bill.amount || 0);
+    }, 0);
     const totalMonthlyBills = paycheck1BillsAmount + paycheck2BillsAmount;
     const annualBills = totalMonthlyBills * 12;
     
@@ -3547,13 +3738,14 @@ window.saveLoan = function() {
                 totalMonthlyPayment += loan.propertyInsurance / 12;
             }
         }
-        
-        const newBill = {
+          const newBill = {
             name: `${loan.name} Payment`,
             amount: totalMonthlyPayment,
             dueDate: loan.dueDate,
             type: 'loan',
-            priority: 'high'
+            priority: 'high',
+            paymentAccount: 'checking', // Default to checking account
+            creditCardId: null
         };
         
         // Add the new bill
