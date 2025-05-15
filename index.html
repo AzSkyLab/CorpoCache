@@ -38,9 +38,11 @@
             }
         }
     </script>
-    
     <!-- External CSS -->
-    <link rel="stylesheet" href="css/style.css">    <style>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/cyberpunk-bg.css">
+    <link rel="stylesheet" href="css/circuit-lines.css">
+    <style>
         .blinking-cursor {
             display: inline-block;
             font-weight: 100;
@@ -49,7 +51,26 @@
         }
     </style>
 </head>
-<body class="bg-cyber-black min-h-screen">
+<body class="min-h-screen">    <!-- Cyberpunk Animated Background -->
+    <div class="cyberpunk-bg">
+        <div class="grid-overlay"></div>
+        <div class="circuit-container">
+            <div class="circuit-line h-line1"></div>
+            <div class="circuit-line h-line2"></div>
+            <div class="circuit-line h-line3"></div>
+            <div class="circuit-line v-line1"></div>
+            <div class="circuit-line v-line2"></div>
+            <div class="circuit-line v-line3"></div>
+            <!-- Added more circuit lines for a richer effect -->
+            <div class="circuit-line h-line4"></div>
+            <div class="circuit-line h-line5"></div>
+            <div class="circuit-line v-line4"></div>
+            <div class="circuit-line v-line5"></div>
+        </div>
+        <div class="glow-overlay"></div>
+        <div class="scan-line"></div>
+    </div>
+    
     <!-- Cyberpunk styled header with no visible background -->
     <header class="relative">
         <div class="container mx-auto px-4 py-8 relative z-20">
@@ -1588,6 +1609,7 @@
 
 <!-- External JavaScript -->
 <script src="js/script.js?v=2.5.3"></script>
+<script src="js/cyberpunk-bg.js"></script>
 <script>
     // Back to Top button functionality
     document.getElementById('backToTop').addEventListener('click', function() {
