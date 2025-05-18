@@ -37,11 +37,11 @@
                 }
             }
         }
-    </script>
-    <!-- External CSS -->
+    </script>    <!-- External CSS -->
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/cyberpunk-bg.css">
     <link rel="stylesheet" href="css/circuit-lines.css">
+    <link rel="stylesheet" href="css/amortization-chart.css">
     <style>
         .blinking-cursor {
             display: inline-block;
@@ -315,10 +315,9 @@
                         <h3 class="text-lg font-medium text-white">Loans Summary</h3>
                         <span class="text-sm text-neon-blue"><span id="totalLoans">0</span> Active Loans</span>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        <div class="bg-glass-purple p-4 rounded-lg">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">                        <div class="bg-glass-purple p-4 rounded-lg">
                             <p class="text-sm text-gray-300">Total Original Amount</p>
-                            <p id="totalOriginalAmount" class="text-2xl font-bold text-white">$0</p>
+                            <p id="totalOriginalAmount" class="text-2xl font-bold text-neon-pink">$0</p>
                         </div>
                         <div class="bg-glass-blue p-4 rounded-lg">
                             <p class="text-sm text-gray-300">Total Current Balance</p>
@@ -1110,6 +1109,11 @@
                     <input type="number" id="loanDueDate" class="cyber-input w-full p-3 rounded-md" placeholder=" " min="1" max="31">
                     <label class="floating-label">Payment Due Date (Day of Month)</label>
                 </div>
+                
+                <div class="input-container">
+                    <input type="date" id="firstPaymentDate" class="cyber-input w-full p-3 rounded-md" placeholder=" ">
+                    <label class="floating-label">First Payment Date</label>
+                </div>
                   <!-- Additional Principal Payment field for all loan types -->
                 <div class="input-container">
                     <input type="number" id="additionalPrincipal" class="cyber-input w-full p-3 rounded-md" placeholder=" " min="0" step="any" value="0">
@@ -1703,8 +1707,8 @@
             const helpModal = document.getElementById('helpModal');
             if (!helpModal.classList.contains('hidden') && event.target === helpModal) {
                 closeHelpModal();
-            }
-        });
+            }        });
     </script>
+<script src="js/amortization.js"></script>
 </body>
 </html>

@@ -939,3 +939,59 @@ input[type="number"] {
         box-shadow: 0 0 30px var(--neon-purple);
     }
 }
+
+/* Amortization Chart Styles */
+.amortization-chart-container {
+    margin-top: 1rem;
+    border-top: 1px solid rgba(100, 100, 150, 0.3);
+    padding-top: 1rem;
+}
+
+.cyber-chart-container {
+    position: relative;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    overflow: hidden;
+}
+
+.cyber-chart-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(0deg, rgba(0, 0, 0, 0) 90%, rgba(0, 255, 255, 0.1) 100%);
+    pointer-events: none;
+}
+
+.cyber-chart-container svg polyline {
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: all 0.3s ease;
+}
+
+.cyber-chart-container svg polyline:nth-child(1) {
+    stroke: var(--neon-pink);
+    stroke-width: 2;
+    filter: drop-shadow(0 0 3px var(--neon-pink));
+}
+
+.cyber-chart-container svg polyline:nth-child(2) {
+    stroke: var(--neon-green);
+    stroke-width: 2;
+    filter: drop-shadow(0 0 3px var(--neon-green));
+}
+
+.chart-legend {
+    display: flex;
+    justify-content: center;
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+}
+
+.chart-legend .inline-block {
+    border-radius: 2px;
+    box-shadow: 0 0 3px currentColor;
+}

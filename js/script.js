@@ -1082,9 +1082,9 @@ function getUtilizationColorClass(utilization) {
     } else if (utilization >= 30) {
         return 'text-neon-yellow';  // 30% to 61%: neon yellow
     } else if (utilization >= 10) {
-        return 'text-neon-blue';    // 10% to 30%: neon blue
+        return 'text-neon-blue';    // 10% to 30%
     } else {
-        return 'text-neon-green';   // 0% to 10%: neon green
+        return 'text-neon-green';   // 0% to 10%
     }
 }
 
@@ -3511,6 +3511,12 @@ window.addLoan = function() {
     document.getElementById('loanDueDate').value = '';
     document.getElementById('loanType').value = 'personal';
     document.getElementById('loanTerm').value = '';
+    
+    // Set first payment date to current date by default (for new loans)
+    const today = new Date();
+    const defaultDate = today.toISOString().split('T')[0];
+    document.getElementById('firstPaymentDate').value = defaultDate;
+    
     document.getElementById('editLoanIndex').value = '-1';
     
     // Reset mortgage-specific fields
@@ -3541,17 +3547,17 @@ window.editLoan = function(index) {
     document.getElementById('loanType').value = loan.type || 'personal';
     document.getElementById('loanTerm').value = loan.term || '';
     
+    // Set first payment date if it exists
+    if (loan.firstPaymentDate) {
+        document.getElementById('firstPaymentDate').value = loan.firstPaymentDate;
+    } else {
+        document.getElementById('firstPaymentDate').value = '';
+    }
+    
     document.getElementById('editLoanIndex').value = index;
     
     // Set up mortgage fields event handler
     setupLoanTypeChangeHandler();
-    
-    // Set mortgage-specific fields if they exist
-    if (loan.additionalPrincipal !== undefined) {
-        document.getElementById('additionalPrincipal').value = loan.additionalPrincipal;
-    } else {
-        document.getElementById('additionalPrincipal').value = '0';
-    }
     
     if (loan.pmi !== undefined) {
         document.getElementById('pmi').value = loan.pmi;
@@ -3610,6 +3616,14 @@ function validateLoanForm() {
         errors.push('Payment Due Date must be a day between 1 and 31');
     }
     
+    // Validate first payment date if provided
+    if (document.getElementById('firstPaymentDate').value) {
+        const firstPaymentDate = new Date(document.getElementById('firstPaymentDate').value);
+        if (isNaN(firstPaymentDate.getTime())) {
+            errors.push('First Payment Date must be a valid date');
+        }
+    }
+    
     // Validate term if provided
     if (loanTerm.value) {
         const termValue = parseInt(loanTerm.value);
@@ -3652,7 +3666,8 @@ window.saveLoan = function() {
         dueDate: parseInt(loanDueDate.value),
         type: loanType.value,
         term: loanTerm.value ? parseInt(loanTerm.value) : null,
-        startDate: new Date().toISOString().split('T')[0]
+        startDate: new Date().toISOString().split('T')[0],
+        firstPaymentDate: document.getElementById('firstPaymentDate').value || new Date().toISOString().split('T')[0]
     };
       // Add additional principal payment for all loan types
     loan.additionalPrincipal = parseFloat(document.getElementById('additionalPrincipal').value) || 0;
@@ -3941,9 +3956,20 @@ function renderLoans() {
                     </div>
                     <div>
                         <p class="text-sm text-gray-400">Payments Remaining</p>
-                        <p class="font-medium text-neon-green">${loan.term ? Math.ceil(loan.term * (loan.balance / loan.originalAmount)) : 'N/A'}</p>
+                        <p class="font-medium text-neon-green">${calculateRemainingPayments(
+                            loan.balance, 
+                            loan.interestRate, 
+                            calculateLoanPayment(loan.originalAmount, loan.interestRate, loan.term),
+                            0
+                        )}</p>
                     </div>
                 </div>
+                
+                ${loan.firstPaymentDate ? `
+                <div class="mt-2">
+                    <p class="text-sm text-gray-400">First Payment Date: <span class="text-white">${new Date(loan.firstPaymentDate).toLocaleDateString()}</span></p>
+                </div>
+                ` : ''}
                 
                 ${additionalPrincipal > 0 && loan.type !== 'mortgage' ? `
                 <div class="grid grid-cols-2 gap-4 mt-4">
@@ -3966,6 +3992,134 @@ function renderLoans() {
                         <p class="text-neon-purple">$${calculateTotalInterest(loan.originalAmount, loan.interestRate, loan.term).toFixed(2)}</p>
                     </div>
                 </div>
+
+                ${additionalPrincipal > 0 ? `
+                <!-- Impact of additional principal payments -->
+                <div class="mt-4 border-t border-gray-700 pt-4">
+                    <h4 class="text-sm font-medium text-white mb-2">Additional Principal Payment Impact</h4>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-xs text-gray-400">Without Extra Principal</p>
+                            <div class="space-y-1">
+                                <p class="font-medium text-neon-blue">Months: <span class="text-white">${calculateRemainingPayments(
+                                    loan.balance, 
+                                    loan.interestRate, 
+                                    calculateLoanPayment(loan.originalAmount, loan.interestRate, loan.term),
+                                    0
+                                )}</span></p>
+                                <p class="font-medium text-neon-blue">Interest: <span class="text-white">$${calculateTotalInterestPaid(
+                                    loan.balance, 
+                                    loan.interestRate, 
+                                    calculateLoanPayment(loan.originalAmount, loan.interestRate, loan.term),
+                                    0
+                                ).toFixed(2)}</span></p>
+                                <p class="font-medium text-neon-blue">Payoff: <span class="text-white">${
+                                    formatPayoffDate(calculatePayoffDate(
+                                        loan.firstPaymentDate,
+                                        calculateRemainingPayments(
+                                            loan.balance, 
+                                            loan.interestRate, 
+                                            calculateLoanPayment(loan.originalAmount, loan.interestRate, loan.term),
+                                            0
+                                        )
+                                    ))
+                                }</span></p>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-400">With Extra Principal</p>
+                            <div class="space-y-1">
+                                <p class="font-medium text-neon-green">Months: <span class="text-white">${calculateRemainingPayments(
+                                    loan.balance, 
+                                    loan.interestRate, 
+                                    calculateLoanPayment(loan.originalAmount, loan.interestRate, loan.term),
+                                    additionalPrincipal
+                                )}</span></p>
+                                <p class="font-medium text-neon-green">Interest: <span class="text-white">$${calculateTotalInterestPaid(
+                                    loan.balance, 
+                                    loan.interestRate, 
+                                    calculateLoanPayment(loan.originalAmount, loan.interestRate, loan.term),
+                                    additionalPrincipal
+                                ).toFixed(2)}</span></p>
+                                <p class="font-medium text-neon-green">Payoff: <span class="text-white">${
+                                    formatPayoffDate(calculatePayoffDate(
+                                        loan.firstPaymentDate,
+                                        calculateRemainingPayments(
+                                            loan.balance, 
+                                            loan.interestRate, 
+                                            calculateLoanPayment(loan.originalAmount, loan.interestRate, loan.term),
+                                            additionalPrincipal
+                                        )
+                                    ))
+                                }</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 bg-glass-blue p-3 rounded-lg">
+                        <h5 class="text-sm font-medium text-white mb-2">Impact Summary:</h5>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="text-neon-yellow">
+                                <p class="text-xs">Time Saved</p>
+                                <p class="font-medium text-neon-yellow">${calculateRemainingPayments(
+                                    loan.balance, 
+                                    loan.interestRate, 
+                                    calculateLoanPayment(loan.originalAmount, loan.interestRate, loan.term),
+                                    0
+                                ) - calculateRemainingPayments(
+                                    loan.balance, 
+                                    loan.interestRate, 
+                                    calculateLoanPayment(loan.originalAmount, loan.interestRate, loan.term),
+                                    additionalPrincipal
+                                )} months</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-400">Interest Saved</p>
+                                <p class="font-medium text-neon-green">$${(
+                                    calculateTotalInterestPaid(
+                                        loan.balance, 
+                                        loan.interestRate, 
+                                        calculateLoanPayment(loan.originalAmount, loan.interestRate, loan.term),
+                                        0
+                                    ) - calculateTotalInterestPaid(
+                                        loan.balance, 
+                                        loan.interestRate, 
+                                        calculateLoanPayment(loan.originalAmount, loan.interestRate, loan.term),
+                                        additionalPrincipal
+                                    )
+                                ).toFixed(2)}</p>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-2">Monthly Cost of Extra Principal: <span class="font-medium text-neon-green">$${additionalPrincipal.toFixed(2)}</span></p>
+                        <p class="text-xs text-white mt-1">By adding <span class="text-neon-green">$${additionalPrincipal.toFixed(2)}</span> to your monthly payment, you'll save <span class="text-neon-yellow">${calculateRemainingPayments(
+                            loan.balance, 
+                            loan.interestRate, 
+                            calculateLoanPayment(loan.originalAmount, loan.interestRate, loan.term),
+                            0
+                        ) - calculateRemainingPayments(
+                            loan.balance, 
+                            loan.interestRate, 
+                            calculateLoanPayment(loan.originalAmount, loan.interestRate, loan.term),
+                            additionalPrincipal
+                        )} months</span> of payments and <span class="text-neon-green">$${(
+                            calculateTotalInterestPaid(
+                                loan.balance, 
+                                loan.interestRate, 
+                                calculateLoanPayment(loan.originalAmount, loan.interestRate, loan.term),
+                                0
+                            ) - calculateTotalInterestPaid(
+                                loan.balance, 
+                                loan.interestRate, 
+                                calculateLoanPayment(loan.originalAmount, loan.interestRate, loan.term),
+                                additionalPrincipal
+                            )
+                        ).toFixed(2)}                                </span> in interest.</p>
+                    </div>
+                </div>
+                ` : ''}
+                
+                ${loan.term && loan.term > 0 && typeof generateAmortizationChart === 'function' ? generateAmortizationChart(loan) : ''}
             </div>
         `;
     });
@@ -4011,7 +4165,7 @@ function updateLoanSummary() {
     document.getElementById('totalLoans').textContent = loans.length;
     
     // Update total original amount
-    document.getElementById('totalOriginalAmount').innerHTML = `<span class="text-white">$${totalOriginalValue.toFixed(2)}</span>`;
+    document.getElementById('totalOriginalAmount').innerHTML = `<span class="text-neon-pink">$${totalOriginalValue.toFixed(2)}</span>`;
     
     // Update total current balance with color
     let balanceColorClass = 'text-neon-pink';
@@ -4089,6 +4243,139 @@ function calculateTotalInterest(principal, interestRate, term) {
     const monthlyPayment = calculateLoanPayment(principal, interestRate, term);
     const totalPayments = monthlyPayment * term;
     return totalPayments - principal;
+}
+
+// Calculate remaining payments based on current balance and payment amount
+function calculateRemainingPayments(balance, interestRate, regularPayment, additionalPrincipal = 0) {
+    // If no regular payment, return 0
+    if (!regularPayment || regularPayment <= 0) {
+        return 0;
+    }
+    
+    // Convert annual interest rate to monthly
+    const monthlyRate = interestRate / 100 / 12;
+    const totalPayment = regularPayment + additionalPrincipal;
+    
+    // If interest rate is zero, simple division
+    if (monthlyRate === 0) {
+        return Math.ceil(balance / totalPayment);
+    }
+    
+    // Simulate remaining payments
+    let remainingBalance = balance;
+    let paymentCount = 0;
+    
+    while (remainingBalance > 0 && paymentCount < 1200) { // Limit to 100 years (1200 months)
+        // Calculate interest for this period
+        const interestAmount = remainingBalance * monthlyRate;
+        
+        // Calculate principal portion of regular payment
+        let principalPaid = regularPayment - interestAmount;
+        if (principalPaid > remainingBalance) {
+            principalPaid = remainingBalance;
+        }
+        
+        // Add additional principal payment (up to the remaining balance)
+        const additionalPrincipalPaid = Math.min(additionalPrincipal, remainingBalance - principalPaid);
+        
+        // Reduce balance by principal paid and additional principal
+        remainingBalance -= (principalPaid + additionalPrincipalPaid);
+        
+        paymentCount++;
+    }
+    
+    return paymentCount;
+}
+
+// Calculate total interest paid with a given payment schedule
+function calculateTotalInterestPaid(balance, interestRate, regularPayment, additionalPrincipal = 0) {
+    // Convert annual interest rate to monthly
+    const monthlyRate = interestRate / 100 / 12;
+    const totalPayment = regularPayment + additionalPrincipal;
+    
+    // If interest rate is zero or payments are zero, return 0
+    if (monthlyRate === 0 || totalPayment <= 0) {
+        return 0;
+    }
+    
+    // Simulate payments and track total interest
+    let remainingBalance = balance;
+    let totalInterest = 0;
+    let paymentCount = 0;
+    
+    while (remainingBalance > 0 && paymentCount < 1200) { // Limit to 100 years (1200 months)
+        // Calculate interest for this period
+        const interestAmount = remainingBalance * monthlyRate;
+        totalInterest += interestAmount;
+        
+        // Calculate principal portion of regular payment
+        let principalPaid = regularPayment - interestAmount;
+        if (principalPaid > remainingBalance) {
+            principalPaid = remainingBalance;
+        }
+        
+        // Add additional principal payment (up to the remaining balance)
+        const additionalPrincipalPaid = Math.min(additionalPrincipal, remainingBalance - principalPaid);
+        
+        // Reduce balance by principal paid and additional principal
+        remainingBalance -= (principalPaid + additionalPrincipalPaid);
+        
+        paymentCount++;
+    }
+    
+    return totalInterest;
+}
+
+// Calculate expected payoff date based on first payment date and remaining payments
+function calculatePayoffDate(firstPaymentDate, remainingPayments) {
+    // If no first payment date or no remaining payments, return null
+    if (!firstPaymentDate || !remainingPayments) {
+        return null;
+    }
+    
+    try {
+        // Create a new date object from the first payment date - only used for validation
+        const firstPaymentDateObj = new Date(firstPaymentDate);
+        
+        // Check if the date is valid
+        if (isNaN(firstPaymentDateObj.getTime())) {
+            return null;
+        }
+        
+        // Calculate payoff date by starting from current date and adding remaining payments
+        // This is the key change - we always calculate from current date, not first payment date
+        const payoffDate = new Date();
+        payoffDate.setMonth(payoffDate.getMonth() + remainingPayments);
+        
+        // Set the day to match the original payment's day (to maintain same day of month for payments)
+        const paymentDay = firstPaymentDateObj.getDate();
+        
+        // Only set the day if it's a valid day for the target month
+        const lastDayOfTargetMonth = new Date(payoffDate.getFullYear(), payoffDate.getMonth() + 1, 0).getDate();
+        payoffDate.setDate(Math.min(paymentDay, lastDayOfTargetMonth));
+        
+        return payoffDate;
+    } catch (error) {
+        console.error("Error calculating payoff date:", error);
+        return null;
+    }
+}
+
+// Format a date for display
+function formatPayoffDate(date) {
+    if (!date) return 'N/A';
+    
+    try {
+        // Format date as MMM DD, YYYY (e.g., May 15, 2025) to provide better clarity
+        return date.toLocaleDateString(undefined, { 
+            month: 'short', 
+            day: 'numeric', 
+            year: 'numeric' 
+        });
+    } catch (error) {
+        console.error("Error formatting date:", error);
+        return 'N/A';
+    }
 }
 
 // Functions to handle mortgage-specific fields
