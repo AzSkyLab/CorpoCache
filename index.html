@@ -1651,52 +1651,7 @@
     // Initially hide the back to top button
     document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('backToTop').style.display = 'none';
-    });
-
-    // Direct initialization for collapsible sections
-    document.addEventListener('DOMContentLoaded', function() {
-        // Credit Rating Legend section
-        const creditRatingLegendHeader = document.getElementById('creditRatingLegendHeader');
-        const creditRatingLegendContent = document.getElementById('creditRatingLegendContent');
-        
-        if (creditRatingLegendHeader && creditRatingLegendContent) {
-            // Make sure the content is initially hidden
-            creditRatingLegendContent.classList.add('hidden');
-            
-            creditRatingLegendHeader.addEventListener('click', function() {
-                creditRatingLegendContent.classList.toggle('hidden');
-                creditRatingLegendHeader.classList.toggle('active');
-                
-                const creditRatingChevron = creditRatingLegendHeader.querySelector('i.fa-chevron-down');
-                if (creditRatingChevron) {
-                    creditRatingChevron.style.transform = creditRatingLegendContent.classList.contains('hidden') 
-                        ? 'rotate(0deg)' 
-                        : 'rotate(180deg)';
-                }
-            });
-        }
-        
-        // Tax Bracket section
-        const taxBracketHeader = document.getElementById('taxBracketHeader');
-        const taxBracketContent = document.getElementById('taxBracketContent');
-        
-        if (taxBracketHeader && taxBracketContent) {
-            // Make sure the content is initially hidden
-            taxBracketContent.classList.add('hidden');
-            
-            taxBracketHeader.addEventListener('click', function() {
-                taxBracketContent.classList.toggle('hidden');
-                taxBracketHeader.classList.toggle('active');
-                
-                const taxBracketChevron = taxBracketHeader.querySelector('i.fa-chevron-down');
-                if (taxBracketChevron) {
-                    taxBracketChevron.style.transform = taxBracketContent.classList.contains('hidden') 
-                        ? 'rotate(0deg)' 
-                        : 'rotate(180deg)';
-                }
-            });
-        }
-    });
+    });    // Collapsible sections are now handled by initCollapsibleSections() in script.js
 </script>
 <script>
         // Help Modal Functions

@@ -3540,6 +3540,11 @@ function initCollapsibleSections() {
     if (creditRatingLegendHeader && creditRatingLegendContent) {
         const creditRatingChevron = creditRatingLegendHeader.querySelector('i.fa-chevron-down');
         
+        // Ensure initial state is properly set
+        if (creditRatingChevron) {
+            creditRatingChevron.style.transform = creditRatingLegendContent.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
+        
         creditRatingLegendHeader.addEventListener('click', function() {
             creditRatingLegendContent.classList.toggle('hidden');
             creditRatingLegendHeader.classList.toggle('active');
@@ -3555,6 +3560,11 @@ function initCollapsibleSections() {
     
     if (taxBracketHeader && taxBracketContent) {
         const taxBracketChevron = taxBracketHeader.querySelector('i.fa-chevron-down');
+        
+        // Ensure initial state is properly set
+        if (taxBracketChevron) {
+            taxBracketChevron.style.transform = taxBracketContent.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
         
         taxBracketHeader.addEventListener('click', function() {
             taxBracketContent.classList.toggle('hidden');
@@ -3572,6 +3582,11 @@ function initCollapsibleSections() {
     if (billTrendsHeader && billTrendsContent) {
         const billTrendsChevron = billTrendsHeader.querySelector('i.fa-chevron-down');
         
+        // Ensure initial state is properly set
+        if (billTrendsChevron) {
+            billTrendsChevron.style.transform = billTrendsContent.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
+        
         billTrendsHeader.addEventListener('click', function() {
             billTrendsContent.classList.toggle('hidden');
             billTrendsHeader.classList.toggle('active');
@@ -3587,13 +3602,6 @@ function initCollapsibleSections() {
     }
 }
 
-// Initialize collapsible sections directly
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize collapsible sections immediately rather than waiting for initElements
-    setTimeout(function() {
-        initCollapsibleSections();
-    }, 500);
-});
 
 // Loan Functions
 window.addLoan = function() {
@@ -4250,61 +4258,183 @@ window.renderBillTrendsCharts = function() {
         return;
     }
 
-    // Create chart HTML
-    let chartsHTML = `
-        <div class="space-y-6">
-            <div class="text-center mb-6">
+    // Get month labels for table headers
+    const monthLabels = historicalBillData.map(monthData => 
+        `${getMonthName(monthData.month)} ${monthData.year}`
+    ).slice(-6); // Show only last 6 months
+
+    // Create compact table view
+    let tableHTML = `
+        <div class="space-y-4">
+            <div class="text-center mb-4">
                 <h3 class="text-lg font-medium text-white mb-2">Bill Amount Trends</h3>
-                <p class="text-sm text-gray-400">Track how your bill amounts change over time</p>
+                <p class="text-sm text-gray-400">Recent bill amounts and trends</p>
             </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-gray-700">
+                            <th class="text-left text-white font-medium p-3">Bill</th>
+                            <th class="text-center text-white font-medium p-2">Latest</th>
+                            <th class="text-center text-white font-medium p-2">Trend</th>
+                            <th class="text-center text-white font-medium p-2">Avg</th>
+                            <th class="text-center text-white font-medium p-2">Change</th>
+                        </tr>
+                    </thead>
+                    <tbody>
     `;
 
-    // Create a chart for each bill
+    // Process each bill
     billNames.forEach(billName => {
         const billData = historicalBillData.map(monthData => {
             const bill = monthData.bills.find(b => b.name === billName);
-            return {
-                month: `${getMonthName(monthData.month)} ${monthData.year}`,
-                amount: bill ? bill.amount : 0
-            };
-        }).filter(data => data.amount > 0); // Only show months where the bill existed
+            return bill ? bill.amount : 0;
+        }).filter(amount => amount > 0);
 
-        if (billData.length > 1) { // Only show chart if there's more than one data point
-            chartsHTML += `
-                <div class="bg-gray-800 border border-gray-700 rounded-lg p-4">
-                    <h4 class="text-md font-medium text-white mb-4">${billName}</h4>
-                    <div class="relative">
-                        <canvas id="chart-${billName.replace(/[^a-zA-Z0-9]/g, '')}" width="400" height="200" class="w-full"></canvas>
-                    </div>
-                    <div class="mt-2 text-xs text-gray-400 text-center">
-                        ${billData.length} months of data
-                    </div>
-                </div>
+        if (billData.length > 0) {
+            const latestAmount = billData[billData.length - 1];
+            const avgAmount = billData.reduce((sum, amount) => sum + amount, 0) / billData.length;
+            const changePercent = billData.length > 1 ? 
+                ((latestAmount - billData[billData.length - 2]) / billData[billData.length - 2] * 100) : 0;
+            
+            // Create mini sparkline data
+            const sparklineData = billData.slice(-6); // Last 6 months
+            const minAmount = Math.min(...sparklineData);
+            const maxAmount = Math.max(...sparklineData);
+            
+            // Generate SVG sparkline
+            const sparklineSVG = generateSparkline(sparklineData, minAmount, maxAmount);
+            
+            // Determine trend direction
+            let trendIcon = '→';
+            let trendColor = 'text-gray-400';
+            if (changePercent > 5) {
+                trendIcon = '↗';
+                trendColor = 'text-red-400';
+            } else if (changePercent < -5) {
+                trendIcon = '↘';
+                trendColor = 'text-green-400';
+            }
+
+            tableHTML += `
+                <tr class="border-b border-gray-800 hover:bg-gray-800/50">
+                    <td class="p-3">
+                        <div class="text-white font-medium">${billName}</div>
+                        <div class="text-xs text-gray-400">${billData.length} months</div>
+                    </td>
+                    <td class="text-center p-2">
+                        <span class="text-white font-medium">$${latestAmount.toFixed(0)}</span>
+                    </td>
+                    <td class="text-center p-2">
+                        <div class="flex justify-center items-center">
+                            ${sparklineSVG}
+                        </div>
+                    </td>
+                    <td class="text-center p-2">
+                        <span class="text-gray-300">$${avgAmount.toFixed(0)}</span>
+                    </td>
+                    <td class="text-center p-2">
+                        <div class="flex items-center justify-center">
+                            <span class="${trendColor} text-lg mr-1">${trendIcon}</span>
+                            <span class="${Math.abs(changePercent) > 5 ? trendColor : 'text-gray-400'} text-xs">
+                                ${changePercent > 0 ? '+' : ''}${changePercent.toFixed(1)}%
+                            </span>
+                        </div>
+                    </td>
+                </tr>
             `;
         }
     });
 
-    chartsHTML += '</div>';
-    chartContainer.innerHTML = chartsHTML;
+    tableHTML += `
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Summary section -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-700">
+                <div class="text-center">
+                    <div class="text-lg font-medium text-neon-blue">$${calculateTotalLatest()}</div>
+                    <div class="text-xs text-gray-400">Current Total</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-lg font-medium text-neon-green">$${calculateTotalAverage()}</div>
+                    <div class="text-xs text-gray-400">Average Total</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-lg font-medium ${getTotalChangeColor()}">${getTotalChangeText()}</div>
+                    <div class="text-xs text-gray-400">Monthly Change</div>
+                </div>
+            </div>
+        </div>
+    `;
 
-    // Render individual charts
-    billNames.forEach(billName => {
-        const billData = historicalBillData.map(monthData => {
-            const bill = monthData.bills.find(b => b.name === billName);
-            return {
-                month: `${getMonthName(monthData.month)} ${monthData.year}`,
-                amount: bill ? bill.amount : 0
-            };
-        }).filter(data => data.amount > 0);
+    chartContainer.innerHTML = tableHTML;
 
-        if (billData.length > 1) {
-            const canvasId = `chart-${billName.replace(/[^a-zA-Z0-9]/g, '')}`;
-            const canvas = document.getElementById(canvasId);
-            if (canvas) {
-                renderLineChart(canvas, billData, billName);
-            }
-        }
+    // Helper functions
+    function calculateTotalLatest() {
+        return billNames.reduce((total, billName) => {
+            const billData = historicalBillData[historicalBillData.length - 1].bills.find(b => b.name === billName);
+            return total + (billData ? billData.amount : 0);
+        }, 0).toFixed(0);
+    }
+
+    function calculateTotalAverage() {
+        const totals = historicalBillData.map(monthData => 
+            monthData.bills.reduce((sum, bill) => sum + bill.amount, 0)
+        );
+        return (totals.reduce((sum, total) => sum + total, 0) / totals.length).toFixed(0);
+    }
+
+    function getTotalChangeColor() {
+        const change = getTotalChange();
+        if (change > 50) return 'text-red-400';
+        if (change < -50) return 'text-green-400';
+        return 'text-gray-400';
+    }
+
+    function getTotalChangeText() {
+        const change = getTotalChange();
+        return `${change > 0 ? '+' : ''}$${change.toFixed(0)}`;
+    }
+
+    function getTotalChange() {
+        if (historicalBillData.length < 2) return 0;
+        const current = historicalBillData[historicalBillData.length - 1].bills.reduce((sum, bill) => sum + bill.amount, 0);
+        const previous = historicalBillData[historicalBillData.length - 2].bills.reduce((sum, bill) => sum + bill.amount, 0);
+        return current - previous;
+    }
+}
+
+// Generate mini sparkline SVG
+function generateSparkline(data, min, max) {
+    if (data.length < 2) return '<span class="text-gray-500 text-xs">—</span>';
+    
+    const width = 60;
+    const height = 20;
+    const padding = 2;
+    const range = max - min || 1;
+    
+    let pathData = '';
+    data.forEach((value, index) => {
+        const x = padding + (index * (width - 2 * padding)) / (data.length - 1);
+        const y = height - padding - ((value - min) / range) * (height - 2 * padding);
+        pathData += index === 0 ? `M${x},${y}` : ` L${x},${y}`;
     });
+    
+    // Determine line color based on trend
+    const trend = data[data.length - 1] - data[0];
+    const strokeColor = trend > 0 ? '#ef4444' : trend < 0 ? '#10b981' : '#6b7280';
+    
+    return `
+        <svg width="${width}" height="${height}" class="inline-block">
+            <path d="${pathData}" stroke="${strokeColor}" stroke-width="1.5" fill="none" opacity="0.8"/>
+            <circle cx="${padding + ((data.length - 1) * (width - 2 * padding)) / (data.length - 1)}" 
+                    cy="${height - padding - ((data[data.length - 1] - min) / range) * (height - 2 * padding)}" 
+                    r="1.5" fill="${strokeColor}"/>
+        </svg>
+    `;
 }
 
 window.renderLineChart = function(canvas, data, title) {
@@ -7769,104 +7899,6 @@ window.updateGrossProfit = function() {
     
     // Call the gross profit calculation function
     calculateGrossProfit();
-}
-
-// Initialize collapsible sections
-function initCollapsibleSections() {
-    // Credit Rating Legend section
-    const creditRatingLegendHeader = document.getElementById('creditRatingLegendHeader');
-    const creditRatingLegendContent = document.getElementById('creditRatingLegendContent');
-    
-    if (creditRatingLegendHeader && creditRatingLegendContent) {
-        const creditRatingChevron = creditRatingLegendHeader.querySelector('i.fa-chevron-down');
-        
-        creditRatingLegendHeader.addEventListener('click', function() {
-            creditRatingLegendContent.classList.toggle('hidden');
-            creditRatingLegendHeader.classList.toggle('active');
-            if (creditRatingChevron) {
-                creditRatingChevron.style.transform = creditRatingLegendContent.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
-            }
-        });
-    }
-    
-    // Tax Bracket section
-    const taxBracketHeader = document.getElementById('taxBracketHeader');
-    const taxBracketContent = document.getElementById('taxBracketContent');
-    
-    if (taxBracketHeader && taxBracketContent) {
-        const taxBracketChevron = taxBracketHeader.querySelector('i.fa-chevron-down');
-        
-        taxBracketHeader.addEventListener('click', function() {
-            taxBracketContent.classList.toggle('hidden');
-            taxBracketHeader.classList.toggle('active');
-            if (taxBracketChevron) {
-                taxBracketChevron.style.transform = taxBracketContent.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
-            }
-        });
-    }
-    
-    // Bill Trends section
-    const billTrendsHeader = document.getElementById('billTrendsHeader');
-    const billTrendsContent = document.getElementById('billTrendsContent');
-    
-    if (billTrendsHeader && billTrendsContent) {
-        const billTrendsChevron = billTrendsHeader.querySelector('i.fa-chevron-down');
-        
-        billTrendsHeader.addEventListener('click', function() {
-            billTrendsContent.classList.toggle('hidden');
-            billTrendsHeader.classList.toggle('active');
-            if (billTrendsChevron) {
-                billTrendsChevron.style.transform = billTrendsContent.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
-            }
-            
-            // If expanding and we have historical data, render the charts
-            if (!billTrendsContent.classList.contains('hidden') && historicalBillData.length > 0) {
-                window.renderBillTrendsCharts();
-            }
-        });
-    }
-}
-
-// Initialize collapsible sections directly
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize collapsible sections immediately rather than waiting for initElements
-    setTimeout(function() {
-        initCollapsibleSections();
-    }, 500);
-});
-
-// Loan Functions
-window.addLoan = function() {
-    document.getElementById('loanModalTitle').textContent = 'Add Loan';
-    document.getElementById('loanName').value = '';
-    document.getElementById('loanAmount').value = '';
-    document.getElementById('loanBalance').value = '';
-    document.getElementById('interestRate').value = '';
-    document.getElementById('loanDueDate').value = '';
-    document.getElementById('loanType').value = 'personal';
-    document.getElementById('loanTerm').value = '';
-    
-    // Set first payment date to current date by default (for new loans)
-    const today = new Date();
-    const defaultDate = today.toISOString().split('T')[0];
-    document.getElementById('firstPaymentDate').value = defaultDate;
-    
-    document.getElementById('editLoanIndex').value = '-1';
-    
-    // Reset mortgage-specific fields
-    resetMortgageFields();
-    
-    // Hide mortgage fields initially
-    document.getElementById('mortgageFields').classList.add('hidden');
-    
-    // Set up the loan type change event handler
-    setupLoanTypeChangeHandler();
-    
-    // Hide any previous validation errors
-    document.getElementById('loanValidationErrors').classList.add('hidden');
-    document.getElementById('loanErrorList').innerHTML = '';
-    
-    document.getElementById('loanModal').classList.remove('hidden');
 }
 
 window.editLoan = function(index) {
