@@ -172,11 +172,26 @@
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="bg-glass-blue p-4 rounded-lg mt-4">
+                      <div class="bg-glass-blue p-4 rounded-lg mt-4">
                         <div class="flex justify-between items-center">
                             <span class="text-white font-semibold">Total Remaining Bills:</span>
                             <span id="totalRemaining" class="text-xl font-bold text-neon-green">$0</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Bill Trends Chart Section -->
+                    <div class="mt-6">
+                        <div class="flex justify-between items-center mb-3 cursor-pointer" id="billTrendsHeader">
+                            <h3 class="text-lg font-medium text-white">
+                                <i class="fas fa-chart-line mr-2 text-neon-blue"></i> Bill Amount Trends
+                            </h3>
+                            <i class="fas fa-chevron-down text-neon-blue transition-transform duration-200"></i>
+                        </div>                        <div id="billTrendsContent" class="hidden">
+                            <div id="billTrendsContainer" class="bg-glass-purple p-4 rounded-lg">
+                                <div id="bill-trends-charts">
+                                    <p class="text-center text-gray-400 py-4">Complete at least one month to see bill trends</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1612,7 +1627,7 @@
 </div>
 
 <!-- External JavaScript -->
-<script src="js/script.js?v=2.5.3"></script>
+<script src="js/script.js?v=2.5.5"></script>
 <script src="js/cyberpunk-bg.js"></script>
 <script>
     // Back to Top button functionality
@@ -1636,52 +1651,7 @@
     // Initially hide the back to top button
     document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('backToTop').style.display = 'none';
-    });
-
-    // Direct initialization for collapsible sections
-    document.addEventListener('DOMContentLoaded', function() {
-        // Credit Rating Legend section
-        const creditRatingLegendHeader = document.getElementById('creditRatingLegendHeader');
-        const creditRatingLegendContent = document.getElementById('creditRatingLegendContent');
-        
-        if (creditRatingLegendHeader && creditRatingLegendContent) {
-            // Make sure the content is initially hidden
-            creditRatingLegendContent.classList.add('hidden');
-            
-            creditRatingLegendHeader.addEventListener('click', function() {
-                creditRatingLegendContent.classList.toggle('hidden');
-                creditRatingLegendHeader.classList.toggle('active');
-                
-                const creditRatingChevron = creditRatingLegendHeader.querySelector('i.fa-chevron-down');
-                if (creditRatingChevron) {
-                    creditRatingChevron.style.transform = creditRatingLegendContent.classList.contains('hidden') 
-                        ? 'rotate(0deg)' 
-                        : 'rotate(180deg)';
-                }
-            });
-        }
-        
-        // Tax Bracket section
-        const taxBracketHeader = document.getElementById('taxBracketHeader');
-        const taxBracketContent = document.getElementById('taxBracketContent');
-        
-        if (taxBracketHeader && taxBracketContent) {
-            // Make sure the content is initially hidden
-            taxBracketContent.classList.add('hidden');
-            
-            taxBracketHeader.addEventListener('click', function() {
-                taxBracketContent.classList.toggle('hidden');
-                taxBracketHeader.classList.toggle('active');
-                
-                const taxBracketChevron = taxBracketHeader.querySelector('i.fa-chevron-down');
-                if (taxBracketChevron) {
-                    taxBracketChevron.style.transform = taxBracketContent.classList.contains('hidden') 
-                        ? 'rotate(0deg)' 
-                        : 'rotate(180deg)';
-                }
-            });
-        }
-    });
+    });    // Collapsible sections are now handled by initCollapsibleSections() in script.js
 </script>
 <script>
         // Help Modal Functions
