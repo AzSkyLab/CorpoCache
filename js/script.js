@@ -70,18 +70,19 @@ function calculateEffectiveTaxRate(annualIncome, filingStatus) {
     return (tax / annualIncome) * 100;
 }
 
-// Data storage
-let creditCards = [];
-let bills = [];
-let expenses = [];
-let loans = []; // Add loans array for loan tracking
-let salaryData = {}; // Object to store salary calculation data
-let profitData = {}; // Object to store profit calculation data
+// Data storage - using var so they become window properties
+// This allows DataService to sync data from the API
+var creditCards = [];
+var bills = [];
+var expenses = [];
+var loans = []; // Add loans array for loan tracking
+var salaryData = {}; // Object to store salary calculation data
+var profitData = {}; // Object to store profit calculation data
 
 // Historical data storage
-let historicalBillData = []; // Array to store bill amounts by month
-let currentAppMonth = new Date().getMonth(); // Track the app's current month (0-11)
-let currentAppYear = new Date().getFullYear(); // Track the app's current year
+var historicalBillData = []; // Array to store bill amounts by month
+var currentAppMonth = new Date().getMonth(); // Track the app's current month (0-11)
+var currentAppYear = new Date().getFullYear(); // Track the app's current year
 
 // Persistence functions for localStorage
 function saveToLocalStorage() {

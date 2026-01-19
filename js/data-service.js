@@ -170,35 +170,21 @@ const DataService = (function () {
 
   /**
    * Sync cache/data to global variables for backward compatibility
+   * Note: We directly assign to window properties because script.js uses 'let'
+   * declarations which don't create window properties automatically
    */
   function syncToGlobals(data) {
-    if (typeof window.creditCards !== 'undefined') {
-      window.creditCards = data.creditCards || [];
-    }
-    if (typeof window.bills !== 'undefined') {
-      window.bills = data.bills || [];
-    }
-    if (typeof window.loans !== 'undefined') {
-      window.loans = data.loans || [];
-    }
-    if (typeof window.expenses !== 'undefined') {
-      window.expenses = data.expenses || [];
-    }
-    if (typeof window.salaryData !== 'undefined') {
-      window.salaryData = data.salaryData || {};
-    }
-    if (typeof window.profitData !== 'undefined') {
-      window.profitData = data.profitData || {};
-    }
-    if (typeof window.historicalBillData !== 'undefined') {
-      window.historicalBillData = data.historicalBillData || [];
-    }
-    if (typeof window.currentAppMonth !== 'undefined') {
-      window.currentAppMonth = data.currentAppMonth;
-    }
-    if (typeof window.currentAppYear !== 'undefined') {
-      window.currentAppYear = data.currentAppYear;
-    }
+    // Always assign to window - this makes the data available to script.js
+    // which references these as local variables that share the same names
+    window.creditCards = data.creditCards || [];
+    window.bills = data.bills || [];
+    window.loans = data.loans || [];
+    window.expenses = data.expenses || [];
+    window.salaryData = data.salaryData || {};
+    window.profitData = data.profitData || {};
+    window.historicalBillData = data.historicalBillData || [];
+    window.currentAppMonth = data.currentAppMonth;
+    window.currentAppYear = data.currentAppYear;
 
     // Update cache
     Object.assign(cache, data);
