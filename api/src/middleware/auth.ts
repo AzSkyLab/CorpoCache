@@ -2,6 +2,25 @@ import { HttpRequest, HttpResponseInit } from '@azure/functions';
 import { ensureUser } from '../services/database';
 
 /**
+ * Check if running in local development mode
+ * Set LOCAL_DEV_MODE=true in local.settings.json to enable
+ */
+function isLocalDevMode(): boolean {
+  return process.env.LOCAL_DEV_MODE === 'true';
+}
+
+/**
+ * Mock user for local development
+ */
+const LOCAL_DEV_USER: AuthenticatedUser = {
+  id: 'local-dev-user',
+  provider: 'local',
+  email: 'dev@localhost',
+  displayName: 'Local Dev User',
+  roles: ['authenticated', 'anonymous'],
+};
+
+/**
  * Client principal structure from Azure Static Web Apps
  */
 interface ClientPrincipal {
@@ -45,11 +64,16 @@ export function parseClientPrincipal(
 
 /**
  * Get authenticated user from request
- * Returns null if not authenticated
+ * Returns null if not authenticated (unless in local dev mode)
  */
 export function getAuthenticatedUser(
   request: HttpRequest
 ): AuthenticatedUser | null {
+  // In local dev mode, return mock user
+  if (isLocalDevMode()) {
+    return LOCAL_DEV_USER;
+  }
+
   const principal = parseClientPrincipal(request);
   if (!principal) {
     return null;

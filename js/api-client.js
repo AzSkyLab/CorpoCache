@@ -4,9 +4,16 @@
  */
 
 const ApiClient = (function () {
-  const API_BASE = '/api';
+  // Detect local development mode
+  const isLocalDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+  // Use local Azure Functions URL in dev mode, otherwise use relative path
+  const API_BASE = isLocalDev ? 'http://localhost:7071/api' : '/api';
   const MAX_RETRIES = 3;
   const RETRY_DELAY = 1000;
+
+  // Track if we're in local dev mode (set after first API call)
+  let localDevMode = false;
 
   /**
    * Make an HTTP request with retry logic
@@ -26,8 +33,8 @@ const ApiClient = (function () {
       try {
         const response = await fetch(url, config);
 
-        // Handle 401 - redirect to login
-        if (response.status === 401) {
+        // Handle 401 - redirect to login (skip in local dev mode)
+        if (response.status === 401 && !isLocalDev) {
           window.location.href = '/.auth/login/github?post_login_redirect_uri=' + encodeURIComponent(window.location.pathname);
           throw new Error('Authentication required');
         }
@@ -69,6 +76,32 @@ const ApiClient = (function () {
   // ============ Authentication ============
 
   async function getAuthStatus() {
+    // In local dev mode, check if API is running and return mock auth
+    if (isLocalDev) {
+      try {
+        const response = await fetch(`${API_BASE}/me`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.id) {
+            localDevMode = true;
+            return {
+              authenticated: true,
+              user: {
+                id: data.id,
+                provider: data.provider || 'local',
+                email: data.email || 'dev@localhost',
+                roles: data.roles || ['authenticated'],
+              },
+            };
+          }
+        }
+      } catch (e) {
+        console.log('Local API not available, using localStorage mode');
+      }
+      return { authenticated: false };
+    }
+
+    // Production mode - use Azure Static Web Apps auth
     try {
       const response = await fetch('/.auth/me');
       const data = await response.json();
