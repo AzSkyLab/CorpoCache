@@ -5553,51 +5553,9 @@ function initPreventDefaultOnAnchors() {
     });
 }
 
-// Add to document ready function
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize elements
-    initElements();
-    
-    // Set current month and year
-    updateCurrentMonthAndYear();
-    
-    // Try to load data from localStorage
-    const dataLoaded = loadFromLocalStorage();
-    
-    // If no data was loaded, use sample data
-    if (!dataLoaded) {
-        loadSampleData();
-    }
-    
-    // Initial renders
-    renderCreditCards();
-    updateCreditSummary();
-    renderBills();
-    updatePaymentSchedule();
-    renderExpenses();
-    updateExpenseSummary();
-    renderLoans(); 
-    updateLoanSummary(); 
-    
-    // Add cyber effects
-    initCyberEffects();
-    
-    // Setup scroll detection for containers
-    setupScrollDetection();
-    
-    // Setup auto-save (save every minute)
-    setupAutoSave();
-    
-    // Any additional initialization that was in other DOMContentLoaded event listeners
-    // Initialize gross profit calculator
-    initGrossProfitCalculator();
-    
-    // Initialize collapsible sections
-    initCollapsibleSections();
-    
-    // Initialize preventDefault on anchors to prevent page refresh
-    initPreventDefaultOnAnchors();
-});
+// NOTE: DOMContentLoaded handler is defined earlier in the file (around line 1062)
+// It uses DataService.init() to load data from API or localStorage
+// DO NOT add duplicate DOMContentLoaded handlers here
 
 // Function to update the month and year display in the Monthly Bills section
 function updateCurrentMonthAndYear() {
