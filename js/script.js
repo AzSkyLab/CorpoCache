@@ -1055,25 +1055,20 @@ function setupAutoSave(interval = 60000) { // Default: save every minute
     }, interval);
 }
 
-// Immediately check for stored data when the script loads (outside any event listener)
-(function() {
-    console.log("Script initialized - checking for stored data...");
-    const dataLoaded = loadFromLocalStorage();
-    if (dataLoaded) {
-        console.log("Data loaded from localStorage successfully");
-    } else {
-        console.log("No saved data found in localStorage");
-    }
-})();
+// NOTE: Data loading is handled by DataService.init() in DOMContentLoaded
+// Do NOT load from localStorage here - it causes race conditions with API mode
 
 // DOM Elements
 document.addEventListener('DOMContentLoaded', async () => {
-    // Initialize elements
+    // Initialize elements first
     initElements();
 
     // Initialize DataService (handles auth check and data loading)
+    // This is the ONLY place data should be loaded from
     try {
+        console.log('Initializing DataService...');
         const initResult = await DataService.init();
+        console.log('DataService initialized:', initResult.mode, 'mode');
 
         // Update auth panel UI
         updateAuthPanel(initResult);
@@ -1084,7 +1079,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     } catch (error) {
         console.error('DataService init failed, using localStorage:', error);
-        // Fallback to localStorage
+        // Fallback to localStorage only if DataService fails
         loadFromLocalStorage();
     }
 

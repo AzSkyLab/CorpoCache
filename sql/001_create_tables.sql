@@ -45,7 +45,7 @@ CREATE TABLE Bills (
     created_at DATETIME2 DEFAULT GETUTCDATE(),
     updated_at DATETIME2 DEFAULT GETUTCDATE(),
     CONSTRAINT FK_Bills_Users FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE,
-    CONSTRAINT FK_Bills_CreditCards FOREIGN KEY (credit_card_id) REFERENCES CreditCards(id) ON DELETE SET NULL,
+    CONSTRAINT FK_Bills_CreditCards FOREIGN KEY (credit_card_id) REFERENCES CreditCards(id) ON DELETE NO ACTION,
     CONSTRAINT CHK_Bills_DueDate CHECK (due_date >= 1 AND due_date <= 31),
     CONSTRAINT CHK_Bills_Type CHECK (type IN ('normal', 'credit', 'loan')),
     CONSTRAINT CHK_Bills_Priority CHECK (priority IN ('low', 'normal', 'high')),
