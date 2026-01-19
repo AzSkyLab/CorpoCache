@@ -86,21 +86,29 @@ let currentAppYear = new Date().getFullYear(); // Track the app's current year
 // Persistence functions for localStorage
 function saveToLocalStorage() {
     try {
+        // Always save to localStorage as backup
         localStorage.setItem('creditCards', JSON.stringify(creditCards));
         localStorage.setItem('bills', JSON.stringify(bills));
         localStorage.setItem('expenses', JSON.stringify(expenses));
         localStorage.setItem('loans', JSON.stringify(loans));
         localStorage.setItem('salaryData', JSON.stringify(salaryData));
         localStorage.setItem('profitData', JSON.stringify(profitData));
-        
+
         // Save historical data
         localStorage.setItem('historicalBillData', JSON.stringify(historicalBillData));
         localStorage.setItem('currentAppMonth', currentAppMonth.toString());
         localStorage.setItem('currentAppYear', currentAppYear.toString());
-        
+
         // Save the last save timestamp
         localStorage.setItem('lastSaved', new Date().toISOString());
-        
+
+        // Also call DataService.save() if available (handles API mode internally)
+        if (typeof DataService !== 'undefined' && DataService.save) {
+            DataService.save().catch(err => {
+                console.warn('DataService save failed:', err);
+            });
+        }
+
         // Show a brief save confirmation
         showSaveConfirmation();
     } catch (error) {
@@ -1059,21 +1067,30 @@ function setupAutoSave(interval = 60000) { // Default: save every minute
 })();
 
 // DOM Elements
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     // Initialize elements
     initElements();
-    
+
+    // Initialize DataService (handles auth check and data loading)
+    try {
+        const initResult = await DataService.init();
+
+        // Update auth panel UI
+        updateAuthPanel(initResult);
+
+        // Check if migration is needed
+        if (DataService.needsMigration()) {
+            showMigrationModal();
+        }
+    } catch (error) {
+        console.error('DataService init failed, using localStorage:', error);
+        // Fallback to localStorage
+        loadFromLocalStorage();
+    }
+
     // Set current month and year
     updateCurrentMonthAndYear();
-    
-    // Try to load data from localStorage
-    const dataLoaded = loadFromLocalStorage();
-    
-    // If no data was loaded, use sample data
-    if (!dataLoaded) {
-        loadSampleData();
-    }
-    
+
     // Initial renders
     renderCreditCards();
     updateCreditSummary();
@@ -1081,28 +1098,118 @@ document.addEventListener('DOMContentLoaded', () => {
     updatePaymentSchedule();
     renderExpenses();
     updateExpenseSummary();
-    renderLoans(); 
-    updateLoanSummary(); 
-    
+    renderLoans();
+    updateLoanSummary();
+
     // Add cyber effects
     initCyberEffects();
-    
+
     // Setup scroll detection for containers
     setupScrollDetection();
-    
+
     // Setup auto-save (save every minute)
     setupAutoSave();
-    
+
     // Any additional initialization that was in other DOMContentLoaded event listeners
     // Initialize gross profit calculator
     initGrossProfitCalculator();
-    
+
     // Initialize collapsible sections
     initCollapsibleSections();
-    
+
     // Initialize preventDefault on anchors to prevent page refresh
     initPreventDefaultOnAnchors();
 });
+
+// Auth Panel Update Function
+function updateAuthPanel(initResult) {
+    const loginPanel = document.getElementById('loginPanel');
+    const userPanel = document.getElementById('userPanel');
+    const userName = document.getElementById('userName');
+    const storageMode = document.getElementById('storageMode');
+
+    if (!loginPanel || !userPanel) return;
+
+    if (initResult && initResult.isAuthenticated) {
+        // Show user panel
+        loginPanel.classList.add('hidden');
+        userPanel.classList.remove('hidden');
+
+        if (userName && initResult.currentUser) {
+            userName.textContent = initResult.currentUser.email || initResult.currentUser.displayName || 'User';
+        }
+
+        if (storageMode) {
+            storageMode.textContent = initResult.mode === 'api' ? 'Cloud' : 'Local';
+            storageMode.classList.toggle('text-neon-green', initResult.mode === 'api');
+            storageMode.classList.toggle('text-neon-yellow', initResult.mode === 'local');
+        }
+    } else {
+        // Show login panel
+        loginPanel.classList.remove('hidden');
+        userPanel.classList.add('hidden');
+    }
+}
+
+// Migration Modal Functions
+function showMigrationModal() {
+    const modal = document.getElementById('migrationModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+    }
+}
+
+function closeMigrationModal() {
+    const modal = document.getElementById('migrationModal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+
+window.skipMigration = function() {
+    // Mark as skipped (user chose to keep local)
+    localStorage.setItem('dataMigrated', 'skipped');
+    closeMigrationModal();
+};
+
+window.startMigration = async function() {
+    const statusEl = document.getElementById('migrationStatus');
+    const errorEl = document.getElementById('migrationError');
+
+    // Show loading status
+    if (statusEl) statusEl.classList.remove('hidden');
+    if (errorEl) errorEl.classList.add('hidden');
+
+    try {
+        await DataService.migrateToCloud();
+
+        // Success - close modal and refresh UI
+        closeMigrationModal();
+
+        // Re-render all components with new data
+        renderCreditCards();
+        updateCreditSummary();
+        renderBills();
+        updatePaymentSchedule();
+        renderExpenses();
+        updateExpenseSummary();
+        renderLoans();
+        updateLoanSummary();
+
+        // Update auth panel to show cloud mode
+        updateAuthPanel({ isAuthenticated: true, mode: 'api', currentUser: DataService.getUser() });
+
+        // Show success notification
+        showSaveConfirmation('Data migrated to cloud successfully!');
+    } catch (error) {
+        console.error('Migration failed:', error);
+        if (statusEl) statusEl.classList.add('hidden');
+        if (errorEl) {
+            errorEl.textContent = 'Migration failed: ' + (error.message || 'Unknown error');
+            errorEl.classList.remove('hidden');
+        }
+    }
+};
 
 // Function to update the month and year display in the Monthly Bills section
 function updateCurrentMonthAndYear() {

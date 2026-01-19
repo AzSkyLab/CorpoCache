@@ -105,6 +105,24 @@
                     </button>
                     <span id="lastSavedTime" class="text-xs text-gray-400 hidden ml-2"></span>
                 </div>
+
+                <!-- Auth Panel -->
+                <div class="bg-glass-purple p-2 rounded-lg flex space-x-2 items-center ml-4">
+                    <!-- Show when not logged in -->
+                    <div id="loginPanel" class="hidden">
+                        <button onclick="ApiClient.login('github')" class="px-3 py-1 bg-glass-blue hover:bg-opacity-90 rounded-md transition text-sm">
+                            <i class="fab fa-github mr-1"></i> Login with GitHub
+                        </button>
+                    </div>
+                    <!-- Show when logged in -->
+                    <div id="userPanel" class="hidden flex items-center space-x-2">
+                        <span id="userName" class="text-xs text-neon-blue"></span>
+                        <span id="storageMode" class="text-xs px-2 py-1 rounded bg-glass-blue"></span>
+                        <button onclick="ApiClient.logout()" class="px-3 py-1 bg-glass-blue hover:bg-opacity-90 rounded-md transition text-sm">
+                            <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </header>
@@ -1621,13 +1639,61 @@
         </div>
     </div>
 
+<!-- Migration Modal -->
+<div id="migrationModal" class="fixed inset-0 bg-black bg-opacity-75 hidden items-center justify-center z-50 flex">
+    <div class="cyber-card rounded-lg p-6 w-full max-w-md mx-4">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-semibold text-neon-blue">
+                <i class="fas fa-cloud-upload-alt mr-2"></i> Migrate to Cloud
+            </h3>
+        </div>
+
+        <div class="space-y-4">
+            <p class="text-gray-300">
+                You have existing data stored locally. Would you like to migrate it to the cloud so you can access it from any device?
+            </p>
+
+            <div class="bg-glass-blue p-4 rounded-lg">
+                <h4 class="text-sm text-neon-green mb-2">Benefits of Cloud Storage:</h4>
+                <ul class="text-sm text-gray-300 space-y-1">
+                    <li><i class="fas fa-check text-neon-green mr-2"></i> Access from any device</li>
+                    <li><i class="fas fa-check text-neon-green mr-2"></i> Automatic backups</li>
+                    <li><i class="fas fa-check text-neon-green mr-2"></i> Secure authentication</li>
+                    <li><i class="fas fa-check text-neon-green mr-2"></i> Never lose your data</li>
+                </ul>
+            </div>
+
+            <div id="migrationStatus" class="hidden">
+                <div class="flex items-center justify-center space-x-2">
+                    <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-neon-blue"></div>
+                    <span class="text-neon-blue">Migrating data...</span>
+                </div>
+            </div>
+
+            <div id="migrationError" class="hidden bg-red-900 bg-opacity-50 p-3 rounded text-red-300 text-sm">
+            </div>
+        </div>
+
+        <div class="flex justify-end space-x-3 mt-6">
+            <button onclick="skipMigration()" class="px-4 py-2 bg-glass-blue hover:bg-opacity-90 rounded-md transition">
+                <i class="fas fa-times mr-1"></i> Keep Local
+            </button>
+            <button onclick="startMigration()" class="px-4 py-2 cyber-primary-btn rounded-md">
+                <i class="fas fa-cloud-upload-alt mr-1"></i> Migrate Now
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- Back to Top Button -->
 <div class="back-to-top" id="backToTop" title="Back to Top">
     <i class="fas fa-arrow-up"></i>
 </div>
 
 <!-- External JavaScript -->
-<script src="js/script.js?v=2.5.5"></script>
+<script src="js/api-client.js"></script>
+<script src="js/data-service.js"></script>
+<script src="js/script.js?v=2.6.0"></script>
 <script src="js/cyberpunk-bg.js"></script>
 <script>
     // Back to Top button functionality
