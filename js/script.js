@@ -5340,21 +5340,32 @@ window.confirmZeroBill = function() {
     closeZeroBillModal();
 }
 
+// Helper function to extract numeric value from either a number or formatted string
+function extractNumericValue(value) {
+    if (value === null || value === undefined) return 0;
+    if (typeof value === 'number') return value;
+    if (typeof value === 'string') {
+        const cleaned = value.replace(/[^0-9.-]/g, '');
+        return parseFloat(cleaned) || 0;
+    }
+    return 0;
+}
+
 // Function to populate the salary calculator modal with saved data
 function populateSalaryModal() {
     // Check if we have saved salary data
     if (Object.keys(salaryData).length > 0) {
         // Populate the salary modal with saved data
-        // Extract the numeric value from formatted string
+        // Extract the numeric value from formatted string or number
         if (salaryData.annualSalary) {
-            const grossValue = salaryData.annualSalary.replace(/[^0-9.]/g, '');
+            const grossValue = extractNumericValue(salaryData.annualSalary);
             document.getElementById('modalGrossSalary').value = grossValue;
         }
-        
+
         if (salaryData.payFrequency) {
             document.getElementById('modalPayFrequency').value = salaryData.payFrequency;
         }
-        
+
         // Set first pay date for semi-monthly
         if (salaryData.firstPayDate) {
             const firstPayDateSelect = document.getElementById('firstPayDate');
@@ -5363,7 +5374,7 @@ function populateSalaryModal() {
             }
             document.getElementById('firstPayDateContainer').classList.remove('hidden');
         }
-        
+
         // Set last pay date for bi-weekly
         if (salaryData.lastPayDate) {
             const lastPayDateInput = document.getElementById('lastPayDate');
@@ -5371,39 +5382,43 @@ function populateSalaryModal() {
                 lastPayDateInput.value = salaryData.lastPayDate;
             }
         }
-        
+
         // Show the appropriate date field based on pay frequency
         toggleLastPayDateField();
-        
+
         // Extract bonus percentage from formatted string if needed
         if (salaryData.bonusAmount && salaryData.annualSalary) {
-            const bonusValue = parseFloat(salaryData.bonusAmount.replace(/[^0-9.]/g, ''));
-            const annualValue = parseFloat(salaryData.annualSalary.replace(/[^0-9.]/g, ''));
+            const bonusValue = extractNumericValue(salaryData.bonusAmount);
+            const annualValue = extractNumericValue(salaryData.annualSalary);
             if (bonusValue && annualValue) {
                 const bonusPct = (bonusValue / annualValue) * 100;
                 document.getElementById('modalBonusPercentage').value = bonusPct.toFixed(2);
             }
         }
-        
+
         // Fix for bonus tax rate - properly extract numeric value
         if (salaryData.bonusTaxRate) {
-            // Extract numeric value from the format like "(25% tax)"
-            const taxMatch = salaryData.bonusTaxRate.match(/\((\d+(?:\.\d+)?)%/);
-            if (taxMatch && taxMatch[1]) {
-                document.getElementById('modalBonusTax').value = taxMatch[1];
+            // Extract numeric value from the format like "(25% tax)" or just a number
+            if (typeof salaryData.bonusTaxRate === 'number') {
+                document.getElementById('modalBonusTax').value = salaryData.bonusTaxRate;
             } else {
-                document.getElementById('modalBonusTax').value = 25; // Default value
+                const taxMatch = salaryData.bonusTaxRate.match(/\((\d+(?:\.\d+)?)%/);
+                if (taxMatch && taxMatch[1]) {
+                    document.getElementById('modalBonusTax').value = taxMatch[1];
+                } else {
+                    document.getElementById('modalBonusTax').value = 25; // Default value
+                }
             }
         }
-        
+
         // Tax info
         if (salaryData.filingStatus) {
             document.getElementById('modalTaxBracket').value = salaryData.filingStatus;
         }
-        
+
         // Extract state from state rate if available
-        if (salaryData.stateRate) {
-            const stateRate = parseFloat(salaryData.stateRate.replace(/[^0-9.]/g, ''));
+        if (salaryData.stateRate || salaryData.stateTaxRate) {
+            const stateRate = extractNumericValue(salaryData.stateRate || salaryData.stateTaxRate);
             if (!isNaN(stateRate)) {
                 // Find the state with this rate
                 const stateSelect = document.getElementById('modalState');
@@ -5422,38 +5437,45 @@ function populateSalaryModal() {
         
         // Extract retirement contribution percentage
         if (salaryData.retirementAmount && salaryData.grossPay) {
-            const retirementAmount = parseFloat(salaryData.retirementAmount.replace(/[^0-9.]/g, ''));
-            const grossPay = parseFloat(salaryData.grossPay.replace(/[^0-9.]/g, ''));
+            const retirementAmount = extractNumericValue(salaryData.retirementAmount);
+            const grossPay = extractNumericValue(salaryData.grossPay);
             if (!isNaN(retirementAmount) && !isNaN(grossPay) && grossPay > 0) {
                 const retirementPct = (retirementAmount / grossPay) * 100;
                 document.getElementById('modalRetirementContribution').value = retirementPct.toFixed(2);
             }
+        } else if (salaryData.retirementPercent) {
+            // API stores as percentage directly
+            document.getElementById('modalRetirementContribution').value = extractNumericValue(salaryData.retirementPercent);
         }
-        
+
         // Extract ESPP contribution percentage
         if (salaryData.esppAmount && salaryData.grossPay) {
-            const esppAmount = parseFloat(salaryData.esppAmount.replace(/[^0-9.]/g, ''));
-            const grossPay = parseFloat(salaryData.grossPay.replace(/[^0-9.]/g, ''));
+            const esppAmount = extractNumericValue(salaryData.esppAmount);
+            const grossPay = extractNumericValue(salaryData.grossPay);
             if (!isNaN(esppAmount) && !isNaN(grossPay) && grossPay > 0) {
                 const esppPct = (esppAmount / grossPay) * 100;
                 document.getElementById('modalEsppContribution').value = esppPct.toFixed(2);
             }
+        } else if (salaryData.esppPercent) {
+            // API stores as percentage directly
+            document.getElementById('modalEsppContribution').value = extractNumericValue(salaryData.esppPercent);
         }
-          // Extract insurance costs
+
+        // Extract insurance costs
         if (salaryData.healthAmount) {
-            document.getElementById('modalHealthInsurance').value = parseFloat(salaryData.healthAmount.replace(/[^0-9.]/g, ''));
+            document.getElementById('modalHealthInsurance').value = extractNumericValue(salaryData.healthAmount);
         }
-        
+
         if (salaryData.fsaAmount) {
-            document.getElementById('modalFsaContribution').value = parseFloat(salaryData.fsaAmount.replace(/[^0-9.]/g, ''));
+            document.getElementById('modalFsaContribution').value = extractNumericValue(salaryData.fsaAmount);
         }
-        
+
         if (salaryData.dentalAmount) {
-            document.getElementById('modalDentalInsurance').value = parseFloat(salaryData.dentalAmount.replace(/[^0-9.]/g, ''));
+            document.getElementById('modalDentalInsurance').value = extractNumericValue(salaryData.dentalAmount);
         }
-        
+
         if (salaryData.visionAmount) {
-            document.getElementById('modalVisionInsurance').value = parseFloat(salaryData.visionAmount.replace(/[^0-9.]/g, ''));
+            document.getElementById('modalVisionInsurance').value = extractNumericValue(salaryData.visionAmount);
         }
     }
 }
