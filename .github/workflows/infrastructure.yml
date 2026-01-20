@@ -62,6 +62,7 @@ jobs:
   submit:
     name: Submit Infrastructure Request
     needs: validate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: ${{ needs.validate.outputs.environment }}
 
@@ -69,33 +70,71 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install pyyaml
+
       - name: Submit to Infrastructure API
+        id: submit
         env:
-          API_URL: ${{ vars.INFRA_API_URL }}
           API_KEY: ${{ secrets.INFRA_API_KEY }}
         run: |
-          echo "📤 Submitting infrastructure request..."
+          python << 'EOF'
+          import yaml
+          import json
+          import urllib.request
+          import os
 
-          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${API_URL}/api/provision" \
-            -H "Content-Type: application/yaml" \
-            -H "Authorization: Bearer ${API_KEY}" \
-            -d @infrastructure.yaml)
+          with open("infrastructure.yaml", 'r') as f:
+              yaml_content = f.read()
+              config = yaml.safe_load(yaml_content)
 
-          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
-          BODY=$(echo "$RESPONSE" | sed '$d')
+          repo = os.environ.get('GITHUB_REPOSITORY', 'unknown')
+          api_key = os.environ['API_KEY']
 
-          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
-            echo "✅ Request submitted successfully"
-            echo "$BODY" | jq '.' 2>/dev/null || echo "$BODY"
+          # Call the API Gateway with function key as query parameter
+          api_url = f"https://func-infra-api-rrkkz6a8.azurewebsites.net/api/provision?code={api_key}"
 
-            # Extract request ID for tracking
-            REQUEST_ID=$(echo "$BODY" | jq -r '.request_id // .requestId // empty')
-            if [ -n "$REQUEST_ID" ]; then
-              echo "📋 Request ID: $REQUEST_ID"
-              echo "request_id=$REQUEST_ID" >> $GITHUB_OUTPUT
-            fi
-          else
-            echo "❌ Request failed with status $HTTP_CODE"
-            echo "$BODY"
-            exit 1
-          fi
+          payload = {
+              'yaml_content': yaml_content,
+              'requester_email': config['metadata'].get('owner_email', 'gitops@automation')
+          }
+
+          data = json.dumps(payload).encode('utf-8')
+          req = urllib.request.Request(api_url, data=data, method='POST')
+          req.add_header('Content-Type', 'application/json')
+
+          try:
+              response = urllib.request.urlopen(req)
+              result = json.loads(response.read().decode())
+
+              request_id = result.get('request_id', 'unknown')
+              queue_name = result.get('queue', 'unknown')
+
+              print(f"✅ Successfully submitted infrastructure request!")
+              print(f"   Request ID: {request_id}")
+              print(f"   Queue: {queue_name}")
+              print(f"   Repository: {repo}")
+
+              with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                  f.write(f"request_id={request_id}\n")
+
+              with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as f:
+                  f.write("## Infrastructure Request Submitted\n\n")
+                  f.write(f"| Property | Value |\n")
+                  f.write(f"|----------|-------|\n")
+                  f.write(f"| Request ID | `{request_id}` |\n")
+                  f.write(f"| Queue | `{queue_name}` |\n")
+                  f.write(f"| Repository | `{repo}` |\n")
+                  f.write(f"| Estimated Cost | `${result.get('estimated_cost', 0):.2f}/month` |\n")
+
+          except urllib.error.HTTPError as e:
+              error_body = e.read().decode()
+              print(f"❌ Failed to submit: {e.code} {e.reason}")
+              print(error_body)
+              exit(1)
+          EOF
