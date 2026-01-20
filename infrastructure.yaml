@@ -24,7 +24,7 @@ metadata:
   cost_center: personal-projects
   location: centralus
   owners:
-    - owner@corpocache.local
+    - sa_scottc1@azureskylab.com
 
 resources:
   - type: azure_sql
@@ -51,11 +51,3 @@ resources:
     config:
       sku_tier: Free
       sku_size: Free
-
-  - type: keyvault
-    name: corpocache-kv
-    config:
-      sku: standard
-      soft_delete_days: 7
-      purge_protection: false
-      rbac_enabled: true
