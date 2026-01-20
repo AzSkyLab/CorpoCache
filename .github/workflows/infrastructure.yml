@@ -20,6 +20,16 @@ on:
   pull_request:
     paths:
       - 'infrastructure.yaml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - prod
 
 permissions:
   contents: read
