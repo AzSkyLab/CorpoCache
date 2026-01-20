@@ -70,37 +70,46 @@ function calculateEffectiveTaxRate(annualIncome, filingStatus) {
     return (tax / annualIncome) * 100;
 }
 
-// Data storage
-let creditCards = [];
-let bills = [];
-let expenses = [];
-let loans = []; // Add loans array for loan tracking
-let salaryData = {}; // Object to store salary calculation data
-let profitData = {}; // Object to store profit calculation data
+// Data storage - using var so they become window properties
+// This allows DataService to sync data from the API
+var creditCards = [];
+var bills = [];
+var expenses = [];
+var loans = []; // Add loans array for loan tracking
+var salaryData = {}; // Object to store salary calculation data
+var profitData = {}; // Object to store profit calculation data
 
 // Historical data storage
-let historicalBillData = []; // Array to store bill amounts by month
-let currentAppMonth = new Date().getMonth(); // Track the app's current month (0-11)
-let currentAppYear = new Date().getFullYear(); // Track the app's current year
+var historicalBillData = []; // Array to store bill amounts by month
+var currentAppMonth = new Date().getMonth(); // Track the app's current month (0-11)
+var currentAppYear = new Date().getFullYear(); // Track the app's current year
 
 // Persistence functions for localStorage
 function saveToLocalStorage() {
     try {
+        // Always save to localStorage as backup
         localStorage.setItem('creditCards', JSON.stringify(creditCards));
         localStorage.setItem('bills', JSON.stringify(bills));
         localStorage.setItem('expenses', JSON.stringify(expenses));
         localStorage.setItem('loans', JSON.stringify(loans));
         localStorage.setItem('salaryData', JSON.stringify(salaryData));
         localStorage.setItem('profitData', JSON.stringify(profitData));
-        
+
         // Save historical data
         localStorage.setItem('historicalBillData', JSON.stringify(historicalBillData));
         localStorage.setItem('currentAppMonth', currentAppMonth.toString());
         localStorage.setItem('currentAppYear', currentAppYear.toString());
-        
+
         // Save the last save timestamp
         localStorage.setItem('lastSaved', new Date().toISOString());
-        
+
+        // Also call DataService.save() if available (handles API mode internally)
+        if (typeof DataService !== 'undefined' && DataService.save) {
+            DataService.save().catch(err => {
+                console.warn('DataService save failed:', err);
+            });
+        }
+
         // Show a brief save confirmation
         showSaveConfirmation();
     } catch (error) {
@@ -1047,33 +1056,37 @@ function setupAutoSave(interval = 60000) { // Default: save every minute
     }, interval);
 }
 
-// Immediately check for stored data when the script loads (outside any event listener)
-(function() {
-    console.log("Script initialized - checking for stored data...");
-    const dataLoaded = loadFromLocalStorage();
-    if (dataLoaded) {
-        console.log("Data loaded from localStorage successfully");
-    } else {
-        console.log("No saved data found in localStorage");
-    }
-})();
+// NOTE: Data loading is handled by DataService.init() in DOMContentLoaded
+// Do NOT load from localStorage here - it causes race conditions with API mode
 
 // DOM Elements
-document.addEventListener('DOMContentLoaded', () => {
-    // Initialize elements
+document.addEventListener('DOMContentLoaded', async () => {
+    // Initialize elements first
     initElements();
-    
+
+    // Initialize DataService (handles auth check and data loading)
+    // This is the ONLY place data should be loaded from
+    try {
+        console.log('Initializing DataService...');
+        const initResult = await DataService.init();
+        console.log('DataService initialized:', initResult.mode, 'mode');
+
+        // Update auth panel UI
+        updateAuthPanel(initResult);
+
+        // Check if migration is needed
+        if (DataService.needsMigration()) {
+            showMigrationModal();
+        }
+    } catch (error) {
+        console.error('DataService init failed, using localStorage:', error);
+        // Fallback to localStorage only if DataService fails
+        loadFromLocalStorage();
+    }
+
     // Set current month and year
     updateCurrentMonthAndYear();
-    
-    // Try to load data from localStorage
-    const dataLoaded = loadFromLocalStorage();
-    
-    // If no data was loaded, use sample data
-    if (!dataLoaded) {
-        loadSampleData();
-    }
-    
+
     // Initial renders
     renderCreditCards();
     updateCreditSummary();
@@ -1081,28 +1094,118 @@ document.addEventListener('DOMContentLoaded', () => {
     updatePaymentSchedule();
     renderExpenses();
     updateExpenseSummary();
-    renderLoans(); 
-    updateLoanSummary(); 
-    
+    renderLoans();
+    updateLoanSummary();
+
     // Add cyber effects
     initCyberEffects();
-    
+
     // Setup scroll detection for containers
     setupScrollDetection();
-    
+
     // Setup auto-save (save every minute)
     setupAutoSave();
-    
+
     // Any additional initialization that was in other DOMContentLoaded event listeners
     // Initialize gross profit calculator
     initGrossProfitCalculator();
-    
+
     // Initialize collapsible sections
     initCollapsibleSections();
-    
+
     // Initialize preventDefault on anchors to prevent page refresh
     initPreventDefaultOnAnchors();
 });
+
+// Auth Panel Update Function
+function updateAuthPanel(initResult) {
+    const loginPanel = document.getElementById('loginPanel');
+    const userPanel = document.getElementById('userPanel');
+    const userName = document.getElementById('userName');
+    const storageMode = document.getElementById('storageMode');
+
+    if (!loginPanel || !userPanel) return;
+
+    if (initResult && initResult.isAuthenticated) {
+        // Show user panel
+        loginPanel.classList.add('hidden');
+        userPanel.classList.remove('hidden');
+
+        if (userName && initResult.currentUser) {
+            userName.textContent = initResult.currentUser.email || initResult.currentUser.displayName || 'User';
+        }
+
+        if (storageMode) {
+            storageMode.textContent = initResult.mode === 'api' ? 'Cloud' : 'Local';
+            storageMode.classList.toggle('text-neon-green', initResult.mode === 'api');
+            storageMode.classList.toggle('text-neon-yellow', initResult.mode === 'local');
+        }
+    } else {
+        // Show login panel
+        loginPanel.classList.remove('hidden');
+        userPanel.classList.add('hidden');
+    }
+}
+
+// Migration Modal Functions
+function showMigrationModal() {
+    const modal = document.getElementById('migrationModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+    }
+}
+
+function closeMigrationModal() {
+    const modal = document.getElementById('migrationModal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+
+window.skipMigration = function() {
+    // Mark as skipped (user chose to keep local)
+    localStorage.setItem('dataMigrated', 'skipped');
+    closeMigrationModal();
+};
+
+window.startMigration = async function() {
+    const statusEl = document.getElementById('migrationStatus');
+    const errorEl = document.getElementById('migrationError');
+
+    // Show loading status
+    if (statusEl) statusEl.classList.remove('hidden');
+    if (errorEl) errorEl.classList.add('hidden');
+
+    try {
+        await DataService.migrateToCloud();
+
+        // Success - close modal and refresh UI
+        closeMigrationModal();
+
+        // Re-render all components with new data
+        renderCreditCards();
+        updateCreditSummary();
+        renderBills();
+        updatePaymentSchedule();
+        renderExpenses();
+        updateExpenseSummary();
+        renderLoans();
+        updateLoanSummary();
+
+        // Update auth panel to show cloud mode
+        updateAuthPanel({ isAuthenticated: true, mode: 'api', currentUser: DataService.getUser() });
+
+        // Show success notification
+        showSaveConfirmation('Data migrated to cloud successfully!');
+    } catch (error) {
+        console.error('Migration failed:', error);
+        if (statusEl) statusEl.classList.add('hidden');
+        if (errorEl) {
+            errorEl.textContent = 'Migration failed: ' + (error.message || 'Unknown error');
+            errorEl.classList.remove('hidden');
+        }
+    }
+};
 
 // Function to update the month and year display in the Monthly Bills section
 function updateCurrentMonthAndYear() {
@@ -5237,21 +5340,32 @@ window.confirmZeroBill = function() {
     closeZeroBillModal();
 }
 
+// Helper function to extract numeric value from either a number or formatted string
+function extractNumericValue(value) {
+    if (value === null || value === undefined) return 0;
+    if (typeof value === 'number') return value;
+    if (typeof value === 'string') {
+        const cleaned = value.replace(/[^0-9.-]/g, '');
+        return parseFloat(cleaned) || 0;
+    }
+    return 0;
+}
+
 // Function to populate the salary calculator modal with saved data
 function populateSalaryModal() {
     // Check if we have saved salary data
     if (Object.keys(salaryData).length > 0) {
         // Populate the salary modal with saved data
-        // Extract the numeric value from formatted string
+        // Extract the numeric value from formatted string or number
         if (salaryData.annualSalary) {
-            const grossValue = salaryData.annualSalary.replace(/[^0-9.]/g, '');
+            const grossValue = extractNumericValue(salaryData.annualSalary);
             document.getElementById('modalGrossSalary').value = grossValue;
         }
-        
+
         if (salaryData.payFrequency) {
             document.getElementById('modalPayFrequency').value = salaryData.payFrequency;
         }
-        
+
         // Set first pay date for semi-monthly
         if (salaryData.firstPayDate) {
             const firstPayDateSelect = document.getElementById('firstPayDate');
@@ -5260,7 +5374,7 @@ function populateSalaryModal() {
             }
             document.getElementById('firstPayDateContainer').classList.remove('hidden');
         }
-        
+
         // Set last pay date for bi-weekly
         if (salaryData.lastPayDate) {
             const lastPayDateInput = document.getElementById('lastPayDate');
@@ -5268,39 +5382,43 @@ function populateSalaryModal() {
                 lastPayDateInput.value = salaryData.lastPayDate;
             }
         }
-        
+
         // Show the appropriate date field based on pay frequency
         toggleLastPayDateField();
-        
+
         // Extract bonus percentage from formatted string if needed
         if (salaryData.bonusAmount && salaryData.annualSalary) {
-            const bonusValue = parseFloat(salaryData.bonusAmount.replace(/[^0-9.]/g, ''));
-            const annualValue = parseFloat(salaryData.annualSalary.replace(/[^0-9.]/g, ''));
+            const bonusValue = extractNumericValue(salaryData.bonusAmount);
+            const annualValue = extractNumericValue(salaryData.annualSalary);
             if (bonusValue && annualValue) {
                 const bonusPct = (bonusValue / annualValue) * 100;
                 document.getElementById('modalBonusPercentage').value = bonusPct.toFixed(2);
             }
         }
-        
+
         // Fix for bonus tax rate - properly extract numeric value
         if (salaryData.bonusTaxRate) {
-            // Extract numeric value from the format like "(25% tax)"
-            const taxMatch = salaryData.bonusTaxRate.match(/\((\d+(?:\.\d+)?)%/);
-            if (taxMatch && taxMatch[1]) {
-                document.getElementById('modalBonusTax').value = taxMatch[1];
+            // Extract numeric value from the format like "(25% tax)" or just a number
+            if (typeof salaryData.bonusTaxRate === 'number') {
+                document.getElementById('modalBonusTax').value = salaryData.bonusTaxRate;
             } else {
-                document.getElementById('modalBonusTax').value = 25; // Default value
+                const taxMatch = salaryData.bonusTaxRate.match(/\((\d+(?:\.\d+)?)%/);
+                if (taxMatch && taxMatch[1]) {
+                    document.getElementById('modalBonusTax').value = taxMatch[1];
+                } else {
+                    document.getElementById('modalBonusTax').value = 25; // Default value
+                }
             }
         }
-        
+
         // Tax info
         if (salaryData.filingStatus) {
             document.getElementById('modalTaxBracket').value = salaryData.filingStatus;
         }
-        
+
         // Extract state from state rate if available
-        if (salaryData.stateRate) {
-            const stateRate = parseFloat(salaryData.stateRate.replace(/[^0-9.]/g, ''));
+        if (salaryData.stateRate || salaryData.stateTaxRate) {
+            const stateRate = extractNumericValue(salaryData.stateRate || salaryData.stateTaxRate);
             if (!isNaN(stateRate)) {
                 // Find the state with this rate
                 const stateSelect = document.getElementById('modalState');
@@ -5319,38 +5437,45 @@ function populateSalaryModal() {
         
         // Extract retirement contribution percentage
         if (salaryData.retirementAmount && salaryData.grossPay) {
-            const retirementAmount = parseFloat(salaryData.retirementAmount.replace(/[^0-9.]/g, ''));
-            const grossPay = parseFloat(salaryData.grossPay.replace(/[^0-9.]/g, ''));
+            const retirementAmount = extractNumericValue(salaryData.retirementAmount);
+            const grossPay = extractNumericValue(salaryData.grossPay);
             if (!isNaN(retirementAmount) && !isNaN(grossPay) && grossPay > 0) {
                 const retirementPct = (retirementAmount / grossPay) * 100;
                 document.getElementById('modalRetirementContribution').value = retirementPct.toFixed(2);
             }
+        } else if (salaryData.retirementPercent) {
+            // API stores as percentage directly
+            document.getElementById('modalRetirementContribution').value = extractNumericValue(salaryData.retirementPercent);
         }
-        
+
         // Extract ESPP contribution percentage
         if (salaryData.esppAmount && salaryData.grossPay) {
-            const esppAmount = parseFloat(salaryData.esppAmount.replace(/[^0-9.]/g, ''));
-            const grossPay = parseFloat(salaryData.grossPay.replace(/[^0-9.]/g, ''));
+            const esppAmount = extractNumericValue(salaryData.esppAmount);
+            const grossPay = extractNumericValue(salaryData.grossPay);
             if (!isNaN(esppAmount) && !isNaN(grossPay) && grossPay > 0) {
                 const esppPct = (esppAmount / grossPay) * 100;
                 document.getElementById('modalEsppContribution').value = esppPct.toFixed(2);
             }
+        } else if (salaryData.esppPercent) {
+            // API stores as percentage directly
+            document.getElementById('modalEsppContribution').value = extractNumericValue(salaryData.esppPercent);
         }
-          // Extract insurance costs
+
+        // Extract insurance costs
         if (salaryData.healthAmount) {
-            document.getElementById('modalHealthInsurance').value = parseFloat(salaryData.healthAmount.replace(/[^0-9.]/g, ''));
+            document.getElementById('modalHealthInsurance').value = extractNumericValue(salaryData.healthAmount);
         }
-        
+
         if (salaryData.fsaAmount) {
-            document.getElementById('modalFsaContribution').value = parseFloat(salaryData.fsaAmount.replace(/[^0-9.]/g, ''));
+            document.getElementById('modalFsaContribution').value = extractNumericValue(salaryData.fsaAmount);
         }
-        
+
         if (salaryData.dentalAmount) {
-            document.getElementById('modalDentalInsurance').value = parseFloat(salaryData.dentalAmount.replace(/[^0-9.]/g, ''));
+            document.getElementById('modalDentalInsurance').value = extractNumericValue(salaryData.dentalAmount);
         }
-        
+
         if (salaryData.visionAmount) {
-            document.getElementById('modalVisionInsurance').value = parseFloat(salaryData.visionAmount.replace(/[^0-9.]/g, ''));
+            document.getElementById('modalVisionInsurance').value = extractNumericValue(salaryData.visionAmount);
         }
     }
 }
@@ -5428,51 +5553,9 @@ function initPreventDefaultOnAnchors() {
     });
 }
 
-// Add to document ready function
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize elements
-    initElements();
-    
-    // Set current month and year
-    updateCurrentMonthAndYear();
-    
-    // Try to load data from localStorage
-    const dataLoaded = loadFromLocalStorage();
-    
-    // If no data was loaded, use sample data
-    if (!dataLoaded) {
-        loadSampleData();
-    }
-    
-    // Initial renders
-    renderCreditCards();
-    updateCreditSummary();
-    renderBills();
-    updatePaymentSchedule();
-    renderExpenses();
-    updateExpenseSummary();
-    renderLoans(); 
-    updateLoanSummary(); 
-    
-    // Add cyber effects
-    initCyberEffects();
-    
-    // Setup scroll detection for containers
-    setupScrollDetection();
-    
-    // Setup auto-save (save every minute)
-    setupAutoSave();
-    
-    // Any additional initialization that was in other DOMContentLoaded event listeners
-    // Initialize gross profit calculator
-    initGrossProfitCalculator();
-    
-    // Initialize collapsible sections
-    initCollapsibleSections();
-    
-    // Initialize preventDefault on anchors to prevent page refresh
-    initPreventDefaultOnAnchors();
-});
+// NOTE: DOMContentLoaded handler is defined earlier in the file (around line 1062)
+// It uses DataService.init() to load data from API or localStorage
+// DO NOT add duplicate DOMContentLoaded handlers here
 
 // Function to update the month and year display in the Monthly Bills section
 function updateCurrentMonthAndYear() {
