@@ -9,29 +9,85 @@ on:
     branches:
       - main
 
+env:
+  SQL_SERVER: ${{ vars.SQL_SERVER }}
+  SQL_DATABASE: corpocache
+  SQL_USER: sqladmin
+
 jobs:
   build_and_deploy_job:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
     name: Build and Deploy Job
+    environment: production
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: true
           lfs: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: api/package-lock.json
+
+      - name: Install API Dependencies
+        run: |
+          cd api
+          npm ci
+
+      - name: Build API
+        run: |
+          cd api
+          npm run build
+
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_JOLLY_OCEAN_063372B0F }}
-          repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for Github integrations (i.e. PR comments)
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
-          ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
-          # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
-          app_location: "/" # App source code path
-          api_location: "api" # Azure Functions API - handles backend operations
-          output_location: "." # Built app content directory - optional
+          ###### Repository/Build Configurations ######
+          app_location: "/"
+          api_location: "api"
+          output_location: "."
           ###### End of Repository/Build Configurations ######
+        env:
+          SQL_SERVER: ${{ vars.SQL_SERVER }}
+          SQL_DATABASE: corpocache
+          SQL_USER: sqladmin
+          SQL_PASSWORD: ${{ secrets.SQL_PASSWORD }}
+
+      - name: Configure SWA App Settings
+        if: github.event_name == 'push'
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set Function App Settings
+        if: github.event_name == 'push'
+        run: |
+          # Get SWA resource name
+          SWA_NAME="jolly-ocean-063372b0f"
+          RESOURCE_GROUP=$(az staticwebapp list --query "[?name=='$SWA_NAME'].resourceGroup" -o tsv)
+
+          if [ -n "$RESOURCE_GROUP" ]; then
+            # Set app settings for the managed functions
+            az staticwebapp appsettings set \
+              --name $SWA_NAME \
+              --resource-group $RESOURCE_GROUP \
+              --setting-names \
+                SQL_SERVER="${{ vars.SQL_SERVER }}" \
+                SQL_DATABASE="corpocache" \
+                SQL_USER="sqladmin" \
+                SQL_PASSWORD="${{ secrets.SQL_PASSWORD }}"
+            echo "✓ App settings configured"
+          else
+            echo "Warning: Could not find SWA resource group"
+          fi
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
