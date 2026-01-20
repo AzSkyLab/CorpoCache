@@ -58,7 +58,7 @@ jobs:
       - name: Validate infrastructure YAML
         id: validate
         run: |
-          python << 'EOF'
+          python3 << 'VALIDATEEOF'
           import yaml
           import json
           import sys
@@ -81,7 +81,6 @@ jobs:
                   f.write("result=failed\n")
               sys.exit(1)
 
-          # Validate required fields
           errors = []
 
           if 'metadata' not in config:
@@ -121,12 +120,12 @@ jobs:
           print("Validation passed!")
           with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
               f.write("result=passed\n")
-          EOF
+          VALIDATEEOF
 
       - name: Generate Plan Preview
         id: plan
         run: |
-          python << 'PLANEOF'
+          python3 << 'PLANEOF'
           import yaml
           import os
 
@@ -144,11 +143,9 @@ jobs:
               else:
                   return f"{rtype}-{project}-{rname}-{env}"
 
-          # Load current config
           with open("infrastructure.yaml", 'r') as f:
               config = yaml.safe_load(f)
 
-          # Load base config (previous state)
           base_resources = {}
           try:
               with open("base_infrastructure.yaml", 'r') as f:
@@ -164,80 +161,75 @@ jobs:
 
           metadata = config['metadata']
           resources = config.get('resources', [])
-
           project = metadata.get('project_name', 'unknown')
           env = metadata.get('environment', 'dev')
 
-          # Categorize resources
           current_keys = set()
           for r in resources:
               key = f"{r['type']}:{r['name']}"
               current_keys.add(key)
 
           base_keys = set(base_resources.keys())
-
           added = current_keys - base_keys
           removed = base_keys - current_keys
           unchanged = current_keys & base_keys
 
-          # Generate markdown preview
-          preview = f"""## Infrastructure Plan Preview
+          lines = []
+          lines.append("## Infrastructure Plan Preview")
+          lines.append("")
+          lines.append("### Project Information")
+          lines.append("| Property | Value |")
+          lines.append("|----------|-------|")
+          lines.append(f"| Project Name | `{metadata.get('project_name')}` |")
+          lines.append(f"| Environment | `{metadata.get('environment')}` |")
+          lines.append(f"| Business Unit | `{metadata.get('business_unit')}` |")
+          lines.append(f"| Cost Center | `{metadata.get('cost_center')}` |")
+          lines.append(f"| Owner | `{metadata.get('owner_email')}` |")
+          lines.append(f"| Location | `{metadata.get('location', 'centralus')}` |")
+          lines.append("")
+          lines.append("### Changes Summary")
+          lines.append("| Added | Removed | Unchanged |")
+          lines.append("|-------|---------|-----------|")
+          lines.append(f"| {len(added)} | {len(removed)} | {len(unchanged)} |")
+          lines.append("")
+          lines.append("### Resource Changes")
+          lines.append("")
+          lines.append("| Status | Type | Name | Azure Resource |")
+          lines.append("|--------|------|------|----------------|")
 
-### Project Information
-| Property | Value |
-|----------|-------|
-| Project Name | `{metadata.get('project_name')}` |
-| Environment | `{metadata.get('environment')}` |
-| Business Unit | `{metadata.get('business_unit')}` |
-| Cost Center | `{metadata.get('cost_center')}` |
-| Owner | `{metadata.get('owner_email')}` |
-| Location | `{metadata.get('location', 'centralus')}` |
-
-### Changes Summary
-| Added | Removed | Unchanged |
-|-------|---------|-----------|
-| {len(added)} | {len(removed)} | {len(unchanged)} |
-
-### Resource Changes
-
-| Status | Type | Name | Azure Resource |
-|--------|------|------|----------------|
-"""
-
-          # Show added resources
           for r in resources:
               key = f"{r['type']}:{r['name']}"
               azure_name = get_azure_name(r['type'], r['name'], project, env)
               if key in added:
-                  preview += f"| + **Add** | `{r['type']}` | `{r['name']}` | `{azure_name}` |\n"
+                  lines.append(f"| + **Add** | `{r['type']}` | `{r['name']}` | `{azure_name}` |")
 
-          # Show removed resources
           for key in removed:
               r = base_resources[key]
               azure_name = get_azure_name(r['type'], r['name'], project, env)
-              preview += f"| - **Remove** | `{r['type']}` | `{r['name']}` | `{azure_name}` |\n"
+              lines.append(f"| - **Remove** | `{r['type']}` | `{r['name']}` | `{azure_name}` |")
 
-          # Show unchanged resources
           for r in resources:
               key = f"{r['type']}:{r['name']}"
               azure_name = get_azure_name(r['type'], r['name'], project, env)
               if key in unchanged:
-                  preview += f"| = No change | `{r['type']}` | `{r['name']}` | `{azure_name}` |\n"
+                  lines.append(f"| = No change | `{r['type']}` | `{r['name']}` | `{azure_name}` |")
 
-          preview += f"""
-### Resource Group
-`rg-{project}-{env}`
-
----
-"""
+          lines.append("")
+          lines.append("### Resource Group")
+          lines.append(f"`rg-{project}-{env}`")
+          lines.append("")
+          lines.append("---")
 
           if added or removed:
-              preview += "**Warning: This PR will modify infrastructure.** Review changes carefully before merging.\n\n"
+              lines.append("**Warning: This PR will modify infrastructure.** Review changes carefully before merging.")
+              lines.append("")
           else:
-              preview += "**No infrastructure changes detected.**\n\n"
+              lines.append("**No infrastructure changes detected.**")
+              lines.append("")
 
-          preview += "**On merge to main**, these changes will be automatically applied.\n"
+          lines.append("**On merge to main**, these changes will be automatically applied.")
 
+          preview = "\n".join(lines)
           with open('plan_preview.md', 'w') as f:
               f.write(preview)
 
@@ -296,7 +288,6 @@ jobs:
             cat plan_preview.md >> $GITHUB_STEP_SUMMARY
           fi
 
-  # Submit to queue on merge to main
   provision:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
@@ -319,7 +310,7 @@ jobs:
         env:
           API_KEY: ${{ secrets.INFRA_API_KEY }}
         run: |
-          python << 'EOF'
+          python3 << 'SUBMITEOF'
           import yaml
           import json
           import urllib.request
@@ -332,7 +323,6 @@ jobs:
           repo = os.environ.get('GITHUB_REPOSITORY', 'unknown')
           api_key = os.environ['API_KEY']
 
-          # Call the API Gateway which handles Cosmos DB + Service Bus
           api_url = f"https://func-infra-api-rrkkz6a8.azurewebsites.net/api/provision?code={api_key}"
 
           payload = {
@@ -361,8 +351,8 @@ jobs:
 
               with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as f:
                   f.write("## Infrastructure Request Submitted\n\n")
-                  f.write(f"| Property | Value |\n")
-                  f.write(f"|----------|-------|\n")
+                  f.write("| Property | Value |\n")
+                  f.write("|----------|-------|\n")
                   f.write(f"| Request ID | `{request_id}` |\n")
                   f.write(f"| Queue | `{queue_name}` |\n")
                   f.write(f"| Repository | `{repo}` |\n")
@@ -373,7 +363,7 @@ jobs:
               print(f"::error::Failed to submit: {e.code} {e.reason}")
               print(error_body)
               exit(1)
-          EOF
+          SUBMITEOF
 
       - name: Generate GitHub App Token
         id: app-token
