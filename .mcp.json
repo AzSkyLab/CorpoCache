@@ -1,0 +1,8 @@
+{                                                                                                                                    
+  "mcpServers": {                                                                                                                    
+    "infrastructure": {                                                                                                              
+      "type": "sse",                                                                                                                 
+      "url": "https://ca-mcp-prod.mangoflower-3bcf53fc.centralus.azurecontainerapps.io/sse?api_key=Qf772uaMytaTn48XBSy9rHint5ju2Lc7" 
+    }                                                                                                                                
+  }                                                                                                                                  
+}
