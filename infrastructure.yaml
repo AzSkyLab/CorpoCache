@@ -1,6 +1,24 @@
-# Infrastructure Pattern Request - Full Test
-# Test run 25: destroy existing infrastructure
-
+# CorpoCache Infrastructure
+# Generated from codebase analysis
+---
+# API Backend - Function App + Azure SQL + KeyVault
+version: "1"
+metadata:
+  project: corpocache
+  environment: dev
+  business_unit: personal
+  owners:
+    - sa_scottc1@azureskylab.com
+  location: eastus2
+pattern: api-backend
+config:
+  name: corpocache-api
+  runtime: node
+  db_type: azure_sql
+  enable_access_review: true
+  size: small
+---
+# Secondary Key Vault - Standalone config vault
 version: "1"
 metadata:
   project: corpocache
@@ -10,8 +28,7 @@ metadata:
     - sa_scottc1@azureskylab.com
   location: eastus2
 pattern: keyvault
-action: destroy
 config:
-  name: corpocache-secrets
+  name: config-vault
+  enable_access_review: false
   size: small
-  enable_access_review: true
