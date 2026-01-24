@@ -1,5 +1,5 @@
 # Infrastructure Pattern Request - Access Review Test
-# Test run 21: validating access review fix
+# Test run 22: fixed pattern config to include enable_access_review in optional
 #
 # This tests the keyvault pattern with access reviews enabled
 
