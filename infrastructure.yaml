@@ -1,6 +1,22 @@
-# Infrastructure Pattern Request - Full Test
-# Test run 25: destroy existing infrastructure
-
+# CorpoCache Infrastructure
+# Personal finance dashboard application infrastructure
+---
+# Full-stack web application
+version: "1"
+metadata:
+  project: corpocache
+  environment: dev
+  business_unit: personal
+  owners:
+    - sa_scottc1@azureskylab.com
+  location: eastus2
+pattern: web-app
+config:
+  name: corpocache
+  size: small
+  enable_access_review: true
+---
+# Secondary Key Vault - Standalone backup/config vault
 version: "1"
 metadata:
   project: corpocache
@@ -10,8 +26,7 @@ metadata:
     - sa_scottc1@azureskylab.com
   location: eastus2
 pattern: keyvault
-action: destroy
 config:
-  name: corpocache-secrets
+  name: config-vault
   size: small
-  enable_access_review: true
+  enable_access_review: false
