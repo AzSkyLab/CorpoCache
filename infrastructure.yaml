@@ -1,7 +1,5 @@
-# Infrastructure Pattern Request - Access Review Test
-# Test run 24 - two-stage annual access review: fixed pattern config to include enable_access_review in optional
-#
-# This tests the keyvault pattern with access reviews enabled
+# Infrastructure Pattern Request - Full Test
+# Test run 25: destroy existing infrastructure
 
 version: "1"
 metadata:
@@ -12,6 +10,7 @@ metadata:
     - sa_scottc1@azureskylab.com
   location: eastus2
 pattern: keyvault
+action: destroy
 config:
   name: corpocache-secrets
   size: small
