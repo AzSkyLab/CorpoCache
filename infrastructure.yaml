@@ -1,21 +1,16 @@
-# CorpoCache Infrastructure - Test Run 3
-# Generated from codebase analysis
----
-# API Backend - Function App + Azure SQL + KeyVault
 version: "1"
-action: destroy
+action: create
 metadata:
   project: corpocache
   environment: dev
-  business_unit: personal
+  business_unit: finance
   owners:
     - sa_scottc1@azureskylab.com
   location: eastus2
-pattern: api-backend
+
+pattern: keyvault
 pattern_version: "1.0.0"
 config:
-  name: corpocache-api
-  runtime: node
-  db_type: azure_sql
-  enable_access_review: true
   size: small
+  enable_access_review: true
+  name: secrets
