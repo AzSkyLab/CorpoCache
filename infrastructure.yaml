@@ -8,6 +8,7 @@ metadata:
     - sa_scottc1@azureskylab.com
   location: eastus2
 pattern: keyvault
+pattern_version: "1.0.0"
 config:
   size: small
   enable_access_review: true
@@ -24,6 +25,7 @@ metadata:
     - sa_scottc1@azureskylab.com
   location: eastus2
 pattern: static-site
+pattern_version: "1.0.0"
 config:
   size: small
   name: web
