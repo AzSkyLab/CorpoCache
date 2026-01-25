@@ -7,27 +7,23 @@ metadata:
   owners:
     - sa_scottc1@azureskylab.com
   location: eastus2
-
----
 pattern: keyvault
-pattern_version: "1.0.0"
 config:
   size: small
   enable_access_review: true
   name: secrets
 
+---
 version: "1"
 action: create
 metadata:
-  project: asdf
+  project: corpocache
   environment: dev
-  business_unit: asdf
+  business_unit: finance
   owners:
-    - asdfasdfasdf@asdfasdf.com
+    - sa_scottc1@azureskylab.com
   location: eastus2
-
 pattern: static-site
-pattern_version: "1.0.0"
 config:
   size: small
   name: web
