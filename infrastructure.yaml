@@ -3,6 +3,7 @@
 ---
 # API Backend - Function App + Azure SQL + KeyVault
 version: "1"
+action: destroy
 metadata:
   project: corpocache
   environment: dev
