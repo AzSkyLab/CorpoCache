@@ -1,3 +1,4 @@
+#comment for new test
 version: "1"
 action: create
 metadata:
@@ -25,7 +26,7 @@ metadata:
     - sa_scottc1@azureskylab.com
   location: eastus2
 pattern: static-site
-pattern_version: "1.0.0"
+pattern_version: "1.0.1"
 config:
   size: small
   name: web
