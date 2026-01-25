@@ -18,19 +18,3 @@ config:
   db_type: azure_sql
   enable_access_review: true
   size: small
----
-# Secondary Key Vault - Standalone config vault
-version: "1"
-metadata:
-  project: corpocache
-  environment: dev
-  business_unit: personal
-  owners:
-    - sa_scottc1@azureskylab.com
-  location: eastus2
-pattern: keyvault
-pattern_version: "1.0.0"
-config:
-  name: config-vault
-  enable_access_review: false
-  size: small
