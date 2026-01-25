@@ -1,6 +1,6 @@
 #comment for new test
 version: "1"
-action: create
+action: destroy
 metadata:
   project: corpocache
   environment: dev
@@ -17,7 +17,7 @@ config:
 
 ---
 version: "1"
-action: create
+action: destroy
 metadata:
   project: corpocache
   environment: dev
