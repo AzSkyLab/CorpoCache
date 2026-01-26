@@ -1,33 +1,15 @@
-#comment for new test
 version: "1"
-action: destroy
 metadata:
   project: corpocache
   environment: dev
   business_unit: finance
   owners:
-    - sa_scottc1@azureskylab.com
+    - "sa_scottc1@azureskylab.com"
   location: eastus2
-pattern: keyvault
-pattern_version: "1.0.0"
-config:
-  size: small
-  enable_access_review: true
-  name: secrets
 
----
-version: "1"
-action: destroy
-metadata:
-  project: corpocache
-  environment: dev
-  business_unit: finance
-  owners:
-    - sa_scottc1@azureskylab.com
-  location: eastus2
-pattern: static-site
-pattern_version: "1.0.1"
+pattern: keyvault
+pattern_version: "2.0.0"
 config:
   size: small
-  name: web
+  name: secrets
   enable_access_review: true
