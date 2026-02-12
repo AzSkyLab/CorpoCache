@@ -1,0 +1,44 @@
+frontend:
+  replicaCount: 1
+  image:
+    repository: ghcr.io/csgit34/corpocache-frontend
+    tag: latest
+    pullPolicy: Always
+  resources:
+    requests:
+      cpu: 50m
+      memory: 32Mi
+    limits:
+      cpu: 200m
+      memory: 64Mi
+
+api:
+  replicaCount: 1
+  image:
+    repository: ghcr.io/csgit34/corpocache-api
+    tag: latest
+    pullPolicy: Always
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+ingress:
+  enabled: true
+  host: cache.home.lab
+  tls:
+    enabled: true
+    secretName: corpocache-tls
+    issuerName: home-lab-ca
+
+database:
+  host: 10.0.30.10
+  port: "5432"
+  name: corpocache
+  user: corpocache
+  password: changeme
+  # Set to true to skip Helm-managed secret and use a manually created one instead
+  externalSecret: true

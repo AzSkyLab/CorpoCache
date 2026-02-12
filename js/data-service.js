@@ -6,12 +6,12 @@
 
 const DataService = (function () {
   // Storage mode: 'local' or 'api'
-  let mode = 'local';
+  let mode = 'api';
   let isInitialized = false;
   let isAuthenticated = false;
   let currentUser = null;
 
-  // Local cache for API mode (reduces API calls)
+  // Local cache for API mode
   let cache = {
     creditCards: [],
     bills: [],
@@ -25,14 +25,11 @@ const DataService = (function () {
   };
 
   // ID mapping for bills that reference credit cards
-  // In local mode: bills use index-based creditCardId
-  // In API mode: bills use database ID-based creditCardId
-  let creditCardIdMap = new Map(); // index -> dbId
-  let creditCardIndexMap = new Map(); // dbId -> index
+  let creditCardIdMap = new Map();
+  let creditCardIndexMap = new Map();
 
   /**
    * Initialize the data service
-   * Checks authentication and determines storage mode
    */
   async function init() {
     if (isInitialized) {
@@ -46,29 +43,22 @@ const DataService = (function () {
       currentUser = authStatus.user;
 
       if (isAuthenticated) {
-        // Try to load from API
         try {
           const data = await ApiClient.fetchAllData();
           mode = 'api';
-
-          // Update cache and global variables
           syncToGlobals(data);
           buildCreditCardMaps();
-
           console.log('DataService: Initialized in API mode');
         } catch (apiError) {
-          console.warn(
-            'DataService: API fetch failed, falling back to local mode',
-            apiError
-          );
+          console.warn('DataService: API fetch failed, falling back to local mode', apiError);
           mode = 'local';
           loadFromLocalStorage();
         }
       } else {
-        // Not authenticated - use local storage
+        // API not reachable - use local storage as fallback
         mode = 'local';
         loadFromLocalStorage();
-        console.log('DataService: Initialized in local mode');
+        console.log('DataService: Initialized in local mode (API unreachable)');
       }
 
       isInitialized = true;
@@ -83,85 +73,19 @@ const DataService = (function () {
   }
 
   /**
-   * Check if migration is needed (has localStorage data but using API mode)
-   */
-  function needsMigration() {
-    if (mode !== 'api') return false;
-
-    const hasLocalData =
-      localStorage.getItem('creditCards') ||
-      localStorage.getItem('bills') ||
-      localStorage.getItem('loans');
-    const alreadyMigrated = localStorage.getItem('dataMigrated') === 'true';
-
-    return hasLocalData && !alreadyMigrated;
-  }
-
-  /**
-   * Migrate data from localStorage to API
-   */
-  async function migrateToCloud() {
-    if (mode !== 'api') {
-      throw new Error('Must be authenticated to migrate to cloud');
-    }
-
-    // Gather all localStorage data
-    const localData = {
-      creditCards: JSON.parse(localStorage.getItem('creditCards') || '[]'),
-      bills: JSON.parse(localStorage.getItem('bills') || '[]'),
-      loans: JSON.parse(localStorage.getItem('loans') || '[]'),
-      expenses: JSON.parse(localStorage.getItem('expenses') || '[]'),
-      salaryData: JSON.parse(localStorage.getItem('salaryData') || '{}'),
-      profitData: JSON.parse(localStorage.getItem('profitData') || '{}'),
-      historicalBillData: JSON.parse(
-        localStorage.getItem('historicalBillData') || '[]'
-      ),
-      currentAppMonth: parseInt(
-        localStorage.getItem('currentAppMonth') || new Date().getMonth()
-      ),
-      currentAppYear: parseInt(
-        localStorage.getItem('currentAppYear') || new Date().getFullYear()
-      ),
-    };
-
-    // Send to sync endpoint
-    await ApiClient.syncAllData(localData);
-
-    // Mark as migrated
-    localStorage.setItem('dataMigrated', 'true');
-
-    // Reload data from API to get new IDs
-    const freshData = await ApiClient.fetchAllData();
-    syncToGlobals(freshData);
-    buildCreditCardMaps();
-
-    return true;
-  }
-
-  /**
-   * Load data from localStorage (legacy mode)
+   * Load data from localStorage (fallback mode)
    */
   function loadFromLocalStorage() {
     try {
-      cache.creditCards = JSON.parse(
-        localStorage.getItem('creditCards') || '[]'
-      );
+      cache.creditCards = JSON.parse(localStorage.getItem('creditCards') || '[]');
       cache.bills = JSON.parse(localStorage.getItem('bills') || '[]');
       cache.loans = JSON.parse(localStorage.getItem('loans') || '[]');
       cache.expenses = JSON.parse(localStorage.getItem('expenses') || '[]');
       cache.salaryData = JSON.parse(localStorage.getItem('salaryData') || '{}');
       cache.profitData = JSON.parse(localStorage.getItem('profitData') || '{}');
-      cache.historicalBillData = JSON.parse(
-        localStorage.getItem('historicalBillData') || '[]'
-      );
-      cache.currentAppMonth = parseInt(
-        localStorage.getItem('currentAppMonth') || new Date().getMonth()
-      );
-      cache.currentAppYear = parseInt(
-        localStorage.getItem('currentAppYear') || new Date().getFullYear()
-      );
-
-      // Sync to global variables
+      cache.historicalBillData = JSON.parse(localStorage.getItem('historicalBillData') || '[]');
+      cache.currentAppMonth = parseInt(localStorage.getItem('currentAppMonth') || new Date().getMonth());
+      cache.currentAppYear = parseInt(localStorage.getItem('currentAppYear') || new Date().getFullYear());
       syncToGlobals(cache);
     } catch (error) {
       console.error('DataService: Error loading from localStorage', error);
@@ -170,12 +94,8 @@ const DataService = (function () {
 
   /**
    * Sync cache/data to global variables for backward compatibility
-   * Note: We directly assign to window properties because script.js uses 'let'
-   * declarations which don't create window properties automatically
    */
   function syncToGlobals(data) {
-    // Always assign to window - this makes the data available to script.js
-    // which references these as local variables that share the same names
     window.creditCards = data.creditCards || [];
     window.bills = data.bills || [];
     window.loans = data.loans || [];
@@ -185,8 +105,6 @@ const DataService = (function () {
     window.historicalBillData = data.historicalBillData || [];
     window.currentAppMonth = data.currentAppMonth;
     window.currentAppYear = data.currentAppYear;
-
-    // Update cache
     Object.assign(cache, data);
   }
 
@@ -196,7 +114,6 @@ const DataService = (function () {
   function buildCreditCardMaps() {
     creditCardIdMap.clear();
     creditCardIndexMap.clear();
-
     cache.creditCards.forEach((card, index) => {
       if (card.id) {
         creditCardIdMap.set(index, card.id);
@@ -212,11 +129,10 @@ const DataService = (function () {
     if (mode === 'local') {
       saveToLocalStorage();
     }
-    // In API mode, individual save methods handle persistence
   }
 
   /**
-   * Save to localStorage (legacy)
+   * Save to localStorage (fallback)
    */
   function saveToLocalStorage() {
     try {
@@ -226,10 +142,7 @@ const DataService = (function () {
       localStorage.setItem('expenses', JSON.stringify(window.expenses));
       localStorage.setItem('salaryData', JSON.stringify(window.salaryData));
       localStorage.setItem('profitData', JSON.stringify(window.profitData));
-      localStorage.setItem(
-        'historicalBillData',
-        JSON.stringify(window.historicalBillData)
-      );
+      localStorage.setItem('historicalBillData', JSON.stringify(window.historicalBillData));
       localStorage.setItem('currentAppMonth', window.currentAppMonth);
       localStorage.setItem('currentAppYear', window.currentAppYear);
       localStorage.setItem('lastSaved', new Date().toISOString());
@@ -251,16 +164,13 @@ const DataService = (function () {
       return cardData;
     }
 
-    // API mode
     if (index >= 0 && cache.creditCards[index]?.id) {
-      // Update existing
       const id = cache.creditCards[index].id;
       const updated = await ApiClient.updateCreditCard(id, cardData);
       cache.creditCards[index] = updated;
       window.creditCards[index] = updated;
       return updated;
     } else {
-      // Create new
       const created = await ApiClient.createCreditCard(cardData);
       cache.creditCards.push(created);
       window.creditCards.push(created);
@@ -276,7 +186,6 @@ const DataService = (function () {
       return true;
     }
 
-    // API mode
     const card = cache.creditCards[index];
     if (card?.id) {
       await ApiClient.deleteCreditCard(card.id);
@@ -300,21 +209,14 @@ const DataService = (function () {
       return billData;
     }
 
-    // API mode - convert creditCardId from index to DB id
     const apiData = { ...billData };
-    if (
-      billData.creditCardId !== undefined &&
-      billData.creditCardId !== null &&
-      billData.creditCardId >= 0
-    ) {
+    if (billData.creditCardId !== undefined && billData.creditCardId !== null && billData.creditCardId >= 0) {
       apiData.creditCardId = creditCardIdMap.get(billData.creditCardId) || null;
     }
 
     if (index >= 0 && cache.bills[index]?.id) {
-      // Update existing
       const id = cache.bills[index].id;
       const updated = await ApiClient.updateBill(id, apiData);
-      // Convert creditCardId back to index for UI
       if (updated.creditCardId) {
         updated.creditCardId = creditCardIndexMap.get(updated.creditCardId);
       }
@@ -322,7 +224,6 @@ const DataService = (function () {
       window.bills[index] = updated;
       return updated;
     } else {
-      // Create new
       const created = await ApiClient.createBill(apiData);
       if (created.creditCardId) {
         created.creditCardId = creditCardIndexMap.get(created.creditCardId);
@@ -340,7 +241,6 @@ const DataService = (function () {
       return true;
     }
 
-    // API mode
     const bill = cache.bills[index];
     if (bill?.id) {
       await ApiClient.deleteBill(bill.id);
@@ -357,7 +257,6 @@ const DataService = (function () {
       return window.bills[index];
     }
 
-    // API mode
     const bill = cache.bills[index];
     if (bill?.id) {
       const result = await ApiClient.toggleBillPaid(bill.id);
@@ -375,7 +274,6 @@ const DataService = (function () {
       return true;
     }
 
-    // API mode
     await ApiClient.resetAllBillsPaid();
     cache.bills.forEach((bill) => (bill.isPaid = false));
     window.bills.forEach((bill) => (bill.isPaid = false));
@@ -395,7 +293,6 @@ const DataService = (function () {
       return loanData;
     }
 
-    // API mode
     if (index >= 0 && cache.loans[index]?.id) {
       const id = cache.loans[index].id;
       const updated = await ApiClient.updateLoan(id, loanData);
@@ -474,13 +371,10 @@ const DataService = (function () {
 
   async function saveSalaryData(data) {
     window.salaryData = data;
-
     if (mode === 'local') {
       saveToLocalStorage();
       return data;
     }
-
-    // Convert formatted strings to numeric values for API
     const numericData = convertSalaryDataToNumeric(data);
     await ApiClient.saveSalaryData(numericData);
     cache.salaryData = data;
@@ -489,13 +383,10 @@ const DataService = (function () {
 
   async function saveProfitData(data) {
     window.profitData = data;
-
     if (mode === 'local') {
       saveToLocalStorage();
       return data;
     }
-
-    // Convert formatted strings to numeric values for API
     const numericData = convertProfitDataToNumeric(data);
     await ApiClient.saveProfitData(numericData);
     cache.profitData = data;
@@ -578,7 +469,6 @@ const DataService = (function () {
       saveToLocalStorage();
       return data;
     }
-
     const created = await ApiClient.createHistoricalSnapshot(data);
     cache.historicalBillData.push(created);
     window.historicalBillData.push(created);
@@ -590,16 +480,11 @@ const DataService = (function () {
   async function saveAppState(month, year) {
     window.currentAppMonth = month;
     window.currentAppYear = year;
-
     if (mode === 'local') {
       saveToLocalStorage();
       return { currentAppMonth: month, currentAppYear: year };
     }
-
-    await ApiClient.saveUserData({
-      currentAppMonth: month,
-      currentAppYear: year,
-    });
+    await ApiClient.saveUserData({ currentAppMonth: month, currentAppYear: year });
     cache.currentAppMonth = month;
     cache.currentAppYear = year;
     return { currentAppMonth: month, currentAppYear: year };
@@ -607,17 +492,9 @@ const DataService = (function () {
 
   // ============ Utility ============
 
-  function getMode() {
-    return mode;
-  }
-
-  function isUserAuthenticated() {
-    return isAuthenticated;
-  }
-
-  function getUser() {
-    return currentUser;
-  }
+  function getMode() { return mode; }
+  function isUserAuthenticated() { return isAuthenticated; }
+  function getUser() { return currentUser; }
 
   // Public API
   return {
@@ -625,8 +502,6 @@ const DataService = (function () {
     getMode,
     isUserAuthenticated,
     getUser,
-    needsMigration,
-    migrateToCloud,
     save,
 
     // Credit Cards

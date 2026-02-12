@@ -1,46 +1,41 @@
-import * as sql from 'mssql';
+import { Pool, PoolClient } from 'pg';
 
 // Database configuration from environment variables
-const config: sql.config = {
-  server: process.env.SQL_SERVER || '',
-  database: process.env.SQL_DATABASE || 'corpocache',
-  user: process.env.SQL_USER || '',
-  password: process.env.SQL_PASSWORD || '',
-  options: {
-    encrypt: true,
-    trustServerCertificate: false,
-  },
-  pool: {
-    max: 10,
-    min: 0,
-    idleTimeoutMillis: 30000,
-  },
-};
-
-// Alternative: use connection string if provided
-const connectionString = process.env.SQL_CONNECTION_STRING;
-
-let pool: sql.ConnectionPool | null = null;
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  host: process.env.PG_HOST,
+  port: parseInt(process.env.PG_PORT || '5432', 10),
+  database: process.env.PG_DATABASE || 'corpocache',
+  user: process.env.PG_USER,
+  password: process.env.PG_PASSWORD,
+  max: 10,
+  idleTimeoutMillis: 30000,
+});
 
 /**
- * Get or create database connection pool
+ * Convert MSSQL-style named params (@paramName) to PostgreSQL positional params ($1, $2, ...)
+ * Returns the converted query string and ordered values array.
  */
-export async function getPool(): Promise<sql.ConnectionPool> {
-  if (pool && pool.connected) {
-    return pool;
+function convertNamedParams(
+  queryText: string,
+  params?: Record<string, unknown>
+): { text: string; values: unknown[] } {
+  if (!params) {
+    return { text: queryText, values: [] };
   }
 
-  try {
-    if (connectionString) {
-      pool = await sql.connect(connectionString);
-    } else {
-      pool = await sql.connect(config);
+  const paramNames: string[] = [];
+  const text = queryText.replace(/@(\w+)/g, (_match, name) => {
+    let idx = paramNames.indexOf(name);
+    if (idx === -1) {
+      paramNames.push(name);
+      idx = paramNames.length - 1;
     }
-    return pool;
-  } catch (error) {
-    console.error('Database connection error:', error);
-    throw error;
-  }
+    return `$${idx + 1}`;
+  });
+
+  const values = paramNames.map((name) => params[name]);
+  return { text, values };
 }
 
 /**
@@ -49,17 +44,10 @@ export async function getPool(): Promise<sql.ConnectionPool> {
 export async function query<T>(
   queryText: string,
   params?: Record<string, unknown>
-): Promise<sql.IResult<T>> {
-  const pool = await getPool();
-  const request = pool.request();
-
-  if (params) {
-    for (const [key, value] of Object.entries(params)) {
-      request.input(key, value);
-    }
-  }
-
-  return request.query<T>(queryText);
+): Promise<{ rows: T[]; rowCount: number }> {
+  const { text, values } = convertNamedParams(queryText, params);
+  const result = await pool.query<T>(text, values);
+  return { rows: result.rows, rowCount: result.rowCount ?? 0 };
 }
 
 /**
@@ -70,7 +58,7 @@ export async function queryRows<T>(
   params?: Record<string, unknown>
 ): Promise<T[]> {
   const result = await query<T>(queryText, params);
-  return result.recordset;
+  return result.rows;
 }
 
 /**
@@ -81,29 +69,20 @@ export async function queryRow<T>(
   params?: Record<string, unknown>
 ): Promise<T | null> {
   const result = await query<T>(queryText, params);
-  return result.recordset[0] || null;
+  return result.rows[0] || null;
 }
 
 /**
  * Execute an insert and return the inserted ID
+ * Appends RETURNING id to the query.
  */
 export async function insert(
   queryText: string,
   params?: Record<string, unknown>
 ): Promise<number> {
-  const pool = await getPool();
-  const request = pool.request();
-
-  if (params) {
-    for (const [key, value] of Object.entries(params)) {
-      request.input(key, value);
-    }
-  }
-
-  // Append SCOPE_IDENTITY() to get the inserted ID
-  const fullQuery = `${queryText}; SELECT SCOPE_IDENTITY() AS id;`;
-  const result = await request.query(fullQuery);
-  return result.recordset[0]?.id || 0;
+  const fullQuery = `${queryText} RETURNING id`;
+  const result = await query<{ id: number }>(fullQuery, params);
+  return result.rows[0]?.id || 0;
 }
 
 /**
@@ -114,36 +93,45 @@ export async function execute(
   params?: Record<string, unknown>
 ): Promise<number> {
   const result = await query(queryText, params);
-  return result.rowsAffected[0] || 0;
+  return result.rowCount;
 }
 
 /**
- * Begin a transaction for multiple operations
+ * Transaction helper - returns a client with BEGIN already called
  */
-export async function beginTransaction(): Promise<sql.Transaction> {
-  const pool = await getPool();
-  const transaction = new sql.Transaction(pool);
-  await transaction.begin();
-  return transaction;
+export async function beginTransaction(): Promise<PoolClient> {
+  const client = await pool.connect();
+  await client.query('BEGIN');
+  return client;
 }
 
 /**
  * Execute query within a transaction
  */
 export async function transactionQuery<T>(
-  transaction: sql.Transaction,
+  client: PoolClient,
   queryText: string,
   params?: Record<string, unknown>
-): Promise<sql.IResult<T>> {
-  const request = new sql.Request(transaction);
+): Promise<{ rows: T[]; rowCount: number }> {
+  const { text, values } = convertNamedParams(queryText, params);
+  const result = await client.query<T>(text, values);
+  return { rows: result.rows, rowCount: result.rowCount ?? 0 };
+}
 
-  if (params) {
-    for (const [key, value] of Object.entries(params)) {
-      request.input(key, value);
-    }
-  }
+/**
+ * Commit a transaction and release the client
+ */
+export async function commitTransaction(client: PoolClient): Promise<void> {
+  await client.query('COMMIT');
+  client.release();
+}
 
-  return request.query<T>(queryText);
+/**
+ * Rollback a transaction and release the client
+ */
+export async function rollbackTransaction(client: PoolClient): Promise<void> {
+  await client.query('ROLLBACK');
+  client.release();
 }
 
 /**
@@ -165,12 +153,11 @@ export async function ensureUser(
       { userId, email, displayName }
     );
   } else if (email || displayName) {
-    // Update user info if provided
     await query(
       `UPDATE Users SET
         email = COALESCE(@email, email),
         display_name = COALESCE(@displayName, display_name),
-        updated_at = GETUTCDATE()
+        updated_at = NOW()
        WHERE id = @userId`,
       { userId, email, displayName }
     );
@@ -181,10 +168,19 @@ export async function ensureUser(
  * Close the connection pool
  */
 export async function closePool(): Promise<void> {
-  if (pool) {
-    await pool.close();
-    pool = null;
+  await pool.end();
+}
+
+/**
+ * Check if database is reachable
+ */
+export async function checkConnection(): Promise<boolean> {
+  try {
+    await pool.query('SELECT 1');
+    return true;
+  } catch {
+    return false;
   }
 }
 
-export { sql };
+export { pool };

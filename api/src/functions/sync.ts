@@ -1,20 +1,14 @@
-import {
-  app,
-  HttpRequest,
-  HttpResponseInit,
-  InvocationContext,
-} from '@azure/functions';
+import { Router, Request, Response } from 'express';
 import {
   beginTransaction,
   transactionQuery,
-  query,
+  commitTransaction,
+  rollbackTransaction,
   queryRow,
 } from '../services/database';
-import { ensureUserInDatabase } from '../middleware/auth';
 
-/**
- * Sync payload structure - matches localStorage data format
- */
+const router = Router();
+
 interface SyncPayload {
   creditCards?: Array<{
     name: string;
@@ -34,7 +28,7 @@ interface SyncPayload {
     varyingAmount?: boolean;
     autoPay?: boolean;
     paymentAccount?: string;
-    creditCardId?: number; // Index in the creditCards array
+    creditCardId?: number;
   }>;
   loans?: Array<{
     name: string;
@@ -75,73 +69,48 @@ interface SyncPayload {
   currentAppYear?: number;
 }
 
-/**
- * POST /api/sync - Bulk upload all data from localStorage
- * This is used for migrating existing users to the database
- */
-async function syncHandler(
-  request: HttpRequest,
-  context: InvocationContext
-): Promise<HttpResponseInit> {
-  try {
-    const user = await ensureUserInDatabase(request);
-    const body = (await request.json()) as SyncPayload;
+function parseNumeric(value: unknown): number | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    const cleaned = value.replace(/[$,()%\s]/g, '').replace(/^-/, '');
+    const num = parseFloat(cleaned);
+    if (!isNaN(num)) {
+      const isNegative = value.includes('-') || value.startsWith('(');
+      return isNegative ? -num : num;
+    }
+  }
+  return null;
+}
 
-    const transaction = await beginTransaction();
-    const creditCardIdMap: Map<number, number> = new Map(); // old index -> new DB id
+// POST /api/sync
+router.post('/sync', async (req: Request, res: Response) => {
+  try {
+    const user = req.user!;
+    const body = req.body as SyncPayload;
+    const client = await beginTransaction();
+    const creditCardIdMap: Map<number, number> = new Map();
 
     try {
-      // 1. Clear existing data for user (fresh sync)
-      await transactionQuery(
-        transaction,
+      // 1. Clear existing data
+      await transactionQuery(client,
         'DELETE FROM HistoricalBillItems WHERE historical_bill_data_id IN (SELECT id FROM HistoricalBillData WHERE user_id = @userId)',
-        { userId: user.id }
-      );
-      await transactionQuery(
-        transaction,
-        'DELETE FROM HistoricalBillData WHERE user_id = @userId',
-        { userId: user.id }
-      );
-      await transactionQuery(
-        transaction,
-        'DELETE FROM Bills WHERE user_id = @userId',
-        { userId: user.id }
-      );
-      await transactionQuery(
-        transaction,
-        'DELETE FROM CreditCards WHERE user_id = @userId',
-        { userId: user.id }
-      );
-      await transactionQuery(
-        transaction,
-        'DELETE FROM Loans WHERE user_id = @userId',
-        { userId: user.id }
-      );
-      await transactionQuery(
-        transaction,
-        'DELETE FROM Expenses WHERE user_id = @userId',
-        { userId: user.id }
-      );
-      await transactionQuery(
-        transaction,
-        'DELETE FROM SalaryData WHERE user_id = @userId',
-        { userId: user.id }
-      );
-      await transactionQuery(
-        transaction,
-        'DELETE FROM ProfitData WHERE user_id = @userId',
-        { userId: user.id }
-      );
+        { userId: user.id });
+      await transactionQuery(client, 'DELETE FROM HistoricalBillData WHERE user_id = @userId', { userId: user.id });
+      await transactionQuery(client, 'DELETE FROM Bills WHERE user_id = @userId', { userId: user.id });
+      await transactionQuery(client, 'DELETE FROM CreditCards WHERE user_id = @userId', { userId: user.id });
+      await transactionQuery(client, 'DELETE FROM Loans WHERE user_id = @userId', { userId: user.id });
+      await transactionQuery(client, 'DELETE FROM Expenses WHERE user_id = @userId', { userId: user.id });
+      await transactionQuery(client, 'DELETE FROM SalaryData WHERE user_id = @userId', { userId: user.id });
+      await transactionQuery(client, 'DELETE FROM ProfitData WHERE user_id = @userId', { userId: user.id });
 
-      // 2. Insert credit cards and build ID map
+      // 2. Insert credit cards
       if (body.creditCards && body.creditCards.length > 0) {
         for (let i = 0; i < body.creditCards.length; i++) {
           const card = body.creditCards[i];
-          const result = await transactionQuery<{ id: number }>(
-            transaction,
+          const result = await transactionQuery<{ id: number }>(client,
             `INSERT INTO CreditCards (user_id, name, credit_limit, balance, open_date, due_date, custom_image)
-             OUTPUT INSERTED.id
-             VALUES (@userId, @name, @limit, @balance, @openDate, @dueDate, @customImage)`,
+             VALUES (@userId, @name, @limit, @balance, @openDate, @dueDate, @customImage) RETURNING id`,
             {
               userId: user.id,
               name: card.name?.trim() || 'Unnamed Card',
@@ -150,30 +119,20 @@ async function syncHandler(
               openDate: card.openDate || null,
               dueDate: card.dueDate || 1,
               customImage: card.customImage || null,
-            }
-          );
-          const newId = result.recordset[0]?.id;
-          if (newId) {
-            creditCardIdMap.set(i, newId);
-          }
+            });
+          const newId = result.rows[0]?.id;
+          if (newId) creditCardIdMap.set(i, newId);
         }
       }
 
-      // 3. Insert bills with credit card ID mapping
+      // 3. Insert bills
       if (body.bills && body.bills.length > 0) {
         for (const bill of body.bills) {
-          // Map old index-based creditCardId to new DB id
           let newCreditCardId: number | null = null;
-          if (
-            bill.creditCardId !== undefined &&
-            bill.creditCardId !== null &&
-            bill.creditCardId >= 0
-          ) {
+          if (bill.creditCardId !== undefined && bill.creditCardId !== null && bill.creditCardId >= 0) {
             newCreditCardId = creditCardIdMap.get(bill.creditCardId) || null;
           }
-
-          await transactionQuery(
-            transaction,
+          await transactionQuery(client,
             `INSERT INTO Bills (user_id, name, amount, due_date, type, priority, is_paid, varying_amount, auto_pay, payment_account, credit_card_id)
              VALUES (@userId, @name, @amount, @dueDate, @type, @priority, @isPaid, @varyingAmount, @autoPay, @paymentAccount, @creditCardId)`,
             {
@@ -188,16 +147,14 @@ async function syncHandler(
               autoPay: bill.autoPay || false,
               paymentAccount: bill.paymentAccount || null,
               creditCardId: newCreditCardId,
-            }
-          );
+            });
         }
       }
 
       // 4. Insert loans
       if (body.loans && body.loans.length > 0) {
         for (const loan of body.loans) {
-          await transactionQuery(
-            transaction,
+          await transactionQuery(client,
             `INSERT INTO Loans (user_id, name, original_amount, balance, interest_rate, due_date, type, term, start_date, first_payment_date, additional_principal, pmi, property_tax, property_insurance)
              VALUES (@userId, @name, @originalAmount, @balance, @interestRate, @dueDate, @type, @term, @startDate, @firstPaymentDate, @additionalPrincipal, @pmi, @propertyTax, @propertyInsurance)`,
             {
@@ -215,16 +172,14 @@ async function syncHandler(
               pmi: loan.pmi || 0,
               propertyTax: loan.propertyTax || 0,
               propertyInsurance: loan.propertyInsurance || 0,
-            }
-          );
+            });
         }
       }
 
       // 5. Insert expenses
       if (body.expenses && body.expenses.length > 0) {
         for (const expense of body.expenses) {
-          await transactionQuery(
-            transaction,
+          await transactionQuery(client,
             `INSERT INTO Expenses (user_id, name, amount, category)
              VALUES (@userId, @name, @amount, @category)`,
             {
@@ -232,16 +187,14 @@ async function syncHandler(
               name: expense.name?.trim() || 'Unnamed Expense',
               amount: expense.amount || 0,
               category: expense.category?.trim() || 'other',
-            }
-          );
+            });
         }
       }
 
       // 6. Insert salary data
       if (body.salaryData && Object.keys(body.salaryData).length > 0) {
         const s = body.salaryData;
-        await transactionQuery(
-          transaction,
+        await transactionQuery(client,
           `INSERT INTO SalaryData (
             user_id, annual_salary, pay_frequency, filing_status, state_tax_rate,
             retirement_percent, espp_percent, health_amount, dental_amount, vision_amount,
@@ -285,15 +238,13 @@ async function syncHandler(
             insuranceTotal: parseNumeric(s.insuranceTotal),
             savingsTotal: parseNumeric(s.savingsTotal),
             afterTaxBonus: parseNumeric(s.afterTaxBonusAmount),
-          }
-        );
+          });
       }
 
       // 7. Insert profit data
       if (body.profitData && Object.keys(body.profitData).length > 0) {
         const p = body.profitData;
-        await transactionQuery(
-          transaction,
+        await transactionQuery(client,
           `INSERT INTO ProfitData (
             user_id, monthly_income, monthly_bills, monthly_surplus,
             paycheck1_net, paycheck1_bills, paycheck1_surplus,
@@ -331,31 +282,25 @@ async function syncHandler(
             annualSurplusWithBonus: parseNumeric(p.gpAnnualSurplusWithBonus),
             profitRatio: p.profitRatio || null,
             payFrequency: p.payFrequency || null,
-          }
-        );
+          });
       }
 
       // 8. Insert historical bill data
       if (body.historicalBillData && body.historicalBillData.length > 0) {
         for (const hist of body.historicalBillData) {
-          const result = await transactionQuery<{ id: number }>(
-            transaction,
+          const result = await transactionQuery<{ id: number }>(client,
             `INSERT INTO HistoricalBillData (user_id, month, year, timestamp)
-             OUTPUT INSERTED.id
-             VALUES (@userId, @month, @year, @timestamp)`,
+             VALUES (@userId, @month, @year, @timestamp) RETURNING id`,
             {
               userId: user.id,
               month: hist.month,
               year: hist.year,
               timestamp: hist.timestamp || new Date().toISOString(),
-            }
-          );
-
-          const histId = result.recordset[0]?.id;
+            });
+          const histId = result.rows[0]?.id;
           if (histId && hist.bills && hist.bills.length > 0) {
             for (const bill of hist.bills) {
-              await transactionQuery(
-                transaction,
+              await transactionQuery(client,
                 `INSERT INTO HistoricalBillItems
                  (historical_bill_data_id, name, amount, type, due_date, is_paid, payment_account)
                  VALUES (@histId, @name, @amount, @type, @dueDate, @isPaid, @paymentAccount)`,
@@ -367,89 +312,48 @@ async function syncHandler(
                   dueDate: bill.dueDate || 1,
                   isPaid: bill.isPaid || false,
                   paymentAccount: bill.paymentAccount || null,
-                }
-              );
+                });
             }
           }
         }
       }
 
       // 9. Update user app state
-      if (
-        body.currentAppMonth !== undefined ||
-        body.currentAppYear !== undefined
-      ) {
-        await transactionQuery(
-          transaction,
+      if (body.currentAppMonth !== undefined || body.currentAppYear !== undefined) {
+        await transactionQuery(client,
           `UPDATE Users SET
             current_app_month = COALESCE(@currentAppMonth, current_app_month),
             current_app_year = COALESCE(@currentAppYear, current_app_year),
-            updated_at = GETUTCDATE()
+            updated_at = NOW()
            WHERE id = @userId`,
           {
             userId: user.id,
             currentAppMonth: body.currentAppMonth,
             currentAppYear: body.currentAppYear,
-          }
-        );
+          });
       }
 
-      await transaction.commit();
+      await commitTransaction(client);
 
-      return {
-        status: 200,
-        jsonBody: {
-          success: true,
-          message: 'Data synchronized successfully',
-          stats: {
-            creditCards: body.creditCards?.length || 0,
-            bills: body.bills?.length || 0,
-            loans: body.loans?.length || 0,
-            expenses: body.expenses?.length || 0,
-            historicalSnapshots: body.historicalBillData?.length || 0,
-          },
+      res.json({
+        success: true,
+        message: 'Data synchronized successfully',
+        stats: {
+          creditCards: body.creditCards?.length || 0,
+          bills: body.bills?.length || 0,
+          loans: body.loans?.length || 0,
+          expenses: body.expenses?.length || 0,
+          historicalSnapshots: body.historicalBillData?.length || 0,
         },
-      };
+      });
     } catch (error) {
-      await transaction.rollback();
+      await rollbackTransaction(client);
       throw error;
     }
   } catch (error) {
-    context.error('Error in sync handler:', error);
-    return {
-      status: 500,
-      jsonBody: { error: 'Internal server error during sync' },
-    };
+    console.error('Error in POST /sync:', error);
+    res.status(500).json({ error: 'Internal server error during sync' });
   }
-}
-
-/**
- * Parse numeric value from various formats (string with currency, percentage, etc.)
- */
-function parseNumeric(value: unknown): number | null {
-  if (value === null || value === undefined) {
-    return null;
-  }
-  if (typeof value === 'number') {
-    return value;
-  }
-  if (typeof value === 'string') {
-    // Remove currency symbols, commas, parentheses, percent signs
-    const cleaned = value.replace(/[$,()%\s]/g, '').replace(/^-/, '');
-    const num = parseFloat(cleaned);
-    if (!isNaN(num)) {
-      // Handle negative values (parentheses or leading minus)
-      const isNegative = value.includes('-') || value.startsWith('(');
-      return isNegative ? -num : num;
-    }
-  }
-  return null;
-}
-
-// Register route
-app.http('sync', {
-  methods: ['POST'],
-  authLevel: 'anonymous',
-  route: 'sync',
-  handler: syncHandler,
 });
+
+export default router;

@@ -1,11 +1,7 @@
-import {
-  app,
-  HttpRequest,
-  HttpResponseInit,
-  InvocationContext,
-} from '@azure/functions';
+import { Router, Request, Response } from 'express';
 import { queryRow, query } from '../services/database';
-import { ensureUserInDatabase } from '../middleware/auth';
+
+const router = Router();
 
 interface ProfitDataRow {
   id: number;
@@ -55,14 +51,8 @@ interface ProfitDataInput {
   payFrequency?: number;
 }
 
-/**
- * Transform DB row to API response format
- */
 function toApiFormat(row: ProfitDataRow | null): Record<string, unknown> {
-  if (!row) {
-    return {};
-  }
-
+  if (!row) return {};
   return {
     monthlyIncome: row.monthly_income,
     monthlyBills: row.monthly_bills,
@@ -87,158 +77,105 @@ function toApiFormat(row: ProfitDataRow | null): Record<string, unknown> {
   };
 }
 
-/**
- * GET /api/profitData - Get profit data for user
- * PUT /api/profitData - Save profit data (upsert)
- */
-async function profitDataHandler(
-  request: HttpRequest,
-  context: InvocationContext
-): Promise<HttpResponseInit> {
+// GET /api/profitData
+router.get('/profitData', async (req: Request, res: Response) => {
   try {
-    const user = await ensureUserInDatabase(request);
-
-    if (request.method === 'GET') {
-      const data = await queryRow<ProfitDataRow>(
-        'SELECT * FROM ProfitData WHERE user_id = @userId',
-        { userId: user.id }
-      );
-
-      return {
-        status: 200,
-        jsonBody: toApiFormat(data),
-      };
-    }
-
-    if (request.method === 'PUT') {
-      const body = (await request.json()) as ProfitDataInput;
-
-      // Check if record exists
-      const existing = await queryRow<{ id: number }>(
-        'SELECT id FROM ProfitData WHERE user_id = @userId',
-        { userId: user.id }
-      );
-
-      if (existing) {
-        // Update existing record
-        await query(
-          `UPDATE ProfitData SET
-            monthly_income = @monthlyIncome,
-            monthly_bills = @monthlyBills,
-            monthly_surplus = @monthlySurplus,
-            paycheck1_net = @paycheck1Net,
-            paycheck1_bills = @paycheck1Bills,
-            paycheck1_surplus = @paycheck1Surplus,
-            paycheck2_net = @paycheck2Net,
-            paycheck2_bills = @paycheck2Bills,
-            paycheck2_surplus = @paycheck2Surplus,
-            paycheck3_net = @paycheck3Net,
-            paycheck3_bills = @paycheck3Bills,
-            paycheck3_surplus = @paycheck3Surplus,
-            has_third_paycheck = @hasThirdPaycheck,
-            annual_income = @annualIncome,
-            annual_bonus = @annualBonus,
-            annual_bills = @annualBills,
-            annual_surplus = @annualSurplus,
-            annual_surplus_with_bonus = @annualSurplusWithBonus,
-            profit_ratio = @profitRatio,
-            pay_frequency = @payFrequency,
-            updated_at = GETUTCDATE()
-           WHERE user_id = @userId`,
-          {
-            userId: user.id,
-            monthlyIncome: body.monthlyIncome ?? null,
-            monthlyBills: body.monthlyBills ?? null,
-            monthlySurplus: body.monthlySurplus ?? null,
-            paycheck1Net: body.paycheck1Net ?? null,
-            paycheck1Bills: body.paycheck1Bills ?? null,
-            paycheck1Surplus: body.paycheck1Surplus ?? null,
-            paycheck2Net: body.paycheck2Net ?? null,
-            paycheck2Bills: body.paycheck2Bills ?? null,
-            paycheck2Surplus: body.paycheck2Surplus ?? null,
-            paycheck3Net: body.paycheck3Net ?? null,
-            paycheck3Bills: body.paycheck3Bills ?? null,
-            paycheck3Surplus: body.paycheck3Surplus ?? null,
-            hasThirdPaycheck: body.hasThirdPaycheck ?? false,
-            annualIncome: body.annualIncome ?? null,
-            annualBonus: body.annualBonus ?? null,
-            annualBills: body.annualBills ?? null,
-            annualSurplus: body.annualSurplus ?? null,
-            annualSurplusWithBonus: body.annualSurplusWithBonus ?? null,
-            profitRatio: body.profitRatio ?? null,
-            payFrequency: body.payFrequency ?? null,
-          }
-        );
-      } else {
-        // Insert new record
-        await query(
-          `INSERT INTO ProfitData (
-            user_id, monthly_income, monthly_bills, monthly_surplus,
-            paycheck1_net, paycheck1_bills, paycheck1_surplus,
-            paycheck2_net, paycheck2_bills, paycheck2_surplus,
-            paycheck3_net, paycheck3_bills, paycheck3_surplus, has_third_paycheck,
-            annual_income, annual_bonus, annual_bills, annual_surplus, annual_surplus_with_bonus,
-            profit_ratio, pay_frequency
-          ) VALUES (
-            @userId, @monthlyIncome, @monthlyBills, @monthlySurplus,
-            @paycheck1Net, @paycheck1Bills, @paycheck1Surplus,
-            @paycheck2Net, @paycheck2Bills, @paycheck2Surplus,
-            @paycheck3Net, @paycheck3Bills, @paycheck3Surplus, @hasThirdPaycheck,
-            @annualIncome, @annualBonus, @annualBills, @annualSurplus, @annualSurplusWithBonus,
-            @profitRatio, @payFrequency
-          )`,
-          {
-            userId: user.id,
-            monthlyIncome: body.monthlyIncome ?? null,
-            monthlyBills: body.monthlyBills ?? null,
-            monthlySurplus: body.monthlySurplus ?? null,
-            paycheck1Net: body.paycheck1Net ?? null,
-            paycheck1Bills: body.paycheck1Bills ?? null,
-            paycheck1Surplus: body.paycheck1Surplus ?? null,
-            paycheck2Net: body.paycheck2Net ?? null,
-            paycheck2Bills: body.paycheck2Bills ?? null,
-            paycheck2Surplus: body.paycheck2Surplus ?? null,
-            paycheck3Net: body.paycheck3Net ?? null,
-            paycheck3Bills: body.paycheck3Bills ?? null,
-            paycheck3Surplus: body.paycheck3Surplus ?? null,
-            hasThirdPaycheck: body.hasThirdPaycheck ?? false,
-            annualIncome: body.annualIncome ?? null,
-            annualBonus: body.annualBonus ?? null,
-            annualBills: body.annualBills ?? null,
-            annualSurplus: body.annualSurplus ?? null,
-            annualSurplusWithBonus: body.annualSurplusWithBonus ?? null,
-            profitRatio: body.profitRatio ?? null,
-            payFrequency: body.payFrequency ?? null,
-          }
-        );
-      }
-
-      // Return updated data
-      const updated = await queryRow<ProfitDataRow>(
-        'SELECT * FROM ProfitData WHERE user_id = @userId',
-        { userId: user.id }
-      );
-
-      return {
-        status: 200,
-        jsonBody: toApiFormat(updated),
-      };
-    }
-
-    return { status: 405, jsonBody: { error: 'Method not allowed' } };
+    const user = req.user!;
+    const data = await queryRow<ProfitDataRow>(
+      'SELECT * FROM ProfitData WHERE user_id = @userId',
+      { userId: user.id }
+    );
+    res.json(toApiFormat(data));
   } catch (error) {
-    context.error('Error in profitData handler:', error);
-    return {
-      status: 500,
-      jsonBody: { error: 'Internal server error' },
-    };
+    console.error('Error in GET /profitData:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
-}
-
-// Register route
-app.http('profitData', {
-  methods: ['GET', 'PUT'],
-  authLevel: 'anonymous',
-  route: 'profitData',
-  handler: profitDataHandler,
 });
+
+// PUT /api/profitData
+router.put('/profitData', async (req: Request, res: Response) => {
+  try {
+    const user = req.user!;
+    const body = req.body as ProfitDataInput;
+
+    const existing = await queryRow<{ id: number }>(
+      'SELECT id FROM ProfitData WHERE user_id = @userId',
+      { userId: user.id }
+    );
+
+    const params = {
+      userId: user.id,
+      monthlyIncome: body.monthlyIncome ?? null,
+      monthlyBills: body.monthlyBills ?? null,
+      monthlySurplus: body.monthlySurplus ?? null,
+      paycheck1Net: body.paycheck1Net ?? null,
+      paycheck1Bills: body.paycheck1Bills ?? null,
+      paycheck1Surplus: body.paycheck1Surplus ?? null,
+      paycheck2Net: body.paycheck2Net ?? null,
+      paycheck2Bills: body.paycheck2Bills ?? null,
+      paycheck2Surplus: body.paycheck2Surplus ?? null,
+      paycheck3Net: body.paycheck3Net ?? null,
+      paycheck3Bills: body.paycheck3Bills ?? null,
+      paycheck3Surplus: body.paycheck3Surplus ?? null,
+      hasThirdPaycheck: body.hasThirdPaycheck ?? false,
+      annualIncome: body.annualIncome ?? null,
+      annualBonus: body.annualBonus ?? null,
+      annualBills: body.annualBills ?? null,
+      annualSurplus: body.annualSurplus ?? null,
+      annualSurplusWithBonus: body.annualSurplusWithBonus ?? null,
+      profitRatio: body.profitRatio ?? null,
+      payFrequency: body.payFrequency ?? null,
+    };
+
+    if (existing) {
+      await query(
+        `UPDATE ProfitData SET
+          monthly_income = @monthlyIncome, monthly_bills = @monthlyBills,
+          monthly_surplus = @monthlySurplus,
+          paycheck1_net = @paycheck1Net, paycheck1_bills = @paycheck1Bills,
+          paycheck1_surplus = @paycheck1Surplus,
+          paycheck2_net = @paycheck2Net, paycheck2_bills = @paycheck2Bills,
+          paycheck2_surplus = @paycheck2Surplus,
+          paycheck3_net = @paycheck3Net, paycheck3_bills = @paycheck3Bills,
+          paycheck3_surplus = @paycheck3Surplus, has_third_paycheck = @hasThirdPaycheck,
+          annual_income = @annualIncome, annual_bonus = @annualBonus,
+          annual_bills = @annualBills, annual_surplus = @annualSurplus,
+          annual_surplus_with_bonus = @annualSurplusWithBonus,
+          profit_ratio = @profitRatio, pay_frequency = @payFrequency,
+          updated_at = NOW()
+         WHERE user_id = @userId`,
+        params
+      );
+    } else {
+      await query(
+        `INSERT INTO ProfitData (
+          user_id, monthly_income, monthly_bills, monthly_surplus,
+          paycheck1_net, paycheck1_bills, paycheck1_surplus,
+          paycheck2_net, paycheck2_bills, paycheck2_surplus,
+          paycheck3_net, paycheck3_bills, paycheck3_surplus, has_third_paycheck,
+          annual_income, annual_bonus, annual_bills, annual_surplus, annual_surplus_with_bonus,
+          profit_ratio, pay_frequency
+        ) VALUES (
+          @userId, @monthlyIncome, @monthlyBills, @monthlySurplus,
+          @paycheck1Net, @paycheck1Bills, @paycheck1Surplus,
+          @paycheck2Net, @paycheck2Bills, @paycheck2Surplus,
+          @paycheck3Net, @paycheck3Bills, @paycheck3Surplus, @hasThirdPaycheck,
+          @annualIncome, @annualBonus, @annualBills, @annualSurplus, @annualSurplusWithBonus,
+          @profitRatio, @payFrequency
+        )`,
+        params
+      );
+    }
+
+    const updated = await queryRow<ProfitDataRow>(
+      'SELECT * FROM ProfitData WHERE user_id = @userId',
+      { userId: user.id }
+    );
+    res.json(toApiFormat(updated));
+  } catch (error) {
+    console.error('Error in PUT /profitData:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+export default router;

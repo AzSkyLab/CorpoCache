@@ -1,0 +1,15 @@
+node_modules
+api/node_modules
+api/dist
+.git
+.github
+docs
+PRD-CorpoCache.md
+CLAUDE.md
+*.md
+!index.html
+.dockerignore
+docker-compose.yml
+helm
+scripts
+staticwebapp.config.json

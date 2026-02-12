@@ -1,11 +1,7 @@
-import {
-  app,
-  HttpRequest,
-  HttpResponseInit,
-  InvocationContext,
-} from '@azure/functions';
+import { Router, Request, Response } from 'express';
 import { queryRow, query } from '../services/database';
-import { ensureUserInDatabase } from '../middleware/auth';
+
+const router = Router();
 
 interface UserRow {
   id: string;
@@ -22,14 +18,8 @@ interface UserDataInput {
   currentAppYear?: number;
 }
 
-/**
- * Transform DB row to API response format
- */
 function toApiFormat(row: UserRow | null): Record<string, unknown> {
-  if (!row) {
-    return {};
-  }
-
+  if (!row) return {};
   return {
     id: row.id,
     email: row.email,
@@ -41,110 +31,65 @@ function toApiFormat(row: UserRow | null): Record<string, unknown> {
   };
 }
 
-/**
- * GET /api/userData - Get user data (app state)
- * PUT /api/userData - Update user data (app state)
- */
-async function userDataHandler(
-  request: HttpRequest,
-  context: InvocationContext
-): Promise<HttpResponseInit> {
+// GET /api/userData
+router.get('/userData', async (req: Request, res: Response) => {
   try {
-    const user = await ensureUserInDatabase(request);
-
-    if (request.method === 'GET') {
-      const data = await queryRow<UserRow>(
-        'SELECT * FROM Users WHERE id = @userId',
-        { userId: user.id }
-      );
-
-      return {
-        status: 200,
-        jsonBody: toApiFormat(data),
-      };
-    }
-
-    if (request.method === 'PUT') {
-      const body = (await request.json()) as UserDataInput;
-
-      // Update user record
-      await query(
-        `UPDATE Users SET
-          current_app_month = COALESCE(@currentAppMonth, current_app_month),
-          current_app_year = COALESCE(@currentAppYear, current_app_year),
-          updated_at = GETUTCDATE()
-         WHERE id = @userId`,
-        {
-          userId: user.id,
-          currentAppMonth: body.currentAppMonth,
-          currentAppYear: body.currentAppYear,
-        }
-      );
-
-      // Return updated data
-      const updated = await queryRow<UserRow>(
-        'SELECT * FROM Users WHERE id = @userId',
-        { userId: user.id }
-      );
-
-      return {
-        status: 200,
-        jsonBody: toApiFormat(updated),
-      };
-    }
-
-    return { status: 405, jsonBody: { error: 'Method not allowed' } };
+    const user = req.user!;
+    const data = await queryRow<UserRow>(
+      'SELECT * FROM Users WHERE id = @userId',
+      { userId: user.id }
+    );
+    res.json(toApiFormat(data));
   } catch (error) {
-    context.error('Error in userData handler:', error);
-    return {
-      status: 500,
-      jsonBody: { error: 'Internal server error' },
-    };
+    console.error('Error in GET /userData:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
-}
-
-/**
- * GET /api/me - Get current user authentication info
- */
-async function meHandler(
-  request: HttpRequest,
-  context: InvocationContext
-): Promise<HttpResponseInit> {
-  try {
-    const user = await ensureUserInDatabase(request);
-
-    return {
-      status: 200,
-      jsonBody: {
-        id: user.id,
-        provider: user.provider,
-        email: user.email,
-        displayName: user.displayName,
-        roles: user.roles,
-      },
-    };
-  } catch (error) {
-    // Not authenticated
-    return {
-      status: 200,
-      jsonBody: {
-        authenticated: false,
-      },
-    };
-  }
-}
-
-// Register routes
-app.http('userData', {
-  methods: ['GET', 'PUT'],
-  authLevel: 'anonymous',
-  route: 'userData',
-  handler: userDataHandler,
 });
 
-app.http('me', {
-  methods: ['GET'],
-  authLevel: 'anonymous',
-  route: 'me',
-  handler: meHandler,
+// PUT /api/userData
+router.put('/userData', async (req: Request, res: Response) => {
+  try {
+    const user = req.user!;
+    const body = req.body as UserDataInput;
+
+    await query(
+      `UPDATE Users SET
+        current_app_month = COALESCE(@currentAppMonth, current_app_month),
+        current_app_year = COALESCE(@currentAppYear, current_app_year),
+        updated_at = NOW()
+       WHERE id = @userId`,
+      {
+        userId: user.id,
+        currentAppMonth: body.currentAppMonth,
+        currentAppYear: body.currentAppYear,
+      }
+    );
+
+    const updated = await queryRow<UserRow>(
+      'SELECT * FROM Users WHERE id = @userId',
+      { userId: user.id }
+    );
+    res.json(toApiFormat(updated));
+  } catch (error) {
+    console.error('Error in PUT /userData:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
+
+// GET /api/me
+router.get('/me', async (req: Request, res: Response) => {
+  try {
+    const user = req.user!;
+    res.json({
+      id: user.id,
+      provider: user.provider,
+      email: user.email,
+      displayName: user.displayName,
+      roles: user.roles,
+    });
+  } catch (error) {
+    res.json({ authenticated: false });
+  }
+});
+
+export default router;

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "corpocache.fullname" . }}-api
+  labels:
+    {{- include "corpocache.api.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3000
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "corpocache.api.selectorLabels" . | nindent 4 }}

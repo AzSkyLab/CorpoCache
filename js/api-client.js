@@ -1,19 +1,12 @@
 /**
  * CorpoCache API Client
- * Handles all communication with the Azure Functions backend
+ * Handles all communication with the Express backend
  */
 
 const ApiClient = (function () {
-  // Detect local development mode
-  const isLocalDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-
-  // Use local Azure Functions URL in dev mode, otherwise use relative path
-  const API_BASE = isLocalDev ? 'http://localhost:7071/api' : '/api';
+  const API_BASE = '/api';
   const MAX_RETRIES = 3;
   const RETRY_DELAY = 1000;
-
-  // Track if we're in local dev mode (set after first API call)
-  let localDevMode = false;
 
   /**
    * Make an HTTP request with retry logic
@@ -33,18 +26,15 @@ const ApiClient = (function () {
       try {
         const response = await fetch(url, config);
 
-        // Handle 401 - redirect to login (skip in local dev mode)
-        if (response.status === 401 && !isLocalDev) {
-          window.location.href = '/.auth/login/github?post_login_redirect_uri=' + encodeURIComponent(window.location.pathname);
-          throw new Error('Authentication required');
+        if (response.status === 401) {
+          console.error('Unexpected 401 from API');
+          throw new Error('Authentication error');
         }
 
-        // Handle 204 No Content
         if (response.status === 204) {
           return null;
         }
 
-        // Parse JSON response
         const data = await response.json();
 
         if (!response.ok) {
@@ -55,12 +45,6 @@ const ApiClient = (function () {
       } catch (error) {
         lastError = error;
 
-        // Don't retry on auth errors
-        if (error.message === 'Authentication required') {
-          throw error;
-        }
-
-        // Wait before retrying
         if (attempt < MAX_RETRIES - 1) {
           await new Promise((resolve) =>
             setTimeout(resolve, RETRY_DELAY * (attempt + 1))
@@ -76,60 +60,26 @@ const ApiClient = (function () {
   // ============ Authentication ============
 
   async function getAuthStatus() {
-    // In local dev mode, check if API is running and return mock auth
-    if (isLocalDev) {
-      try {
-        const response = await fetch(`${API_BASE}/me`);
-        if (response.ok) {
-          const data = await response.json();
-          if (data.id) {
-            localDevMode = true;
-            return {
-              authenticated: true,
-              user: {
-                id: data.id,
-                provider: data.provider || 'local',
-                email: data.email || 'dev@localhost',
-                roles: data.roles || ['authenticated'],
-              },
-            };
-          }
-        }
-      } catch (e) {
-        console.log('Local API not available, using localStorage mode');
-      }
-      return { authenticated: false };
-    }
-
-    // Production mode - use Azure Static Web Apps auth
     try {
-      const response = await fetch('/.auth/me');
-      const data = await response.json();
-      if (data.clientPrincipal) {
-        return {
-          authenticated: true,
-          user: {
-            id: data.clientPrincipal.userId,
-            provider: data.clientPrincipal.identityProvider,
-            email: data.clientPrincipal.userDetails,
-            roles: data.clientPrincipal.userRoles,
-          },
-        };
+      const response = await fetch(`${API_BASE}/me`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.id) {
+          return {
+            authenticated: true,
+            user: {
+              id: data.id,
+              provider: data.provider || 'local',
+              email: data.email || 'user@home.lab',
+              roles: data.roles || ['authenticated'],
+            },
+          };
+        }
       }
-      return { authenticated: false };
-    } catch (error) {
-      console.error('Failed to get auth status:', error);
-      return { authenticated: false };
+    } catch (e) {
+      console.log('API not available');
     }
-  }
-
-  function login(provider = 'github') {
-    const redirectUri = encodeURIComponent(window.location.pathname);
-    window.location.href = `/.auth/login/${provider}?post_login_redirect_uri=${redirectUri}`;
-  }
-
-  function logout() {
-    window.location.href = '/.auth/logout?post_logout_redirect_uri=/';
+    return { authenticated: false };
   }
 
   // ============ Credit Cards ============
@@ -359,8 +309,6 @@ const ApiClient = (function () {
   return {
     // Auth
     getAuthStatus,
-    login,
-    logout,
 
     // Credit Cards
     getCreditCards,

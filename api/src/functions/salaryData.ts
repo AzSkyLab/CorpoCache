@@ -1,11 +1,7 @@
-import {
-  app,
-  HttpRequest,
-  HttpResponseInit,
-  InvocationContext,
-} from '@azure/functions';
+import { Router, Request, Response } from 'express';
 import { queryRow, query } from '../services/database';
-import { ensureUserInDatabase } from '../middleware/auth';
+
+const router = Router();
 
 interface SalaryDataRow {
   id: number;
@@ -52,7 +48,6 @@ interface SalaryDataInput {
   bonusAmount?: number;
   lastPayDate?: string;
   firstPayDate?: string;
-  // Calculated values can also be stored
   grossPay?: number;
   netPay?: number;
   federalTaxAmount?: number;
@@ -68,14 +63,8 @@ interface SalaryDataInput {
   afterTaxBonus?: number;
 }
 
-/**
- * Transform DB row to API response format
- */
 function toApiFormat(row: SalaryDataRow | null): Record<string, unknown> {
-  if (!row) {
-    return {};
-  }
-
+  if (!row) return {};
   return {
     annualSalary: row.annual_salary,
     payFrequency: row.pay_frequency,
@@ -106,176 +95,112 @@ function toApiFormat(row: SalaryDataRow | null): Record<string, unknown> {
   };
 }
 
-/**
- * GET /api/salaryData - Get salary data for user
- * PUT /api/salaryData - Save salary data (upsert)
- */
-async function salaryDataHandler(
-  request: HttpRequest,
-  context: InvocationContext
-): Promise<HttpResponseInit> {
+// GET /api/salaryData
+router.get('/salaryData', async (req: Request, res: Response) => {
   try {
-    const user = await ensureUserInDatabase(request);
-
-    if (request.method === 'GET') {
-      const data = await queryRow<SalaryDataRow>(
-        'SELECT * FROM SalaryData WHERE user_id = @userId',
-        { userId: user.id }
-      );
-
-      return {
-        status: 200,
-        jsonBody: toApiFormat(data),
-      };
-    }
-
-    if (request.method === 'PUT') {
-      const body = (await request.json()) as SalaryDataInput;
-
-      // Check if record exists
-      const existing = await queryRow<{ id: number }>(
-        'SELECT id FROM SalaryData WHERE user_id = @userId',
-        { userId: user.id }
-      );
-
-      if (existing) {
-        // Update existing record
-        await query(
-          `UPDATE SalaryData SET
-            annual_salary = @annualSalary,
-            pay_frequency = @payFrequency,
-            filing_status = @filingStatus,
-            state_tax_rate = @stateTaxRate,
-            retirement_percent = @retirementPercent,
-            espp_percent = @esppPercent,
-            health_amount = @healthAmount,
-            dental_amount = @dentalAmount,
-            vision_amount = @visionAmount,
-            fsa_amount = @fsaAmount,
-            bonus_amount = @bonusAmount,
-            last_pay_date = @lastPayDate,
-            first_pay_date = @firstPayDate,
-            gross_pay = @grossPay,
-            net_pay = @netPay,
-            federal_tax_amount = @federalTaxAmount,
-            federal_tax_rate = @federalTaxRate,
-            oasdi_tax_amount = @oasdiTaxAmount,
-            medicare_tax_amount = @medicareTaxAmount,
-            state_tax_amount = @stateTaxAmount,
-            total_tax_amount = @totalTaxAmount,
-            retirement_amount = @retirementAmount,
-            espp_amount_calc = @esppAmountCalc,
-            insurance_total = @insuranceTotal,
-            savings_total = @savingsTotal,
-            after_tax_bonus = @afterTaxBonus,
-            updated_at = GETUTCDATE()
-           WHERE user_id = @userId`,
-          {
-            userId: user.id,
-            annualSalary: body.annualSalary ?? null,
-            payFrequency: body.payFrequency ?? null,
-            filingStatus: body.filingStatus ?? null,
-            stateTaxRate: body.stateTaxRate ?? null,
-            retirementPercent: body.retirementPercent ?? null,
-            esppPercent: body.esppPercent ?? null,
-            healthAmount: body.healthAmount ?? null,
-            dentalAmount: body.dentalAmount ?? null,
-            visionAmount: body.visionAmount ?? null,
-            fsaAmount: body.fsaAmount ?? null,
-            bonusAmount: body.bonusAmount ?? null,
-            lastPayDate: body.lastPayDate ?? null,
-            firstPayDate: body.firstPayDate ?? null,
-            grossPay: body.grossPay ?? null,
-            netPay: body.netPay ?? null,
-            federalTaxAmount: body.federalTaxAmount ?? null,
-            federalTaxRate: body.federalTaxRate ?? null,
-            oasdiTaxAmount: body.oasdiTaxAmount ?? null,
-            medicareTaxAmount: body.medicareTaxAmount ?? null,
-            stateTaxAmount: body.stateTaxAmount ?? null,
-            totalTaxAmount: body.totalTaxAmount ?? null,
-            retirementAmount: body.retirementAmount ?? null,
-            esppAmountCalc: body.esppAmountCalc ?? null,
-            insuranceTotal: body.insuranceTotal ?? null,
-            savingsTotal: body.savingsTotal ?? null,
-            afterTaxBonus: body.afterTaxBonus ?? null,
-          }
-        );
-      } else {
-        // Insert new record
-        await query(
-          `INSERT INTO SalaryData (
-            user_id, annual_salary, pay_frequency, filing_status, state_tax_rate,
-            retirement_percent, espp_percent, health_amount, dental_amount, vision_amount,
-            fsa_amount, bonus_amount, last_pay_date, first_pay_date, gross_pay,
-            net_pay, federal_tax_amount, federal_tax_rate, oasdi_tax_amount, medicare_tax_amount,
-            state_tax_amount, total_tax_amount, retirement_amount, espp_amount_calc, insurance_total,
-            savings_total, after_tax_bonus
-          ) VALUES (
-            @userId, @annualSalary, @payFrequency, @filingStatus, @stateTaxRate,
-            @retirementPercent, @esppPercent, @healthAmount, @dentalAmount, @visionAmount,
-            @fsaAmount, @bonusAmount, @lastPayDate, @firstPayDate, @grossPay,
-            @netPay, @federalTaxAmount, @federalTaxRate, @oasdiTaxAmount, @medicareTaxAmount,
-            @stateTaxAmount, @totalTaxAmount, @retirementAmount, @esppAmountCalc, @insuranceTotal,
-            @savingsTotal, @afterTaxBonus
-          )`,
-          {
-            userId: user.id,
-            annualSalary: body.annualSalary ?? null,
-            payFrequency: body.payFrequency ?? null,
-            filingStatus: body.filingStatus ?? null,
-            stateTaxRate: body.stateTaxRate ?? null,
-            retirementPercent: body.retirementPercent ?? null,
-            esppPercent: body.esppPercent ?? null,
-            healthAmount: body.healthAmount ?? null,
-            dentalAmount: body.dentalAmount ?? null,
-            visionAmount: body.visionAmount ?? null,
-            fsaAmount: body.fsaAmount ?? null,
-            bonusAmount: body.bonusAmount ?? null,
-            lastPayDate: body.lastPayDate ?? null,
-            firstPayDate: body.firstPayDate ?? null,
-            grossPay: body.grossPay ?? null,
-            netPay: body.netPay ?? null,
-            federalTaxAmount: body.federalTaxAmount ?? null,
-            federalTaxRate: body.federalTaxRate ?? null,
-            oasdiTaxAmount: body.oasdiTaxAmount ?? null,
-            medicareTaxAmount: body.medicareTaxAmount ?? null,
-            stateTaxAmount: body.stateTaxAmount ?? null,
-            totalTaxAmount: body.totalTaxAmount ?? null,
-            retirementAmount: body.retirementAmount ?? null,
-            esppAmountCalc: body.esppAmountCalc ?? null,
-            insuranceTotal: body.insuranceTotal ?? null,
-            savingsTotal: body.savingsTotal ?? null,
-            afterTaxBonus: body.afterTaxBonus ?? null,
-          }
-        );
-      }
-
-      // Return updated data
-      const updated = await queryRow<SalaryDataRow>(
-        'SELECT * FROM SalaryData WHERE user_id = @userId',
-        { userId: user.id }
-      );
-
-      return {
-        status: 200,
-        jsonBody: toApiFormat(updated),
-      };
-    }
-
-    return { status: 405, jsonBody: { error: 'Method not allowed' } };
+    const user = req.user!;
+    const data = await queryRow<SalaryDataRow>(
+      'SELECT * FROM SalaryData WHERE user_id = @userId',
+      { userId: user.id }
+    );
+    res.json(toApiFormat(data));
   } catch (error) {
-    context.error('Error in salaryData handler:', error);
-    return {
-      status: 500,
-      jsonBody: { error: 'Internal server error' },
-    };
+    console.error('Error in GET /salaryData:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
-}
-
-// Register route
-app.http('salaryData', {
-  methods: ['GET', 'PUT'],
-  authLevel: 'anonymous',
-  route: 'salaryData',
-  handler: salaryDataHandler,
 });
+
+// PUT /api/salaryData
+router.put('/salaryData', async (req: Request, res: Response) => {
+  try {
+    const user = req.user!;
+    const body = req.body as SalaryDataInput;
+
+    const existing = await queryRow<{ id: number }>(
+      'SELECT id FROM SalaryData WHERE user_id = @userId',
+      { userId: user.id }
+    );
+
+    const params = {
+      userId: user.id,
+      annualSalary: body.annualSalary ?? null,
+      payFrequency: body.payFrequency ?? null,
+      filingStatus: body.filingStatus ?? null,
+      stateTaxRate: body.stateTaxRate ?? null,
+      retirementPercent: body.retirementPercent ?? null,
+      esppPercent: body.esppPercent ?? null,
+      healthAmount: body.healthAmount ?? null,
+      dentalAmount: body.dentalAmount ?? null,
+      visionAmount: body.visionAmount ?? null,
+      fsaAmount: body.fsaAmount ?? null,
+      bonusAmount: body.bonusAmount ?? null,
+      lastPayDate: body.lastPayDate ?? null,
+      firstPayDate: body.firstPayDate ?? null,
+      grossPay: body.grossPay ?? null,
+      netPay: body.netPay ?? null,
+      federalTaxAmount: body.federalTaxAmount ?? null,
+      federalTaxRate: body.federalTaxRate ?? null,
+      oasdiTaxAmount: body.oasdiTaxAmount ?? null,
+      medicareTaxAmount: body.medicareTaxAmount ?? null,
+      stateTaxAmount: body.stateTaxAmount ?? null,
+      totalTaxAmount: body.totalTaxAmount ?? null,
+      retirementAmount: body.retirementAmount ?? null,
+      esppAmountCalc: body.esppAmountCalc ?? null,
+      insuranceTotal: body.insuranceTotal ?? null,
+      savingsTotal: body.savingsTotal ?? null,
+      afterTaxBonus: body.afterTaxBonus ?? null,
+    };
+
+    if (existing) {
+      await query(
+        `UPDATE SalaryData SET
+          annual_salary = @annualSalary, pay_frequency = @payFrequency,
+          filing_status = @filingStatus, state_tax_rate = @stateTaxRate,
+          retirement_percent = @retirementPercent, espp_percent = @esppPercent,
+          health_amount = @healthAmount, dental_amount = @dentalAmount,
+          vision_amount = @visionAmount, fsa_amount = @fsaAmount,
+          bonus_amount = @bonusAmount, last_pay_date = @lastPayDate,
+          first_pay_date = @firstPayDate, gross_pay = @grossPay,
+          net_pay = @netPay, federal_tax_amount = @federalTaxAmount,
+          federal_tax_rate = @federalTaxRate, oasdi_tax_amount = @oasdiTaxAmount,
+          medicare_tax_amount = @medicareTaxAmount, state_tax_amount = @stateTaxAmount,
+          total_tax_amount = @totalTaxAmount, retirement_amount = @retirementAmount,
+          espp_amount_calc = @esppAmountCalc, insurance_total = @insuranceTotal,
+          savings_total = @savingsTotal, after_tax_bonus = @afterTaxBonus,
+          updated_at = NOW()
+         WHERE user_id = @userId`,
+        params
+      );
+    } else {
+      await query(
+        `INSERT INTO SalaryData (
+          user_id, annual_salary, pay_frequency, filing_status, state_tax_rate,
+          retirement_percent, espp_percent, health_amount, dental_amount, vision_amount,
+          fsa_amount, bonus_amount, last_pay_date, first_pay_date, gross_pay,
+          net_pay, federal_tax_amount, federal_tax_rate, oasdi_tax_amount, medicare_tax_amount,
+          state_tax_amount, total_tax_amount, retirement_amount, espp_amount_calc, insurance_total,
+          savings_total, after_tax_bonus
+        ) VALUES (
+          @userId, @annualSalary, @payFrequency, @filingStatus, @stateTaxRate,
+          @retirementPercent, @esppPercent, @healthAmount, @dentalAmount, @visionAmount,
+          @fsaAmount, @bonusAmount, @lastPayDate, @firstPayDate, @grossPay,
+          @netPay, @federalTaxAmount, @federalTaxRate, @oasdiTaxAmount, @medicareTaxAmount,
+          @stateTaxAmount, @totalTaxAmount, @retirementAmount, @esppAmountCalc, @insuranceTotal,
+          @savingsTotal, @afterTaxBonus
+        )`,
+        params
+      );
+    }
+
+    const updated = await queryRow<SalaryDataRow>(
+      'SELECT * FROM SalaryData WHERE user_id = @userId',
+      { userId: user.id }
+    );
+    res.json(toApiFormat(updated));
+  } catch (error) {
+    console.error('Error in PUT /salaryData:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+export default router;
