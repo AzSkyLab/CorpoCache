@@ -96,16 +96,46 @@ const DataService = (function () {
    * Sync cache/data to global variables for backward compatibility
    */
   function syncToGlobals(data) {
-    window.creditCards = data.creditCards || [];
-    window.bills = data.bills || [];
-    window.loans = data.loans || [];
-    window.expenses = data.expenses || [];
+    // PostgreSQL DECIMAL columns return strings - coerce to numbers
+    window.creditCards = (data.creditCards || []).map((c) => ({
+      ...c,
+      limit: Number(c.limit),
+      balance: Number(c.balance),
+      dueDate: Number(c.dueDate),
+    }));
+    window.bills = (data.bills || []).map((b) => ({
+      ...b,
+      amount: Number(b.amount),
+      dueDate: Number(b.dueDate),
+    }));
+    window.loans = (data.loans || []).map((l) => ({
+      ...l,
+      originalAmount: Number(l.originalAmount),
+      balance: Number(l.balance),
+      interestRate: Number(l.interestRate),
+      dueDate: Number(l.dueDate),
+      term: l.term != null ? Number(l.term) : null,
+      additionalPrincipal: Number(l.additionalPrincipal || 0),
+      pmi: Number(l.pmi || 0),
+      propertyTax: Number(l.propertyTax || 0),
+      propertyInsurance: Number(l.propertyInsurance || 0),
+    }));
+    window.expenses = (data.expenses || []).map((e) => ({
+      ...e,
+      amount: Number(e.amount),
+    }));
     window.salaryData = data.salaryData || {};
     window.profitData = data.profitData || {};
     window.historicalBillData = data.historicalBillData || [];
     window.currentAppMonth = data.currentAppMonth;
     window.currentAppYear = data.currentAppYear;
-    Object.assign(cache, data);
+    Object.assign(cache, {
+      ...data,
+      creditCards: window.creditCards,
+      bills: window.bills,
+      loans: window.loans,
+      expenses: window.expenses,
+    });
   }
 
   /**
