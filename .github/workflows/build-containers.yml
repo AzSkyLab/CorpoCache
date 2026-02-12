@@ -12,6 +12,7 @@ on:
       - 'Dockerfile.frontend'
       - 'api/src/**'
       - 'api/package.json'
+      - 'api/package-lock.json'
       - 'api/tsconfig.json'
       - 'Dockerfile.api'
       - '.github/workflows/build-containers.yml'
