@@ -1074,10 +1074,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Update auth panel UI
         updateAuthPanel(initResult);
 
-        // Check if migration is needed
-        if (DataService.needsMigration()) {
-            showMigrationModal();
-        }
     } catch (error) {
         console.error('DataService init failed, using localStorage:', error);
         // Fallback to localStorage only if DataService fails
