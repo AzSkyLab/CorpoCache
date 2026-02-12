@@ -1,4 +1,4 @@
-import { Pool, PoolClient } from 'pg';
+import { Pool, PoolClient, QueryResultRow } from 'pg';
 
 // Database configuration from environment variables
 const pool = new Pool({
@@ -41,7 +41,7 @@ function convertNamedParams(
 /**
  * Execute a parameterized query
  */
-export async function query<T>(
+export async function query<T extends QueryResultRow>(
   queryText: string,
   params?: Record<string, unknown>
 ): Promise<{ rows: T[]; rowCount: number }> {
@@ -53,7 +53,7 @@ export async function query<T>(
 /**
  * Execute a query and return all rows
  */
-export async function queryRows<T>(
+export async function queryRows<T extends QueryResultRow>(
   queryText: string,
   params?: Record<string, unknown>
 ): Promise<T[]> {
@@ -64,7 +64,7 @@ export async function queryRows<T>(
 /**
  * Execute a query and return first row or null
  */
-export async function queryRow<T>(
+export async function queryRow<T extends QueryResultRow>(
   queryText: string,
   params?: Record<string, unknown>
 ): Promise<T | null> {
@@ -108,7 +108,7 @@ export async function beginTransaction(): Promise<PoolClient> {
 /**
  * Execute query within a transaction
  */
-export async function transactionQuery<T>(
+export async function transactionQuery<T extends QueryResultRow>(
   client: PoolClient,
   queryText: string,
   params?: Record<string, unknown>
