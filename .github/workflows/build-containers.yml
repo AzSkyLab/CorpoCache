@@ -14,6 +14,7 @@ on:
       - 'api/package.json'
       - 'api/tsconfig.json'
       - 'Dockerfile.api'
+      - '.github/workflows/build-containers.yml'
 
 env:
   REGISTRY: ghcr.io
