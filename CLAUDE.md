@@ -27,8 +27,29 @@ CorpoCache is a personal finance dashboard web application with a cyberpunk aest
 ### Deployment
 - Containerized: `Dockerfile.frontend` (nginx), `Dockerfile.api` (Node.js)
 - Helm chart: `helm/corpocache/`
-- CI/CD: GitHub Actions builds containers to ghcr.io on push to main
 - Deployed to homelab k3s via ArgoCD
+
+### CI/CD & Infrastructure
+- **Git remote**: Forgejo at `git.home.lab` (primary), GitHub mirror (backup)
+- **CI/CD**: Forgejo Actions (`.forgejo/workflows/ci.yml`) builds and pushes images to Harbor on push to `main`
+- **Container registry**: Harbor at `registry.home.lab`, project `csgit34` (images: `corpocache-api`, `corpocache-frontend`)
+- **ArgoCD source**: `https://git.home.lab/csGIT34/CorpoCache.git` (helm/ directory)
+- **Push mirroring**: Forgejo automatically mirrors all commits to GitHub (backup)
+
+### Git Remotes
+```
+origin   git@git.home.lab:csGIT34/CorpoCache.git   (Forgejo, primary)
+github   git@github.com:csGIT34/CorpoCache.git      (GitHub, backup mirror)
+```
+
+Always push to `origin` (Forgejo). GitHub is updated automatically via push-mirroring.
+
+### CI Pipeline Notes
+- Workflow at `.forgejo/workflows/ci.yml` triggers on push to `main` (skips `helm/**` and `*.md`)
+- Builds and pushes `corpocache-api` and `corpocache-frontend` images to `registry.home.lab/csgit34/`
+- Harbor credentials use `env:` vars (not inline `${{ secrets.* }}`) because the robot username contains a `$` character
+- After CI pushes new images, restart deployments: `kubectl rollout restart deployment -n corpocache`
+- For manual builds: `docker build -t registry.home.lab/csgit34/corpocache-api:latest -f Dockerfile.api .`
 
 ## Development
 
