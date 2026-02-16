@@ -15,7 +15,10 @@ jobs:
         run: |
           apt-get update && apt-get install -y docker.io
       - name: Login to Harbor
-        run: echo "${{ secrets.HARBOR_PASSWORD }}" | docker login registry.home.lab -u "${{ secrets.HARBOR_USERNAME }}" --password-stdin
+        env:
+          HARBOR_USER: ${{ secrets.HARBOR_USERNAME }}
+          HARBOR_PASS: ${{ secrets.HARBOR_PASSWORD }}
+        run: echo "$HARBOR_PASS" | docker login registry.home.lab -u "$HARBOR_USER" --password-stdin
       - name: Build and push API
         run: |
           docker build -t registry.home.lab/csgit34/corpocache-api:${{ github.sha }} -t registry.home.lab/csgit34/corpocache-api:latest -f Dockerfile.api .
@@ -30,7 +33,10 @@ jobs:
         run: |
           apt-get update && apt-get install -y docker.io
       - name: Login to Harbor
-        run: echo "${{ secrets.HARBOR_PASSWORD }}" | docker login registry.home.lab -u "${{ secrets.HARBOR_USERNAME }}" --password-stdin
+        env:
+          HARBOR_USER: ${{ secrets.HARBOR_USERNAME }}
+          HARBOR_PASS: ${{ secrets.HARBOR_PASSWORD }}
+        run: echo "$HARBOR_PASS" | docker login registry.home.lab -u "$HARBOR_USER" --password-stdin
       - name: Build and push frontend
         run: |
           docker build -t registry.home.lab/csgit34/corpocache-frontend:${{ github.sha }} -t registry.home.lab/csgit34/corpocache-frontend:latest -f Dockerfile.frontend .
