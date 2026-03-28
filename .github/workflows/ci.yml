@@ -8,12 +8,9 @@ on:
 
 jobs:
   build-api:
-    runs-on: ubuntu-latest
+    runs-on: homelab-runners
     steps:
       - uses: actions/checkout@v4
-      - name: Install Docker CLI
-        run: |
-          apt-get update && apt-get install -y docker.io
       - name: Login to Harbor
         env:
           HARBOR_USER: ${{ secrets.HARBOR_USERNAME }}
@@ -26,12 +23,9 @@ jobs:
           docker push registry.home.lab/csgit34/corpocache-api:latest
 
   build-frontend:
-    runs-on: ubuntu-latest
+    runs-on: homelab-runners
     steps:
       - uses: actions/checkout@v4
-      - name: Install Docker CLI
-        run: |
-          apt-get update && apt-get install -y docker.io
       - name: Login to Harbor
         env:
           HARBOR_USER: ${{ secrets.HARBOR_USERNAME }}
