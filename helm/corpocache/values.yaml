@@ -1,7 +1,7 @@
 frontend:
   replicaCount: 1
   image:
-    repository: ghcr.io/csgit34/corpocache-frontend
+    repository: ghcr.io/azskylab/corpocache-frontend
     tag: latest
     pullPolicy: Always
   resources:
@@ -15,7 +15,7 @@ frontend:
 api:
   replicaCount: 1
   image:
-    repository: ghcr.io/csgit34/corpocache-api
+    repository: ghcr.io/azskylab/corpocache-api
     tag: latest
     pullPolicy: Always
   resources:
